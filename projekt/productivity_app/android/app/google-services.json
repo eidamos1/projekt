@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "863209070202",
+    "project_id": "calendar-mot",
+    "storage_bucket": "calendar-mot.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:863209070202:android:300e524d6adc1454a725c3",
+        "android_client_info": {
+          "package_name": "com.example.productivity_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPL6JLH9Q8n0aVKpasG9_BTJ212UZfK04"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
