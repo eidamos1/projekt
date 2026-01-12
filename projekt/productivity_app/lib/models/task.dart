@@ -1,14 +1,16 @@
-// models/task.dart
+// ... enum TaskType ... (nech stejné)
 enum TaskType { daily, weekly, monthly }
+
 class Task {
   final String id;
   final String title;
-  final TaskType type;    // "Denní", "Týdenní" nebo "Měsíční"
-  final String date;    // uložené jako 'yyyy-MM-dd'
+  final TaskType type;
+  final String date;
   final int xp;
   final int coins;
   final String code;
   final bool completed;
+  final String? imageBase64; // Nové: Obrázek jako text
 
   Task({
     required this.id,
@@ -19,6 +21,7 @@ class Task {
     required this.coins,
     required this.code,
     this.completed = false,
+    this.imageBase64,
   });
 
   factory Task.fromMap(String id, Map<String, dynamic> data) {
@@ -33,6 +36,7 @@ class Task {
       coins: data['coins'] ?? 0,
       code: data['code'] ?? '',
       completed: data['completed'] ?? false,
+      imageBase64: data['imageBase64'], // Načtení obrázku
     );
   }
 
@@ -45,17 +49,16 @@ class Task {
       'coins': coins,
       'code': code,
       'completed': completed,
+      'imageBase64': imageBase64, // Uložení obrázku
     };
   }
-
+  
+  // ... typeLabel ...
   String get typeLabel {
     switch (type) {
-      case TaskType.daily:
-        return 'Denní';
-      case TaskType.weekly:
-        return 'Týdenní';
-      case TaskType.monthly:
-        return 'Měsíční';
+      case TaskType.daily: return 'Denní';
+      case TaskType.weekly: return 'Týdenní';
+      case TaskType.monthly: return 'Měsíční';
     }
   }
 }

@@ -64,6 +64,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '863209070202',
     projectId: 'calendar-mot',
     storageBucket: 'calendar-mot.firebasestorage.app',
+    androidClientId: '863209070202-dgviqbbg3prjjm0ehdhn6rrcjm6j4jg9.apps.googleusercontent.com',
+    iosClientId: '863209070202-r2h8qbcdgaf3n7n0v9oiot8r1h0g8hvg.apps.googleusercontent.com',
     iosBundleId: 'com.example.productivityApp',
   );
 
@@ -73,6 +75,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '863209070202',
     projectId: 'calendar-mot',
     storageBucket: 'calendar-mot.firebasestorage.app',
+    androidClientId: '863209070202-dgviqbbg3prjjm0ehdhn6rrcjm6j4jg9.apps.googleusercontent.com',
+    iosClientId: '863209070202-r2h8qbcdgaf3n7n0v9oiot8r1h0g8hvg.apps.googleusercontent.com',
     iosBundleId: 'com.example.productivityApp',
   );
 
