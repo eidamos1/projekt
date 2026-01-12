@@ -1,4 +1,6 @@
 // pages/confirm_task.dart
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -10,7 +12,20 @@ class ConfirmTaskPage extends StatefulWidget {
 class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
   final _codeController = TextEditingController();
   final _firestore = FirebaseFirestore.instance;
+  bool _isInit = true; // Pomocná proměnná
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Pokud se stránka otevřela a byl jí poslán argument (kód), načti ho
+    if (_isInit) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is String) {
+        _codeController.text = args;
+      }
+      _isInit = false;
+    }
+  }
   Future<void> _confirmCode() async {
     String code = _codeController.text.trim();
     if (code.isEmpty) {

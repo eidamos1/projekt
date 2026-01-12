@@ -1,4 +1,6 @@
 // pages/login.dart
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,8 +15,10 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
   bool isLogin = true; // Přepínač mezi přihlášením a registrací
 
   void _toggleForm() {
@@ -26,6 +30,7 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _submit() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
+
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Zadejte prosím e-mail i heslo')));
@@ -35,20 +40,29 @@ class _LoginPageState extends State<LoginPage> {
     try {
       if (isLogin) {
         // Přihlášení existujícího uživatele
-        await _auth.signInWithEmailAndPassword(email: email, password: password);
-      } else {
+        await _auth.signInWithEmailAndPassword(
+          email: email,
+          password: password
+        );
+
+      } 
+      else
+        {
         // Registrace nového uživatele
         UserCredential cred = await _auth.createUserWithEmailAndPassword(
-            email: email, password: password);
-        // Vytvoření dokumentu uživatele ve Firestore s počátečními hodnotami
+          email: email,
+          password: password
+        );
+
+        // Vytvoří dokument uživatele ve Firestore s hodnotami
         await _firestore.collection('users').doc(cred.user!.uid).set({
           'xp': 0,
           'coins': 0,
           'level': 1,
         });
       }
+      
       // Po úspěšném přihlášení/registraci přejdeme na kalendářovou stránku
-      // ignore: use_build_context_synchronously
       Navigator.pushReplacementNamed(context, '/calendar');
     } on FirebaseAuthException catch (e) {
       // Zpracování chyb Firebase Auth
@@ -60,7 +74,7 @@ class _LoginPageState extends State<LoginPage> {
       } else if (e.code == 'user-not-found' || e.code == 'wrong-password') {
         msg = 'Špatný e-mail nebo heslo.';
       }
-      // ignore: use_build_context_synchronously
+
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     }
   }
@@ -102,3 +116,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+

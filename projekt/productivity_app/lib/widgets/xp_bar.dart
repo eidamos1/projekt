@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class XPBar extends StatelessWidget {
   final int xp;
   final int level;
-  XPBar({required this.xp, required this.level});
+  const XPBar({super.key, required this.xp, required this.level});
 
   @override
   Widget build(BuildContext context) {
