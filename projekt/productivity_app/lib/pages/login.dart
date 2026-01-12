@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart' as google_lib;
+import 'package:google_sign_in/google_sign_in.dart';
 // 2. Import pro detekci Webu
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -25,35 +25,33 @@ class _LoginPageState extends State<LoginPage> {
   // Google Přihlášení
 Future<void> _signInWithGoogle() async {
     try {
-      // 1. Konfigurace pro Web (clientId je nutné pro verzi 7.x)
-      // Na Androidu/iOS se clientId ignoruje (bere se z google-services.json)
-      final google_lib.GoogleSignIn googleSignIn = google_lib.GoogleSignIn(
-        clientId: kIsWeb 
-            ? "TVOJE-WEB-CLIENT-ID.apps.googleusercontent.com" // ZDE VLOŽ ID Z FIREBASE
+      // 1. Konfigurace (zejména pro Web)
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: kIsWeb
+            ? "863209070202-ugd71j1mrv9nohbht9puakbr7991ccvv.apps.googleusercontent.com"
             : null,
       );
 
-      // 2. Spuštění přihlašovacího procesu
-      // Ve verzi 7.x je metoda stále .signIn()
-      final google_lib.GoogleSignInAccount? googleUser = await googleSignIn.authenticate();
+      // 2. Spuštění přihlášení (ve verzi 6.x používáme signIn)
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
       if (googleUser == null) {
-        return; // Uživatel zavřel okno
+        return; // Uživatel zavřel okno bez přihlášení
       }
 
-      // 3. Získání tokenů (Authentication)
-      final google_lib.GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      // 3. Získání tokenů
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-      // 4. Vytvoření přihlašovacích údajů pro Firebase
+      // 4. Vytvoření credential pro Firebase
       final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.idToken,
+        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
       // 5. Přihlášení do Firebase
       UserCredential userCred = await _auth.signInWithCredential(credential);
 
-      // 6. Kontrola/Vytvoření uživatele v databázi (tvůj původní kód)
+      // 6. Kontrola/Vytvoření uživatele ve Firestore
       final userDoc = await _firestore.collection('users').doc(userCred.user!.uid).get();
       if (!userDoc.exists) {
         await _firestore.collection('users').doc(userCred.user!.uid).set({
@@ -64,12 +62,17 @@ Future<void> _signInWithGoogle() async {
         });
       }
 
-      if (mounted) Navigator.pushReplacementNamed(context, '/calendar');
+      // 7. Přesměrování do aplikace
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/calendar');
+      }
 
     } catch (e) {
       print("CHYBA Google Login: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Chyba: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Přihlášení selhalo: $e')),
+        );
       }
     }
   }
