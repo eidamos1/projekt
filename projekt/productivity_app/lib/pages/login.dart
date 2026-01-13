@@ -51,11 +51,15 @@ Future<void> _signInWithGoogle() async {
       // 5. Přihlášení do Firebase
       UserCredential userCred = await _auth.signInWithCredential(credential);
 
+      await _firestore.collection('users').doc(userCred.user!.uid).set({
+        'nickname': googleUser.displayName ?? 'Hráč',
+        'photoUrl': googleUser.photoUrl, // Tady se ukládá odkaz na Google fotku
+      }, SetOptions(merge: true));
+
       // 6. Kontrola/Vytvoření uživatele ve Firestore
       final userDoc = await _firestore.collection('users').doc(userCred.user!.uid).get();
       if (!userDoc.exists) {
         await _firestore.collection('users').doc(userCred.user!.uid).set({
-          'nickname': googleUser.displayName ?? 'Hráč',
           'xp': 0,
           'coins': 0,
           'level': 1,

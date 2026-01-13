@@ -35,27 +35,58 @@ class _CalendarPageState extends State<CalendarPage> {
     return DateFormat('yyyy-MM-dd').format(date);
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
-    // Získání aktuálního uživatele
     final user = _auth.currentUser!;
     final uid = user.uid;
 
-    // StreamBuilder pro čtení dat uživatele (XP, coins, level)
     return StreamBuilder<DocumentSnapshot>(
       stream: _firestore.collection('users').doc(uid).snapshots(),
       builder: (context, snapshot) {
         int xp = 0, coins = 0, level = 1;
+        String nickname = 'Hráč';
+        String? photoUrl; // Proměnná pro fotku
+
         if (snapshot.hasData && snapshot.data!.exists) {
           final data = snapshot.data!.data() as Map<String, dynamic>;
           xp = data['xp'] ?? 0;
           coins = data['coins'] ?? 0;
           level = data['level'] ?? 1;
+          nickname = data['nickname'] ?? 'Hráč';
+          photoUrl = data['photoUrl']; // Načtení URL fotky
         }
-        // Stavba celé stránky
+
         return Scaffold(
           appBar: AppBar(
-            title: Text('Můj kalendář'),
+            // --- ZMĚNA: Titulek s fotkou a jménem ---
+            title: Row(
+              children: [
+                if (photoUrl != null && photoUrl.isNotEmpty)
+                  CircleAvatar(
+                    backgroundImage: NetworkImage(photoUrl),
+                    radius: 18,
+                    backgroundColor: Colors.transparent,
+                  )
+                else
+                  CircleAvatar(
+                    backgroundColor: Colors.indigo.shade100,
+                    radius: 18,
+                    child: Text(
+                      nickname.isNotEmpty ? nickname[0].toUpperCase() : '?',
+                      style: TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    nickname,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ),
+              ],
+            ),
+            // ----------------------------------------
             actions: [
               IconButton(
                 icon: Icon(Icons.task_alt),
@@ -76,7 +107,6 @@ class _CalendarPageState extends State<CalendarPage> {
           ),
           body: Column(
             children: [
-              // Horní panel: XP bar a mince
               Padding(
                 padding: EdgeInsets.all(8),
                 child: Row(
@@ -92,14 +122,11 @@ class _CalendarPageState extends State<CalendarPage> {
                   ],
                 ),
               ),
-              // Kalendář
               TableCalendar(
                 firstDay: DateTime(2000),
                 lastDay: DateTime(2100),
                 focusedDay: _focusedDay,
-                selectedDayPredicate: (day) {
-                  return isSameDay(_selectedDay, day);
-                },
+                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                 onDaySelected: (selectedDay, focusedDay) {
                   setState(() {
                     _selectedDay = selectedDay;
@@ -107,7 +134,6 @@ class _CalendarPageState extends State<CalendarPage> {
                   });
                 },
               ),
-              // Seznam úkolů pro vybraný den
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
                   stream: _firestore
@@ -117,14 +143,10 @@ class _CalendarPageState extends State<CalendarPage> {
                       .where('date', isEqualTo: _formatDate(_selectedDay))
                       .snapshots(),
                   builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return Center(child: CircularProgressIndicator());
-                    }
+                    if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
                     final docs = snapshot.data!.docs;
-                    if (docs.isEmpty) {
-                      return Center(child: Text('Žádné úkoly pro tento den.'));
-                    }
-                    // Vytvoření seznamu karet úkolů
+                    if (docs.isEmpty) return Center(child: Text('Žádné úkoly pro tento den.'));
+                    
                     return ListView.builder(
                       itemCount: docs.length,
                       itemBuilder: (context, index) {
@@ -138,18 +160,14 @@ class _CalendarPageState extends State<CalendarPage> {
               ),
             ],
           ),
-          // Tlačítko pro přidání nového úkolu
           floatingActionButton: FloatingActionButton(
             child: Icon(Icons.add),
-            onPressed: () {
-              _showAddTaskDialog(uid);
-            },
+            onPressed: () => _showAddTaskDialog(uid),
           ),
         );
       },
     );
   }
-
   // Dialog pro přidání nového úkolu
 void _showAddTaskDialog(String uid) {
     showDialog(
