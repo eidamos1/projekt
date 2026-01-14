@@ -52,8 +52,8 @@ Future<void> _signInWithGoogle() async {
       UserCredential userCred = await _auth.signInWithCredential(credential);
 
       await _firestore.collection('users').doc(userCred.user!.uid).set({
-        'nickname': googleUser.displayName ?? 'Hráč',
-        'photoUrl': googleUser.photoUrl, // Tady se ukládá odkaz na Google fotku
+        'nickname': googleUser.displayName ?? 'Hráč', // ukládá přezdívku z Google účtu
+        'photoUrl': googleUser.photoUrl, // ukládá odkaz na Google toku pro profil
       }, SetOptions(merge: true));
 
       // 6. Kontrola/Vytvoření uživatele ve Firestore

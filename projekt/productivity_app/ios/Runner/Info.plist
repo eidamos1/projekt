@@ -48,6 +48,10 @@
 	<key>CFBundleURLTypes</key>
 <array>
 	<dict>
+	<key>NSPhotoLibraryUsageDescription</key>
+<string>Aplikace potřebuje přístup ke galerii pro nahrávání obrázků k úkolům.</string>
+<key>NSCameraUsageDescription</key>
+<string>Aplikace potřebuje přístup ke kameře pro focení úkolů.</string>
 		<key>CFBundleTypeRole</key>
 		<string>Editor</string>
 		<key>CFBundleURLSchemes</key>

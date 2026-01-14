@@ -88,10 +88,8 @@ class _TaskCardState extends State<TaskCard> {
 
     // Odkazy pro sdílení
     String mobileLink = 'adamapp://confirm?code=${widget.task.code}';
-    // Pokud testuješ lokálně:
+
     String webLink = 'https://calendar-mot.web.app/#/confirm?code=${widget.task.code}';
-    // Až to nasadíš na Firebase Hosting, změníš to na:
-    // String webLink = 'https://tvoje-appka.web.app/#/confirm?code=${widget.task.code}';
 
     Share.share(
       'Čau! Mám hotovo: "${widget.task.title}".\n'
