@@ -99,7 +99,9 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
         });
         
         // Smazat úkol (nebo nastavit completed: true)
-        tx.delete(_taskRef!);
+        tx.update(_taskRef!, {
+          'completed': true,
+        });
       });
 
       if (mounted) {

@@ -168,6 +168,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     fontWeight: FontWeight.bold,
                   ),
                   formatButtonVisible: false,
+                  titleCentered: true,
                   leftChevronIcon: Icon(Icons.chevron_left, color: Theme.of(context).iconTheme.color),
                   rightChevronIcon: Icon(Icons.chevron_right, color: Theme.of(context).iconTheme.color),
                 ),
@@ -238,7 +239,7 @@ void _showAddTaskDialog(String uid) {
                     // Převedeme Enum na hezký text
                     String label = '';
                     switch (type) {
-                      case TaskType.daily: label = 'Denní (+XP/Coins)'; break;
+                      case TaskType.daily: label = 'Denní (Malá odměna)'; break;
                       case TaskType.weekly: label = 'Týdenní (Větší odměna)'; break;
                       case TaskType.monthly: label = 'Měsíční (Epická odměna)'; break;
                     }

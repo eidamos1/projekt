@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:app_links/app_links.dart';
 import 'firebase_options.dart'; // Konfigurace Firebase
 import 'pages/login.dart';
@@ -135,41 +134,40 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     return MaterialApp(
-      title: 'Motivator',
-      debugShowCheckedModeBanner: false, // Skryje nápis DEBUG
+ title: 'Motivator',
+      debugShowCheckedModeBanner: false,
       themeMode: themeProvider.themeMode,
+      // Světlé téma
       theme: ThemeData(
         brightness: Brightness.light,
         primarySwatch: Colors.indigo,
         scaffoldBackgroundColor: Colors.grey[50],
-        appBarTheme: AppBarTheme(
+        cardColor: Colors.white,
+        appBarTheme: const AppBarTheme(
           backgroundColor: Colors.indigo,
           foregroundColor: Colors.white,
-          
         ),
-                textTheme: GoogleFonts.poppinsTextTheme(),
-        cardTheme: CardThemeData(
-          elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Colors.black),
+          bodyMedium: TextStyle(color: Colors.black87),
         ),
         useMaterial3: true,
       ),
+      // Tmavé téma
       darkTheme: ThemeData(
         brightness: Brightness.dark,
         primarySwatch: Colors.indigo,
-        scaffoldBackgroundColor: Colors.grey[900],
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.indigo[700],
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        cardColor: const Color(0xFF1E1E1E),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1E1E1E),
           foregroundColor: Colors.white,
         ),
-        useMaterial3: true,
-      
-        // Globální nastavení fontu
-        textTheme: GoogleFonts.poppinsTextTheme(ThemeData(brightness: Brightness.light).textTheme),
-        cardTheme: CardThemeData(
-          elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Colors.white),
+          bodyMedium: TextStyle(color: Colors.white70),
         ),
+        useMaterial3: true,
       ),
       initialRoute: '/',
       routes: {

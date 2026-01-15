@@ -103,7 +103,8 @@ class _TaskCardState extends State<TaskCard> {
   Widget build(BuildContext context) {
     bool isFullyCompleted = widget.task.completed;
     bool isPending = widget.task.imageBase64 != null && !isFullyCompleted;
-    Color textColor = Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
+    final subTextColor = Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black;
     return Card(
       color: isFullyCompleted ? Theme.of(context).cardColor.withOpacity(0.6) : Theme.of(context).cardColor,
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -117,9 +118,9 @@ class _TaskCardState extends State<TaskCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.task.title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, decoration: isFullyCompleted ? TextDecoration.lineThrough : null, color: isFullyCompleted ? Colors.green : textColor)),
+            Text(widget.task.title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, decoration: isFullyCompleted ? TextDecoration.lineThrough : null, color: isFullyCompleted ? Colors.green : textColor,decorationColor: isFullyCompleted ? Colors.grey : textColor)),
             const SizedBox(height: 4),
-            Text('${widget.task.typeLabel} • ${widget.task.xp} XP • ${widget.task.coins} Mincí', style: TextStyle(color: isFullyCompleted ? Colors.green : textColor.withOpacity( 0.7))),
+            Text('${widget.task.typeLabel} • ${widget.task.xp} XP • ${widget.task.coins} Mincí', style: TextStyle(color: isFullyCompleted ? Colors.grey : subTextColor, fontSize: 12)),
             
             // --- STAV ÚKOLU ---
             if (isFullyCompleted)
@@ -141,15 +142,28 @@ class _TaskCardState extends State<TaskCard> {
                 ]),
               ),
 
-            if (widget.task.imageBase64 != null)
+            if (widget.task.imageBase64 != null) ...{
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Row(children: const [
-                  Icon(Icons.image, size: 16, color: Colors.green), 
+                  Icon(Icons.image, size: 20, color: Colors.green), 
                   SizedBox(width: 4), 
                   Text("Důkaz připojen", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold))
                 ]),
               ),
+              SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.memory(
+                  base64Decode(widget.task.imageBase64!),
+                  height: 200,
+                  width: 200,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              
+            },
+
 
 // Ovládací tlačítka (skryjeme, pokud je už hotovo/verified)
             if (!isFullyCompleted) ...[
