@@ -34,6 +34,13 @@ class _CalendarPageState extends State<CalendarPage> {
   String _formatDate(DateTime date) {
     return DateFormat('yyyy-MM-dd').format(date);
   }
+  // Funkce zjistí, jestli je vybraný den včera nebo dříve (bez času)
+  bool _isDayInPast(DateTime day) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final checkDay = DateTime(day.year, day.month, day.day);
+    return checkDay.isBefore(today);
+  }
 
 @override
   Widget build(BuildContext context) {
@@ -96,6 +103,13 @@ class _CalendarPageState extends State<CalendarPage> {
                 },
               ),
               IconButton(
+                icon: Icon(Icons.settings),
+                tooltip: 'Nastavení',
+                onPressed: () {
+                  Navigator.pushNamed(context, '/settings');
+                },
+              ),
+              IconButton(
                 icon: Icon(Icons.logout),
                 tooltip: 'Odhlásit',
                 onPressed: () async {
@@ -133,6 +147,30 @@ class _CalendarPageState extends State<CalendarPage> {
                     _focusedDay = focusedDay;
                   });
                 },
+                calendarStyle: CalendarStyle(
+                  defaultTextStyle: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
+                  weekendTextStyle: TextStyle(color: Colors.redAccent),
+                  outsideTextStyle: TextStyle(color: Colors.grey),
+
+                  todayDecoration: BoxDecoration(
+                    color: Colors.indigo.withOpacity( 0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  selectedDecoration: BoxDecoration(
+                    color: Colors.indigo,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                headerStyle: HeaderStyle(
+                  titleTextStyle: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  formatButtonVisible: false,
+                  leftChevronIcon: Icon(Icons.chevron_left, color: Theme.of(context).iconTheme.color),
+                  rightChevronIcon: Icon(Icons.chevron_right, color: Theme.of(context).iconTheme.color),
+                ),
               ),
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
@@ -160,7 +198,9 @@ class _CalendarPageState extends State<CalendarPage> {
               ),
             ],
           ),
-          floatingActionButton: FloatingActionButton(
+          floatingActionButton: _isDayInPast(_selectedDay)
+              ? null
+              : FloatingActionButton(
             child: Icon(Icons.add),
             onPressed: () => _showAddTaskDialog(uid),
           ),

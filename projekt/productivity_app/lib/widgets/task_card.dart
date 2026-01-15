@@ -101,22 +101,46 @@ class _TaskCardState extends State<TaskCard> {
 
   @override
   Widget build(BuildContext context) {
+    bool isFullyCompleted = widget.task.completed;
+    bool isPending = widget.task.imageBase64 != null && !isFullyCompleted;
+    Color textColor = Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
     return Card(
+      color: isFullyCompleted ? Theme.of(context).cardColor.withOpacity(0.6) : Theme.of(context).cardColor,
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       elevation: 4,
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: Border(left: BorderSide(color: _getTypeColor(widget.task.type), width: 5)),
+          border: Border(left: BorderSide(color: isFullyCompleted ? Colors.green : _getTypeColor(widget.task.type), width: 5)),
         ),
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.task.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(widget.task.title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, decoration: isFullyCompleted ? TextDecoration.lineThrough : null, color: isFullyCompleted ? Colors.green : textColor)),
             const SizedBox(height: 4),
-            Text('${widget.task.typeLabel} • ${widget.task.xp} XP • ${widget.task.coins} Mincí'),
+            Text('${widget.task.typeLabel} • ${widget.task.xp} XP • ${widget.task.coins} Mincí', style: TextStyle(color: isFullyCompleted ? Colors.green : textColor.withOpacity( 0.7))),
             
+            // --- STAV ÚKOLU ---
+            if (isFullyCompleted)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Row(children: const [
+                  Icon(Icons.verified, size: 20, color: Colors.green),
+                  SizedBox(width: 4), 
+                  Text("Potvrzeno & Splněno", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold))
+                ]),
+              )
+            else if (isPending)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Row(children: const [
+                  Icon(Icons.hourglass_top, size: 20, color: Colors.orange),
+                  SizedBox(width: 4), 
+                  Text("Čeká na potvrzení kamarádem", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold))
+                ]),
+              ),
+
             if (widget.task.imageBase64 != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
@@ -127,28 +151,36 @@ class _TaskCardState extends State<TaskCard> {
                 ]),
               ),
 
-            const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _isProcessing
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : TextButton.icon(
-                    onPressed: _savePhoto,
-                    icon: const Icon(Icons.camera_alt),
-                    label: Text(widget.task.imageBase64 == null ? "Vyfotit" : "Přefotit"),
+// Ovládací tlačítka (skryjeme, pokud je už hotovo/verified)
+            if (!isFullyCompleted) ...[
+              const Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _isProcessing
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : TextButton.icon(
+                      onPressed: _savePhoto,
+                      // Pokud má fotku, tlačítko je "Přefotit", jinak "Vyfotit"
+                      icon: Icon(Icons.camera_alt, color: textColor),
+                      label: Text(widget.task.imageBase64 == null ? "Vyfotit důkaz" : "Změnit fotku", style: TextStyle(color: textColor)),
+                    ),
+                  
+                  // Tlačítko sdílet je aktivní jen když máme fotku
+                  ElevatedButton.icon(
+                    onPressed: widget.task.imageBase64 != null ? _shareTask : null,
+                    icon: const Icon(Icons.send),
+                    label: const Text("Potvrdit"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _getTypeColor(widget.task.type), 
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey.withOpacity(0.3)
+                    ),
                   ),
-                ElevatedButton.icon(
-                  onPressed: _shareTask,
-                  icon: const Icon(Icons.send),
-                  label: const Text("Poslat k potvrzení"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _getTypeColor(widget.task.type), 
-                    foregroundColor: Colors.white
-                  ),
-                ),
-              ],
-            )
+                ],
+              )
+            ],
+            
           ],
         ),
       ),

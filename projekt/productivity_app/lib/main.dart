@@ -1,6 +1,7 @@
 // main.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:app_links/app_links.dart';
@@ -8,14 +9,32 @@ import 'firebase_options.dart'; // Konfigurace Firebase
 import 'pages/login.dart';
 import 'pages/calendar_page.dart';
 import 'pages/confirm_task.dart';
+import 'pages/settings.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(MyApp());
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform);
+runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const MyApp()));
+}
+
+class ThemeProvider extends ChangeNotifier {
+  ThemeMode themeMode = ThemeMode.system;
+
+  bool get isDarkMode => themeMode == ThemeMode.dark;
+
+  void toggleTheme(bool isOn) {
+    themeMode = isOn ? ThemeMode.dark : ThemeMode.light;
+    notifyListeners();
+  }
 }
 
 class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
   @override
   State<MyApp> createState() => _MyAppState();
 }
@@ -112,19 +131,41 @@ class _MyAppState extends State<MyApp> {
       });
     }
   }
+  @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return MaterialApp(
-      navigatorKey: _navigatorKey,
-      title: 'Productivity App',
+      title: 'Motivator',
       debugShowCheckedModeBanner: false, // Skryje nápis DEBUG
+      themeMode: themeProvider.themeMode,
       theme: ThemeData(
-        useMaterial3: true, // Zapne moderní Material 3 design
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.indigo, // Hlavní barva aplikace
-          brightness: Brightness.light,
+        brightness: Brightness.light,
+        primarySwatch: Colors.indigo,
+        scaffoldBackgroundColor: Colors.grey[50],
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.indigo,
+          foregroundColor: Colors.white,
+          
         ),
+                textTheme: GoogleFonts.poppinsTextTheme(),
+        cardTheme: CardThemeData(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primarySwatch: Colors.indigo,
+        scaffoldBackgroundColor: Colors.grey[900],
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.indigo[700],
+          foregroundColor: Colors.white,
+        ),
+        useMaterial3: true,
+      
         // Globální nastavení fontu
-        textTheme: GoogleFonts.poppinsTextTheme(),
+        textTheme: GoogleFonts.poppinsTextTheme(ThemeData(brightness: Brightness.light).textTheme),
         cardTheme: CardThemeData(
           elevation: 4,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -135,6 +176,7 @@ class _MyAppState extends State<MyApp> {
         '/': (context) => LoginPage(),
         '/calendar': (context) => CalendarPage(),
         '/confirm': (context) => ConfirmTaskPage(),
+        '/settings': (context) => SettingsPage(),
       },
     );
   }

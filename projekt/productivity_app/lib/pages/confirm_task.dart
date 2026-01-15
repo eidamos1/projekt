@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ConfirmTaskPage extends StatefulWidget {
+  const ConfirmTaskPage({super.key});
+
   @override
   State<ConfirmTaskPage> createState() => _ConfirmTaskPageState();
 }
