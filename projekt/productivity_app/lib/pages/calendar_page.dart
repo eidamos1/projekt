@@ -111,7 +111,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 padding: EdgeInsets.all(8),
                 child: Row(
                   children: [
-                    Expanded(child: XPBar(xp: xp, level: level)),
+                    Expanded(child: XPBar(xp: xp % 100, level: level)),
                     SizedBox(width: 16),
                     Column(
                       children: [
