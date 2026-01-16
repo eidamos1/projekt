@@ -10,6 +10,7 @@ import 'pages/calendar_page.dart';
 import 'pages/confirm_task.dart';
 import 'pages/settings.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -39,7 +40,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final _navigatorKey = GlobalKey<NavigatorState>(); // Klíč pro navigaci odkudkoliv
   late AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSubscription;
 
@@ -92,7 +92,7 @@ class _MyAppState extends State<MyApp> {
         // Počkáme chvilku, než se Flutter úplně načte, pokud se appka teprve zapíná
         Future.delayed(Duration(seconds: 1), () {
           // Přesměrujeme na stránku ConfirmTaskPage a předáme kód
-          _navigatorKey.currentState?.pushNamed(
+          navigatorKey.currentState?.pushNamed(
             '/confirm',
             arguments: code, // Pošleme kód jako argument
           );
@@ -123,7 +123,7 @@ class _MyAppState extends State<MyApp> {
       
       // Počkáme chvilku, než se Flutter úplně načte
       Future.delayed(Duration(seconds: 1), () {
-        _navigatorKey.currentState?.pushNamed(
+        navigatorKey.currentState?.pushNamed(
           '/confirm',
           arguments: code,
         );
@@ -134,6 +134,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     return MaterialApp(
+      navigatorKey: navigatorKey,
  title: 'Motivator',
       debugShowCheckedModeBanner: false,
       themeMode: themeProvider.themeMode,

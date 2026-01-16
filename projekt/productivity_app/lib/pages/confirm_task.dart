@@ -25,7 +25,7 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is String) {
         _codeController.text = args;
-        _findTask(); // Pokud přišel kód, rovnou hledáme
+        WidgetsBinding.instance.addPostFrameCallback((_) => _findTask());
       }
       _isInit = false;
     }
