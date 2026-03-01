@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-// 2. Import pro detekci Webu
-import 'package:flutter/foundation.dart' show kIsWeb;
+import '../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,130 +10,104 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _auth = FirebaseAuth.instance;
-  final _firestore = FirebaseFirestore.instance;
+  final _authService = AuthService();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final nicknameController = TextEditingController(); // Pro přezdívku
+  final nicknameController = TextEditingController();
   bool isLogin = true;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    nicknameController.dispose();
+    super.dispose();
+  }
 
   void _toggleForm() => setState(() => isLogin = !isLogin);
 
-  // Google Přihlášení
-Future<void> _signInWithGoogle() async {
+  Future<void> _signInWithGoogle() async {
     try {
-      // 1. Konfigurace (zejména pro Web)
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        clientId: kIsWeb
-            ? "863209070202-ugd71j1mrv9nohbht9puakbr7991ccvv.apps.googleusercontent.com"
-            : null,
-      );
-
-      // 2. Spuštění přihlášení (ve verzi 6.x používáme signIn)
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-
-      if (googleUser == null) {
-        return; // Uživatel zavřel okno bez přihlášení
-      }
-
-      // 3. Získání tokenů
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-      // 4. Vytvoření credential pro Firebase
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      // 5. Přihlášení do Firebase
-      UserCredential userCred = await _auth.signInWithCredential(credential);
-
-      await _firestore.collection('users').doc(userCred.user!.uid).set({
-        'nickname': googleUser.displayName ?? 'Hráč', // ukládá přezdívku z Google účtu
-        'photoUrl': googleUser.photoUrl, // ukládá odkaz na Google toku pro profil
-      }, SetOptions(merge: true));
-
-      // 6. Kontrola/Vytvoření uživatele ve Firestore
-      final userDoc = await _firestore.collection('users').doc(userCred.user!.uid).get();
-      if (!userDoc.exists) {
-        await _firestore.collection('users').doc(userCred.user!.uid).set({
-          'xp': 0,
-          'coins': 0,
-          'level': 1,
-        });
-      }
-
-      // 7. Přesměrování do aplikace
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/calendar');
-      }
-
+      await _authService.signInWithGoogle();
+      if (mounted) Navigator.pushReplacementNamed(context, '/calendar');
     } catch (e) {
-      print("CHYBA Google Login: $e");
+      debugPrint('Google Sign-In error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Přihlášení selhalo: $e')),
+          SnackBar(content: Text('Prihlaseni selhalo: $e')),
         );
       }
     }
   }
 
-  // Email/Heslo Přihlášení
   Future<void> _submit() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
     final nickname = nicknameController.text.trim();
 
     if (email.isEmpty || password.isEmpty || (!isLogin && nickname.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Vyplňte všechna pole')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vyplnte vsechna pole')),
+      );
       return;
     }
 
     try {
       if (isLogin) {
-        await _auth.signInWithEmailAndPassword(email: email, password: password);
+        await _authService.signInWithEmail(email, password);
       } else {
-        UserCredential cred = await _auth.createUserWithEmailAndPassword(email: email, password: password);
-        // Uložení přezdívky při registraci
-        await _firestore.collection('users').doc(cred.user!.uid).set({
-          'nickname': nickname,
-          'xp': 0, 'coins': 0, 'level': 1,
-        });
+        await _authService.registerWithEmail(email, password, nickname);
       }
       if (mounted) Navigator.pushReplacementNamed(context, '/calendar');
     } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? 'Chyba')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Chyba prihlaseni')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(isLogin ? 'Přihlášení' : 'Registrace')),
+      appBar: AppBar(title: Text(isLogin ? 'Prihlaseni' : 'Registrace')),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             if (!isLogin) ...[
               TextField(
                 controller: nicknameController,
-                decoration: InputDecoration(labelText: 'Tvoje přezdívka'),
+                decoration: const InputDecoration(labelText: 'Tvoje prezdivka'),
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
             ],
-            TextField(controller: emailController, decoration: InputDecoration(labelText: 'E-mail')),
-            TextField(controller: passwordController, decoration: InputDecoration(labelText: 'Heslo'), obscureText: true),
-            SizedBox(height: 20),
-            ElevatedButton(onPressed: _submit, child: Text(isLogin ? 'Přihlásit' : 'Registrovat')),
-            SizedBox(height: 10),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'E-mail'),
+            ),
+            TextField(
+              controller: passwordController,
+              decoration: const InputDecoration(labelText: 'Heslo'),
+              obscureText: true,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _submit,
+              child: Text(isLogin ? 'Prihlasit' : 'Registrovat'),
+            ),
+            const SizedBox(height: 10),
             OutlinedButton.icon(
-              icon: Icon(Icons.login),
-              label: Text('Google Přihlášení'),
+              icon: const Icon(Icons.login),
+              label: const Text('Google Prihlaseni'),
               onPressed: _signInWithGoogle,
             ),
             TextButton(
               onPressed: _toggleForm,
-              child: Text(isLogin ? 'Nemáš účet? Registrace' : 'Máš účet? Přihlášení'),
+              child: Text(isLogin
+                  ? 'Nemas ucet? Registrace'
+                  : 'Mas ucet? Prihlaseni'),
             ),
           ],
         ),

@@ -1,6 +1,6 @@
-import 'dart:convert'; // Pro dekódování obrázku
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/task_service.dart';
 
 class ConfirmTaskPage extends StatefulWidget {
   const ConfirmTaskPage({super.key});
@@ -11,12 +11,11 @@ class ConfirmTaskPage extends StatefulWidget {
 
 class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
   final _codeController = TextEditingController();
+  final _taskService = TaskService();
   bool _isInit = true;
   bool _isLoading = false;
-  
-  Map<String, dynamic>? _taskData;
-  DocumentReference? _taskRef;
-  DocumentReference? _userRef;
+
+  TaskLookupResult? _lookup;
 
   @override
   void didChangeDependencies() {
@@ -31,151 +30,134 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
     }
   }
 
-  // 1. Najít úkol a ukázat náhled
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
+  }
+
   Future<void> _findTask() async {
     String code = _codeController.text.trim();
     if (code.isEmpty) return;
-    setState(() { _isLoading = true; _taskData = null; });
+    setState(() {
+      _isLoading = true;
+      _lookup = null;
+    });
 
     try {
-      // Hledáme napříč všemi uživateli (neefektivní pro miliony, ok pro školu)
-      final users = await FirebaseFirestore.instance.collection('users').get();
-      
-      for (var userDoc in users.docs) {
-        final tasks = await userDoc.reference.collection('tasks').where('code', isEqualTo: code).get();
-        if (tasks.docs.isNotEmpty) {
-          var tDoc = tasks.docs.first;
-          var data = tDoc.data();
-          if (!(data['completed'] ?? false)) {
-            setState(() {
-              _taskData = data;
-              _taskRef = tDoc.reference;
-              _userRef = userDoc.reference;
-            });
-          } else {
-             _showSnack('Tento kód už byl použit.');
-          }
-          break; // Našli jsme
-        }
+      final result = await _taskService.findTaskByCode(code);
+      if (result != null) {
+        setState(() => _lookup = result);
+      } else {
+        if (mounted) _showSnack('Ukol s timto kodem nenalezen nebo uz byl potvrzen.');
       }
-      if (_taskData == null && mounted) _showSnack('Úkol s tímto kódem nenalezen.');
     } catch (e) {
-      _showSnack('Chyba: $e');
+      if (mounted) _showSnack('Chyba pri hledani: Zkuste to znovu.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // 2. Potvrdit a přičíst odměny
   Future<void> _confirm() async {
-    if (_taskRef == null || _userRef == null) return;
+    if (_isLoading || _lookup == null) return;
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseFirestore.instance.runTransaction((tx) async {
-        final userSnap = await tx.get(_userRef!);
-        final userData = userSnap.data() as Map<String, dynamic>;
-
-        // Aktuální stav
-        int currentXp = userData['xp'] ?? 0;
-        int currentCoins = userData['coins'] ?? 0;
-        
-        // Odměna z úkolu
-        int rewardXp = _taskData!['xp'] ?? 0;
-        int rewardCoins = _taskData!['coins'] ?? 0;
-
-        // Nový stav
-        int newXp = currentXp + rewardXp;
-        int newCoins = currentCoins + rewardCoins;
-        
-        // VÝPOČET LEVELU: (Celkové XP děleno 100) + 1
-        // 0-99 XP = Level 1, 100-199 XP = Level 2, atd.
-        int newLevel = (newXp ~/ 100) + 1;
-
-        tx.update(_userRef!, {
-          'xp': newXp,
-          'coins': newCoins,
-          'level': newLevel,
-        });
-        
-        // Smazat úkol (nebo nastavit completed: true)
-        tx.update(_taskRef!, {
-          'completed': true,
-        });
-      });
-
+      await _taskService.confirmTask(_lookup!);
       if (mounted) {
-        _showSnack('Potvrzeno! Odměna připsána.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Potvrzeno! Odmena pripsana.')),
+        );
         Navigator.pop(context);
       }
     } catch (e) {
-      _showSnack('Chyba transakce: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Chyba pri potvrzovani. Zkuste to znovu.')),
+        );
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  void _showSnack(String msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  void _showSnack(String msg) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 
   @override
   Widget build(BuildContext context) {
+    final taskData = _lookup?.taskData;
+
     return Scaffold(
-      appBar: AppBar(title: Text('Potvrzení úkolu')),
+      appBar: AppBar(title: const Text('Potvrzeni ukolu')),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             TextField(
               controller: _codeController,
               decoration: InputDecoration(
-                labelText: 'Kód úkolu', 
-                border: OutlineInputBorder(),
-                suffixIcon: IconButton(icon: Icon(Icons.search), onPressed: _findTask)
+                labelText: 'Kod ukolu',
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: _findTask,
+                ),
               ),
             ),
-            SizedBox(height: 20),
-            if (_isLoading) CircularProgressIndicator(),
-
-            if (_taskData != null && !_isLoading) ...[
+            const SizedBox(height: 20),
+            if (_isLoading) const CircularProgressIndicator(),
+            if (taskData != null && !_isLoading) ...[
               Card(
                 elevation: 4,
                 child: Padding(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      Text("Potvrzuješ úkol:", style: TextStyle(color: Colors.grey)),
-                      Text(_taskData!['title'], style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 10),
-                      
-                      // Zobrazení obrázku z Base64
-                      if (_taskData!['imageBase64'] != null)
+                      Text('Potvrzujes ukol:',
+                          style: TextStyle(color: Colors.grey)),
+                      Text(taskData['title'],
+                          style: const TextStyle(
+                              fontSize: 22, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 10),
+                      if (taskData['imageBase64'] != null)
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Image.memory(
-                            base64Decode(_taskData!['imageBase64']),
+                            base64Decode(taskData['imageBase64']),
                             height: 250,
                             fit: BoxFit.cover,
                           ),
                         )
                       else
-                        Container(height: 100, color: Colors.grey[200], child: Center(child: Text("Bez fotky"))),
-
-                      SizedBox(height: 20),
-                      Text("Odměna: ${_taskData!['xp']} XP | ${_taskData!['coins']} Mincí", style: TextStyle(fontWeight: FontWeight.bold)),
-                      SizedBox(height: 20),
+                        Container(
+                          height: 100,
+                          color: Colors.grey[200],
+                          child: const Center(child: Text('Bez fotky')),
+                        ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Odmena: ${taskData['xp']} XP | ${taskData['coins']} Minci',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 20),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: _confirm,
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: EdgeInsets.all(16)),
-                          child: Text("POTVRDIT SPLNĚNÍ", style: TextStyle(fontSize: 18, color: Colors.white)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            padding: const EdgeInsets.all(16),
+                          ),
+                          child: const Text('POTVRDIT SPLNENI',
+                              style:
+                                  TextStyle(fontSize: 18, color: Colors.white)),
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),
-              )
-            ]
+              ),
+            ],
           ],
         ),
       ),
