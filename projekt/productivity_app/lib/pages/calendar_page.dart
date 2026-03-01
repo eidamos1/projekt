@@ -115,6 +115,23 @@ class _CalendarPageState extends State<CalendarPage> {
                     ],
                   ),
                 ),
+              // Zvonecek s badge
+              StreamBuilder<int>(
+                stream: _taskService.unreadNotificationCount(),
+                builder: (context, notifSnapshot) {
+                  final count = notifSnapshot.data ?? 0;
+                  return IconButton(
+                    icon: Badge(
+                      isLabelVisible: count > 0,
+                      label: Text('$count'),
+                      child: const Icon(Icons.notifications),
+                    ),
+                    tooltip: 'Notifikace',
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/notifications'),
+                  );
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.bar_chart),
                 tooltip: 'Statistiky',

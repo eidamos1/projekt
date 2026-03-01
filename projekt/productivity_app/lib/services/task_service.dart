@@ -137,8 +137,55 @@ class TaskService {
     );
   }
 
+  // Ziskat nickname aktualniho uzivatele
+  Future<String> _getCurrentNickname() async {
+    final doc = await _firestore.collection('users').doc(_uid).get();
+    if (doc.exists) {
+      final data = doc.data() as Map<String, dynamic>;
+      return data['nickname'] ?? 'Nekdo';
+    }
+    return 'Nekdo';
+  }
+
+  // Zkontrolovat jestli ma uzivatel zapnute notifikace
+  Future<bool> _areNotificationsEnabled(DocumentReference userRef) async {
+    final doc = await userRef.get();
+    if (doc.exists) {
+      final data = doc.data() as Map<String, dynamic>;
+      return data['notificationsEnabled'] ?? true;
+    }
+    return true;
+  }
+
+  // Vytvorit notifikaci
+  Future<void> _createNotification({
+    required DocumentReference ownerRef,
+    required String type,
+    required String taskTitle,
+    required String fromNickname,
+    String? message,
+  }) async {
+    // Zkontrolovat jestli ma uzivatel zapnute notifikace
+    final enabled = await _areNotificationsEnabled(ownerRef);
+    if (!enabled) return;
+
+    final now = DateTime.now();
+    final createdAt = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+    await ownerRef.collection('notifications').add({
+      'type': type,
+      'taskTitle': taskTitle,
+      'message': message,
+      'fromNickname': fromNickname,
+      'createdAt': createdAt,
+      'read': false,
+    });
+  }
+
   // Potvrdit ukol a pricist odmeny
   Future<void> confirmTask(TaskLookupResult lookup) async {
+    final nickname = await _getCurrentNickname();
+
     await _firestore.runTransaction((tx) async {
       final userSnap = await tx.get(lookup.userRef);
       final taskSnap = await tx.get(lookup.taskRef);
@@ -192,6 +239,96 @@ class TaskService {
         'completedAt': today,
       });
     });
+
+    // Vytvorit notifikaci pro vlastnika ukolu (mimo transakci)
+    final taskTitle = lookup.taskData['title'] ?? 'Ukol';
+    await _createNotification(
+      ownerRef: lookup.userRef,
+      type: 'confirmed',
+      taskTitle: taskTitle,
+      fromNickname: nickname,
+    );
+  }
+
+  // Odmitnout ukol
+  Future<void> rejectTask(TaskLookupResult lookup, String reason) async {
+    final nickname = await _getCurrentNickname();
+
+    // Nastavit rejected stav na ukolu
+    await lookup.taskRef.update({
+      'rejected': true,
+      'rejectionReason': reason,
+    });
+
+    // Vytvorit notifikaci pro vlastnika ukolu
+    final taskTitle = lookup.taskData['title'] ?? 'Ukol';
+    await _createNotification(
+      ownerRef: lookup.userRef,
+      type: 'rejected',
+      taskTitle: taskTitle,
+      fromNickname: nickname,
+      message: reason,
+    );
+  }
+
+  // Reset rejected stavu (pro znovu odeslani)
+  Future<void> resetRejected(String taskId) async {
+    await _tasksCollection.doc(taskId).update({
+      'rejected': false,
+      'rejectionReason': null,
+    });
+  }
+
+  // Stream neprectenych notifikaci
+  Stream<int> unreadNotificationCount() {
+    return _firestore
+        .collection('users')
+        .doc(_uid)
+        .collection('notifications')
+        .where('read', isEqualTo: false)
+        .snapshots()
+        .map((snap) => snap.docs.length);
+  }
+
+  // Stream vsech notifikaci
+  Stream<List<Map<String, dynamic>>> notificationsStream() {
+    return _firestore
+        .collection('users')
+        .doc(_uid)
+        .collection('notifications')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((doc) {
+              final data = doc.data();
+              data['id'] = doc.id;
+              return data;
+            }).toList());
+  }
+
+  // Oznacit notifikaci jako prectenou
+  Future<void> markNotificationRead(String notifId) async {
+    await _firestore
+        .collection('users')
+        .doc(_uid)
+        .collection('notifications')
+        .doc(notifId)
+        .update({'read': true});
+  }
+
+  // Oznacit vsechny notifikace jako prectene
+  Future<void> markAllNotificationsRead() async {
+    final snap = await _firestore
+        .collection('users')
+        .doc(_uid)
+        .collection('notifications')
+        .where('read', isEqualTo: false)
+        .get();
+
+    final batch = _firestore.batch();
+    for (final doc in snap.docs) {
+      batch.update(doc.reference, {'read': true});
+    }
+    await batch.commit();
   }
 
   // Vsechny ukoly uzivatele (pro statistiky)

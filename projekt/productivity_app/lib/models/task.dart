@@ -11,6 +11,8 @@ class Task {
   final String code;
   final bool completed;
   final String? imageBase64; // Nové: Obrázek jako text
+  final bool rejected;
+  final String? rejectionReason;
 
   Task({
     required this.id,
@@ -22,6 +24,8 @@ class Task {
     required this.code,
     this.completed = false,
     this.imageBase64,
+    this.rejected = false,
+    this.rejectionReason,
   });
 
   factory Task.fromMap(String id, Map<String, dynamic> data) {
@@ -37,6 +41,8 @@ class Task {
       code: data['code'] ?? '',
       completed: data['completed'] ?? false,
       imageBase64: data['imageBase64'], // Načtení obrázku
+      rejected: data['rejected'] ?? false,
+      rejectionReason: data['rejectionReason'],
     );
   }
 
@@ -50,9 +56,11 @@ class Task {
       'code': code,
       'completed': completed,
       'imageBase64': imageBase64, // Uložení obrázku
+      'rejected': rejected,
+      'rejectionReason': rejectionReason,
     };
   }
-  
+
   // ... typeLabel ...
   String get typeLabel {
     switch (type) {

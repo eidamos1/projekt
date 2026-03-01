@@ -10,6 +10,7 @@ import 'pages/calendar_page.dart';
 import 'pages/confirm_task.dart';
 import 'pages/settings.dart';
 import 'pages/stats_page.dart';
+import 'pages/notifications_page.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -164,6 +165,7 @@ class _MyAppState extends State<MyApp> {
         '/confirm': (context) => const ConfirmTaskPage(),
         '/settings': (context) => const SettingsPage(),
         '/stats': (context) => const StatsPage(),
+        '/notifications': (context) => const NotificationsPage(),
       },
     );
   }

@@ -80,6 +80,77 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
     }
   }
 
+  Future<void> _showRejectDialog() async {
+    final reasonController = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Odmitnout ukol'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Proc odmitas tento ukol?'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonController,
+              decoration: const InputDecoration(
+                labelText: 'Duvod odmiteni',
+                border: OutlineInputBorder(),
+                hintText: 'Napr. Fotka neodpovida ukolu...',
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Zrusit'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              final text = reasonController.text.trim();
+              if (text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Zadej duvod odmiteni')),
+                );
+                return;
+              }
+              Navigator.pop(context, text);
+            },
+            child: const Text('Odmitnout'),
+          ),
+        ],
+      ),
+    );
+
+    reasonController.dispose();
+
+    if (reason == null || reason.isEmpty) return;
+
+    setState(() => _isLoading = true);
+    try {
+      await _taskService.rejectTask(_lookup!, reason);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ukol byl odmitnut.')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Chyba pri odmitani. Zkuste to znovu.')),
+        );
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   void _showSnack(String msg) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 
@@ -140,18 +211,34 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _confirm,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            padding: const EdgeInsets.all(16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _showRejectDialog,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                padding: const EdgeInsets.all(16),
+                              ),
+                              child: const Text('ODMITNOUT',
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.white)),
+                            ),
                           ),
-                          child: const Text('POTVRDIT SPLNENI',
-                              style:
-                                  TextStyle(fontSize: 18, color: Colors.white)),
-                        ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _confirm,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                padding: const EdgeInsets.all(16),
+                              ),
+                              child: const Text('POTVRDIT',
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.white)),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

@@ -118,10 +118,31 @@ class _TaskCardState extends State<TaskCard> {
     );
   }
 
+  Future<void> _resetRejected() async {
+    setState(() => _isProcessing = true);
+    try {
+      await _taskService.resetRejected(widget.task.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ukol pripraven k novemu odeslani!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Chyba pri resetu ukolu.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     bool isFullyCompleted = widget.task.completed;
-    bool isPending = widget.task.imageBase64 != null && !isFullyCompleted;
+    bool isRejected = widget.task.rejected;
+    bool isPending = widget.task.imageBase64 != null && !isFullyCompleted && !isRejected;
     final textColor =
         Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
     final subTextColor =
@@ -173,7 +194,9 @@ class _TaskCardState extends State<TaskCard> {
               left: BorderSide(
                 color: isFullyCompleted
                     ? Colors.green
-                    : _getTypeColor(widget.task.type),
+                    : isRejected
+                        ? Colors.red
+                        : _getTypeColor(widget.task.type),
                 width: 5,
               ),
             ),
@@ -215,6 +238,45 @@ class _TaskCardState extends State<TaskCard> {
                             color: Colors.green,
                             fontWeight: FontWeight.bold)),
                   ]),
+                )
+              else if (isRejected)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(children: [
+                        Icon(Icons.cancel, size: 20, color: Colors.red),
+                        SizedBox(width: 4),
+                        Text('Odmitnuto',
+                            style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold)),
+                      ]),
+                      if (widget.task.rejectionReason != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4, left: 24),
+                          child: Text(
+                            'Duvod: ${widget.task.rejectionReason}',
+                            style: const TextStyle(
+                                color: Colors.red, fontSize: 12),
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _isProcessing ? null : _resetRejected,
+                          icon: const Icon(Icons.refresh, color: Colors.orange),
+                          label: const Text('Odeslat znovu',
+                              style: TextStyle(color: Colors.orange)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.orange),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 )
               else if (isPending)
                 const Padding(

@@ -1,10 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../main.dart';
 import '../services/auth_service.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  final _firestore = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
+
+  Future<void> _toggleNotifications(bool value) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+    await _firestore.collection('users').doc(uid).update({
+      'notificationsEnabled': value,
+    });
+  }
 
   Future<void> _deleteAccount(BuildContext context) async {
     bool confirm = await showDialog(
@@ -54,6 +72,7 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final uid = _auth.currentUser?.uid;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Nastaveni')),
@@ -67,6 +86,27 @@ class SettingsPage extends StatelessWidget {
               onChanged: (value) => themeProvider.toggleTheme(value),
             ),
           ),
+          const Divider(),
+          if (uid != null)
+            StreamBuilder<DocumentSnapshot>(
+              stream: _firestore.collection('users').doc(uid).snapshots(),
+              builder: (context, snapshot) {
+                bool notifEnabled = true;
+                if (snapshot.hasData && snapshot.data!.exists) {
+                  final data = snapshot.data!.data() as Map<String, dynamic>;
+                  notifEnabled = data['notificationsEnabled'] ?? true;
+                }
+                return ListTile(
+                  leading: const Icon(Icons.notifications),
+                  title: const Text('Notifikace'),
+                  subtitle: const Text('Prijmat notifikace pri potvrzeni/odmiteni ukolu'),
+                  trailing: Switch(
+                    value: notifEnabled,
+                    onChanged: (value) => _toggleNotifications(value),
+                  ),
+                );
+              },
+            ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.delete_forever, color: Colors.red),
