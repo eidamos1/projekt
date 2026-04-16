@@ -135,4 +135,33 @@ abstract final class Strings {
     6: 'Sobota',
     7: 'Nedele',
   };
+
+  // Habits
+  static const habit = 'Navyk';
+  static const habitAccented = 'N\u00e1vyk';
+  static const habits = 'Navyky';
+  static const habitsAccented = 'N\u00e1vyky';
+  static const habitsMine = 'Moje navyky';
+  static const repeatTask = 'Opakovat pravidelne';
+  static const recurrenceEveryday = 'Kazdy den';
+  static const recurrenceWeekdays = 'Vsedni dny';
+  static const recurrenceCustom = 'Vlastni';
+  static const recurrenceLabel = 'Opakovani';
+  static const chooseDays = 'Vyber dny';
+  static const habitStreak = 'Serie navyku';
+  static const habitRecord = 'rekord';
+  static const editHabitOrInstance = 'Upravit jen tento ukol, nebo cely navyk?';
+  static const thisOnly = 'Jen tento';
+  static const wholeHabit = 'Cely navyk';
+  static const pauseHabit = 'Pozastavit';
+  static const resumeHabit = 'Aktivovat';
+  static const deleteHabit = 'Smazat navyk';
+  static const deleteHabitConfirm = 'Smaze vsechny budouci instance. Minule zustanou.';
+  static const noHabitsTitle = 'Jeste nemas zadne navyky';
+  static const noHabitsSubtitle = 'Pridej jeden pri tvorbe ukolu.';
+  static const rewardTierWarning = 'Monthly tier pri denni frekvenci = hodne XP.';
+
+  static const weekdayShort = {
+    1: 'Po', 2: 'Ut', 3: 'St', 4: 'Ct', 5: 'Pa', 6: 'So', 7: 'Ne',
+  };
 }
