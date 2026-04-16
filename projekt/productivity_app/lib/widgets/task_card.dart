@@ -245,34 +245,55 @@ class _TaskCardState extends State<TaskCard> {
                       ),
                       const SizedBox(width: 8),
                       // Type chip — border instead of opacity bg
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          borderRadius:
-                              BorderRadius.circular(NeoTheme.radiusSmall),
-                          color: Colors.transparent,
-                          border: Border.all(
-                            color: typeColor,
-                            width: NeoTheme.borderWidthThin,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(_getTypeIcon(widget.task.type),
-                                size: 14, color: typeColor),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (widget.task.habitId != null) ...[
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(
+                                    NeoTheme.radiusSmall),
+                                border: Border.all(
+                                  color: typeColor,
+                                  width: NeoTheme.borderWidthThin,
+                                ),
+                              ),
+                              child: Icon(Icons.autorenew_rounded,
+                                  size: 12, color: typeColor),
+                            ),
                             const SizedBox(width: 4),
-                            Text(
-                              widget.task.typeLabel,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                          ],
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              borderRadius:
+                                  BorderRadius.circular(NeoTheme.radiusSmall),
+                              color: Colors.transparent,
+                              border: Border.all(
                                 color: typeColor,
+                                width: NeoTheme.borderWidthThin,
                               ),
                             ),
-                          ],
-                        ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(_getTypeIcon(widget.task.type),
+                                    size: 14, color: typeColor),
+                                const SizedBox(width: 4),
+                                Text(
+                                  widget.task.typeLabel,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: typeColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
