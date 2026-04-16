@@ -76,8 +76,13 @@ class Habit {
     }
   }
 
+  /// Max gap between expected days for any supported recurrence is 7
+  /// (e.g. custom with a single weekday). 14 gives 2x safety; beyond
+  /// that the streak is definitionally broken.
+  static const _maxLookbackDays = 14;
+
   DateTime? previousExpectedDay(DateTime day) {
-    for (int i = 1; i <= 14; i++) {
+    for (int i = 1; i <= _maxLookbackDays; i++) {
       final candidate = day.subtract(Duration(days: i));
       if (expectedOn(candidate)) return candidate;
     }

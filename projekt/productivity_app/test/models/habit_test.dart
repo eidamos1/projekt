@@ -117,8 +117,9 @@ void main() {
         customDays: const [7],
         startDate: '2026-04-20', active: true,
       );
-      // 2026-04-21 je uterek, zpet 14 dni nenarazi na aktivni nedeli (startDate je 04-20 Po)
-      // 2026-04-20 je Po, test: pred tim zadna nedele v ramci startDate
+      // Walking back from 2026-04-21 for 14 days reaches 2026-04-07, which is
+      // before startDate (2026-04-20). Every candidate day therefore fails the
+      // startDate guard in expectedOn, so previousExpectedDay returns null.
       final prev = sundayOnly.previousExpectedDay(DateTime(2026, 4, 21));
       expect(prev, isNull);
     });
