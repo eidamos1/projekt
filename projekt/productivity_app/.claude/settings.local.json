@@ -12,7 +12,9 @@
       "WebFetch(domain:www.behance.net)",
       "WebFetch(domain:mobbin.com)",
       "WebFetch(domain:www.wearetenet.com)",
-      "WebFetch(domain:raw.studio)"
+      "WebFetch(domain:raw.studio)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }
