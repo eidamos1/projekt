@@ -218,7 +218,7 @@ class _CalendarPageState extends State<CalendarPage> {
     showDialog(
       context: context,
       builder: (context) => TaskFormDialog(
-        onSubmit: (title, type) {
+        onSubmit: (title, type, cfg) {
           _taskService.createTask(
             title: title,
             type: type,
@@ -235,7 +235,7 @@ class _CalendarPageState extends State<CalendarPage> {
       context: context,
       builder: (context) => TaskFormDialog(
         existingTask: task,
-        onSubmit: (title, type) {
+        onSubmit: (title, type, cfg) {
           _taskService.updateTask(task.id, title: title, type: type);
         },
       ),
