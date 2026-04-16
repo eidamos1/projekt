@@ -1,3 +1,4 @@
+// ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
 import '../models/habit.dart';
 import '../models/task.dart';
@@ -24,7 +25,7 @@ class _HabitsPageState extends State<HabitsPage> {
       case RecurrenceType.weekdays:
         return Strings.recurrenceWeekdays;
       case RecurrenceType.custom:
-        return h.customDays.map((d) => Strings.weekdayShort[d]).join(' ');
+        return h.customDays.map((d) => Strings.weekdayShort[d]).join(' · ');
     }
   }
 

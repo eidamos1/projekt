@@ -23,9 +23,14 @@ class HabitService {
       _firestore.collection('users').doc(_uid).collection('tasks');
 
   Stream<List<Habit>> habitsStream() {
-    return _habitsCollection.snapshots().map((snap) => snap.docs
-        .map((d) => Habit.fromMap(d.id, d.data() as Map<String, dynamic>))
-        .toList());
+    // NOTE: Habits without createdAt (from pre-v2-push snapshots) won't appear.
+    // We're pre-launch so this isn't a migration concern.
+    return _habitsCollection
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((d) => Habit.fromMap(d.id, d.data() as Map<String, dynamic>))
+            .toList());
   }
 
   Future<String> createHabit({
