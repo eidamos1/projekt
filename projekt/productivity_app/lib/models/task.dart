@@ -14,6 +14,7 @@ class Task {
   final String? imageBase64;
   final bool rejected;
   final String? rejectionReason;
+  final String? habitId;
 
   Task({
     required this.id,
@@ -27,6 +28,7 @@ class Task {
     this.imageBase64,
     this.rejected = false,
     this.rejectionReason,
+    this.habitId,
   });
 
   factory Task.fromMap(String id, Map<String, dynamic> data) {
@@ -44,6 +46,7 @@ class Task {
       imageBase64: data['imageBase64'],
       rejected: data['rejected'] ?? false,
       rejectionReason: data['rejectionReason'],
+      habitId: data['habitId'],
     );
   }
 
@@ -59,6 +62,7 @@ class Task {
       'imageBase64': imageBase64,
       'rejected': rejected,
       'rejectionReason': rejectionReason,
+      'habitId': habitId,
     };
   }
 
