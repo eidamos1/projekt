@@ -174,7 +174,8 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                       .toList(),
                 ),
               ],
-              if (_recurrence == RecurrenceType.everyday &&
+              if ((_recurrence == RecurrenceType.everyday ||
+                      _recurrence == RecurrenceType.weekdays) &&
                   _selectedType == TaskType.monthly) ...[
                 const SizedBox(height: 8),
                 const Text(Strings.rewardTierWarning,

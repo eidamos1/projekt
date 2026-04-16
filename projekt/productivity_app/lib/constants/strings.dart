@@ -159,7 +159,7 @@ abstract final class Strings {
   static const deleteHabitConfirm = 'Smaze vsechny budouci instance. Minule zustanou.';
   static const noHabitsTitle = 'Jeste nemas zadne navyky';
   static const noHabitsSubtitle = 'Pridej jeden pri tvorbe ukolu.';
-  static const rewardTierWarning = 'Monthly tier pri denni frekvenci = hodne XP.';
+  static const rewardTierWarning = 'Pozor: casta frekvence + mesicni tier = hodne XP.';
 
   static const weekdayShort = {
     1: 'Po', 2: 'Ut', 3: 'St', 4: 'Ct', 5: 'Pa', 6: 'So', 7: 'Ne',
