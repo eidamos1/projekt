@@ -1,9 +1,15 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:image_picker/image_picker.dart';
 import '../models/task.dart';
 import '../services/task_service.dart';
+import '../services/image_service.dart';
+import '../constants/app_colors.dart';
+import '../constants/neo_theme.dart';
+import '../constants/strings.dart';
+import '../utils/context_extensions.dart';
+import '../utils/ui_helpers.dart';
+import 'status_badge.dart';
 
 class TaskCard extends StatefulWidget {
   final Task task;
@@ -19,49 +25,31 @@ class _TaskCardState extends State<TaskCard> {
   final _taskService = TaskService();
   bool _isProcessing = false;
 
-  Color _getTypeColor(TaskType type) {
+  IconData _getTypeIcon(TaskType type) {
     switch (type) {
       case TaskType.daily:
-        return Colors.blueAccent;
+        return Icons.today_rounded;
       case TaskType.weekly:
-        return Colors.orangeAccent;
+        return Icons.date_range_rounded;
       case TaskType.monthly:
-        return Colors.purpleAccent;
+        return Icons.calendar_month_rounded;
     }
   }
 
   Future<void> _savePhoto() async {
-    final picker = ImagePicker();
-    final XFile? image = await picker.pickImage(
-      source: ImageSource.camera,
-      maxWidth: 500,
-      imageQuality: 40,
-    );
-    if (image == null) return;
-
     setState(() => _isProcessing = true);
 
     try {
-      final bytes = await image.readAsBytes();
-      if (bytes.lengthInBytes > 750000) {
-        throw Exception('Obrazek je moc velky. Zkus jiny.');
-      }
-
-      String base64Image = base64Encode(bytes);
+      final base64Image = await ImageService.pickAndCompressPhoto();
       await _taskService.savePhoto(widget.task.id, base64Image);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Dukaz ulozen!')),
-        );
-      }
+      if (mounted) showSuccessSnack(context, Strings.photoSaved);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  'Chyba: ${e.toString().replaceAll("Exception:", "")}')),
-        );
+      if (e.runtimeType.toString() == '_UserCancelledException') {
+        // User cancelled — do nothing
+      } else if (mounted) {
+        showErrorSnack(
+            context, 'Chyba: ${e.toString().replaceAll("Exception:", "")}');
       }
     } finally {
       if (mounted) setState(() => _isProcessing = false);
@@ -70,11 +58,7 @@ class _TaskCardState extends State<TaskCard> {
 
   void _shareTask() {
     if (widget.task.imageBase64 == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Musis nejdriv vyfotit dukaz!'),
-            backgroundColor: Colors.red),
-      );
+      showErrorSnack(context, Strings.photoRequired);
       return;
     }
 
@@ -96,22 +80,29 @@ class _TaskCardState extends State<TaskCard> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Smazat ukol?'),
-        content: Text('Opravdu chces smazat "${widget.task.title}"?'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
+          side: BorderSide(
+            color: context.isDark ? AppColors.borderSubtle : AppColors.borderBold,
+            width: NeoTheme.borderWidth,
+          ),
+        ),
+        title: const Text(Strings.deleteTask),
+        content: Text('${Strings.deleteTaskConfirm} "${widget.task.title}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Zrusit'),
+            child: const Text(Strings.cancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: AppColors.neonPink,
                 foregroundColor: Colors.white),
             onPressed: () {
               Navigator.pop(context);
               widget.onDelete?.call();
             },
-            child: const Text('Smazat'),
+            child: const Text(Strings.delete),
           ),
         ],
       ),
@@ -122,17 +113,9 @@ class _TaskCardState extends State<TaskCard> {
     setState(() => _isProcessing = true);
     try {
       await _taskService.resetRejected(widget.task.id);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ukol pripraven k novemu odeslani!')),
-        );
-      }
+      if (mounted) showSuccessSnack(context, Strings.taskResetOk);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Chyba pri resetu ukolu.')),
-        );
-      }
+      if (mounted) showErrorSnack(context, Strings.taskResetError);
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
@@ -142,11 +125,10 @@ class _TaskCardState extends State<TaskCard> {
   Widget build(BuildContext context) {
     bool isFullyCompleted = widget.task.completed;
     bool isRejected = widget.task.rejected;
-    bool isPending = widget.task.imageBase64 != null && !isFullyCompleted && !isRejected;
-    final textColor =
-        Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
-    final subTextColor =
-        Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black;
+    bool isPending =
+        widget.task.imageBase64 != null && !isFullyCompleted && !isRejected;
+    final isDark = context.isDark;
+    final typeColor = AppColors.colorForTaskType(widget.task.type);
 
     return GestureDetector(
       onLongPress: isFullyCompleted
@@ -154,23 +136,40 @@ class _TaskCardState extends State<TaskCard> {
           : () {
               showModalBottomSheet(
                 context: context,
+                shape: RoundedRectangleBorder(
+                  borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(NeoTheme.radiusCard)),
+                  side: BorderSide(
+                    color: isDark ? AppColors.borderSubtle : AppColors.borderBold,
+                    width: NeoTheme.borderWidth,
+                  ),
+                ),
                 builder: (context) => SafeArea(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.borderSubtle : Colors.black12,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
                       ListTile(
-                        leading: const Icon(Icons.edit),
-                        title: const Text('Upravit ukol'),
+                        leading: const Icon(Icons.edit_rounded),
+                        title: const Text(Strings.editTaskAction),
                         onTap: () {
                           Navigator.pop(context);
                           widget.onEdit?.call();
                         },
                       ),
                       ListTile(
-                        leading:
-                            const Icon(Icons.delete, color: Colors.red),
-                        title: const Text('Smazat ukol',
-                            style: TextStyle(color: Colors.red)),
+                        leading: const Icon(Icons.delete_rounded,
+                            color: AppColors.neonPink),
+                        title: const Text(Strings.deleteTaskAction,
+                            style: TextStyle(color: AppColors.neonPink)),
                         onTap: () {
                           Navigator.pop(context);
                           _showDeleteConfirmation();
@@ -181,183 +180,291 @@ class _TaskCardState extends State<TaskCard> {
                 ),
               );
             },
-      child: Card(
-        color: isFullyCompleted
-            ? Theme.of(context).cardColor.withValues(alpha:0.6)
-            : Theme.of(context).cardColor,
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        elevation: 4,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border(
-              left: BorderSide(
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
+          color: isDark
+              ? AppColors.cardDark.withValues(alpha: isFullyCompleted ? 0.6 : 1.0)
+              : isFullyCompleted
+                  ? Colors.grey.shade50
+                  : Colors.white,
+          border: Border.all(
+            color: isDark ? AppColors.borderSubtle : AppColors.borderBold,
+            width: NeoTheme.borderWidth,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? typeColor.withValues(alpha: 0.15)
+                  : Colors.black.withValues(alpha: 0.12),
+              offset: NeoTheme.shadowOffset,
+              blurRadius: 0,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Colored top accent — taller
+            Container(
+              height: NeoTheme.accentBarHeight,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(NeoTheme.radiusCard - 2)),
                 color: isFullyCompleted
-                    ? Colors.green
+                    ? AppColors.neonGreen
                     : isRejected
-                        ? Colors.red
-                        : _getTypeColor(widget.task.type),
-                width: 5,
+                        ? AppColors.neonPink
+                        : typeColor,
               ),
             ),
-          ),
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.task.title,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  decoration: isFullyCompleted
-                      ? TextDecoration.lineThrough
-                      : null,
-                  color: isFullyCompleted ? Colors.grey : textColor,
-                  decorationColor:
-                      isFullyCompleted ? Colors.green : textColor,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${widget.task.typeLabel} | ${widget.task.xp} XP | ${widget.task.coins} Minci',
-                style: TextStyle(
-                  color: isFullyCompleted ? Colors.grey : subTextColor,
-                  fontSize: 12,
-                ),
-              ),
-
-              if (isFullyCompleted)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8.0),
-                  child: Row(children: [
-                    Icon(Icons.verified, size: 20, color: Colors.green),
-                    SizedBox(width: 4),
-                    Text('Potvrzeno & Splneno',
-                        style: TextStyle(
-                            color: Colors.green,
-                            fontWeight: FontWeight.bold)),
-                  ]),
-                )
-              else if (isRejected)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title row with type chip
+                  Row(
                     children: [
-                      const Row(children: [
-                        Icon(Icons.cancel, size: 20, color: Colors.red),
-                        SizedBox(width: 4),
-                        Text('Odmitnuto',
-                            style: TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold)),
-                      ]),
-                      if (widget.task.rejectionReason != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4, left: 24),
-                          child: Text(
-                            'Duvod: ${widget.task.rejectionReason}',
-                            style: const TextStyle(
-                                color: Colors.red, fontSize: 12),
+                      Expanded(
+                        child: Text(
+                          widget.task.title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            decoration: isFullyCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
+                            color: isFullyCompleted
+                                ? (isDark ? Colors.white30 : Colors.grey)
+                                : (isDark ? AppColors.textPrimary : Colors.black87),
+                            decorationColor: AppColors.neonGreen,
                           ),
                         ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: _isProcessing ? null : _resetRejected,
-                          icon: const Icon(Icons.refresh, color: Colors.orange),
-                          label: const Text('Odeslat znovu',
-                              style: TextStyle(color: Colors.orange)),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Colors.orange),
+                      ),
+                      const SizedBox(width: 8),
+                      // Type chip — border instead of opacity bg
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          borderRadius:
+                              BorderRadius.circular(NeoTheme.radiusSmall),
+                          color: Colors.transparent,
+                          border: Border.all(
+                            color: typeColor,
+                            width: NeoTheme.borderWidthThin,
                           ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(_getTypeIcon(widget.task.type),
+                                size: 14, color: typeColor),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.task.typeLabel,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: typeColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                )
-              else if (isPending)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8.0),
-                  child: Row(children: [
-                    Icon(Icons.hourglass_top,
-                        size: 20, color: Colors.orange),
-                    SizedBox(width: 4),
-                    Text('Ceka na potvrzeni kamaradem',
+                  const SizedBox(height: 6),
+                  // Rewards row
+                  Row(
+                    children: [
+                      const Icon(Icons.bolt_rounded,
+                          size: 14, color: AppColors.neonCyan),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${widget.task.xp} XP',
                         style: TextStyle(
-                            color: Colors.orange,
-                            fontWeight: FontWeight.bold)),
-                  ]),
-                ),
-
-              if (widget.task.imageBase64 != null) ...[
-                const Padding(
-                  padding: EdgeInsets.only(top: 8.0),
-                  child: Row(children: [
-                    Icon(Icons.image, size: 20, color: Colors.green),
-                    SizedBox(width: 4),
-                    Text('Dukaz pripojen',
+                          color: isFullyCompleted
+                              ? (isDark ? Colors.white24 : Colors.grey)
+                              : AppColors.neonCyan,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.monetization_on_rounded,
+                          size: 14, color: AppColors.neonYellow),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${widget.task.coins}',
                         style: TextStyle(
-                            color: Colors.green,
-                            fontWeight: FontWeight.bold)),
-                  ]),
-                ),
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.memory(
-                    base64Decode(widget.task.imageBase64!),
-                    height: 200,
-                    width: 200,
-                    fit: BoxFit.cover,
+                          color: isFullyCompleted
+                              ? (isDark ? Colors.white24 : Colors.grey)
+                              : AppColors.neonYellow,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
 
-              // Ovladaci tlacitka
-              if (!isFullyCompleted) ...[
-                const Divider(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _isProcessing
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2))
-                        : TextButton.icon(
-                            onPressed: _savePhoto,
-                            icon: Icon(Icons.camera_alt,
-                                color: textColor),
-                            label: Text(
-                              widget.task.imageBase64 == null
-                                  ? 'Vyfotit dukaz'
-                                  : 'Zmenit fotku',
-                              style: TextStyle(color: textColor),
-                            ),
-                          ),
-                    ElevatedButton.icon(
-                      onPressed: widget.task.imageBase64 != null
-                          ? _shareTask
-                          : null,
-                      icon: const Icon(Icons.send),
-                      label: const Text('Potvrdit'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            _getTypeColor(widget.task.type),
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor:
-                            Colors.grey.withValues(alpha:0.3),
+                  // Status badges
+                  if (isFullyCompleted)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 10),
+                      child: StatusBadge(status: StatusType.completed),
+                    )
+                  else if (isRejected)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: StatusBadge(
+                        status: StatusType.rejected,
+                        rejectionReason: widget.task.rejectionReason,
+                        onRetry: _resetRejected,
+                        isProcessing: _isProcessing,
+                      ),
+                    )
+                  else if (isPending)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 10),
+                      child: StatusBadge(status: StatusType.pending),
+                    ),
+
+                  // Photo proof
+                  if (widget.task.imageBase64 != null) ...[
+                    const SizedBox(height: 10),
+                    ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(NeoTheme.radiusButton),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 300),
+                        child: Image.memory(
+                          base64Decode(widget.task.imageBase64!),
+                          width: double.infinity,
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
                   ],
-                ),
-              ],
-            ],
-          ),
+
+                  // Action buttons
+                  if (!isFullyCompleted) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _isProcessing
+                              ? Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.neonCyan,
+                                    ),
+                                  ),
+                                )
+                              : TextButton.icon(
+                                  onPressed: _savePhoto,
+                                  icon: Icon(Icons.camera_alt_rounded,
+                                      color: isDark
+                                          ? AppColors.textSecondary
+                                          : Colors.black45,
+                                      size: 18),
+                                  label: Text(
+                                    widget.task.imageBase64 == null
+                                        ? Strings.takePhoto
+                                        : Strings.changePhoto,
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? AppColors.textSecondary
+                                          : Colors.black45,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8),
+                                  ),
+                                ),
+                        ),
+                        // Share/confirm button with neo style
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius:
+                                BorderRadius.circular(NeoTheme.radiusButton),
+                            color: widget.task.imageBase64 != null
+                                ? typeColor
+                                : (isDark
+                                    ? Colors.white10
+                                    : Colors.grey.shade200),
+                            border: widget.task.imageBase64 != null
+                                ? Border.all(
+                                    color: Colors.white,
+                                    width: NeoTheme.borderWidthThin,
+                                  )
+                                : null,
+                            boxShadow: widget.task.imageBase64 != null
+                                ? [
+                                    BoxShadow(
+                                      color: typeColor.withValues(alpha: 0.3),
+                                      offset: NeoTheme.shadowOffsetSmall,
+                                      blurRadius: 0,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius:
+                                  BorderRadius.circular(NeoTheme.radiusButton),
+                              onTap: widget.task.imageBase64 != null
+                                  ? _shareTask
+                                  : null,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.send_rounded,
+                                        size: 16,
+                                        color:
+                                            widget.task.imageBase64 != null
+                                                ? Colors.white
+                                                : (isDark
+                                                    ? Colors.white24
+                                                    : Colors.grey)),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      Strings.confirm,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                        color:
+                                            widget.task.imageBase64 != null
+                                                ? Colors.white
+                                                : (isDark
+                                                    ? Colors.white24
+                                                    : Colors.grey),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

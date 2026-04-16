@@ -5,7 +5,14 @@
       "Bash(flutter pub get:*)",
       "Bash(flutter analyze:*)",
       "Bash(flutter test:*)",
-      "Bash(firebase deploy:*)"
+      "Bash(firebase deploy:*)",
+      "WebFetch(domain:www.cccreative.design)",
+      "WebFetch(domain:bejamas.com)",
+      "WebFetch(domain:yukaichou.com)",
+      "WebFetch(domain:www.behance.net)",
+      "WebFetch(domain:mobbin.com)",
+      "WebFetch(domain:www.wearetenet.com)",
+      "WebFetch(domain:raw.studio)"
     ]
   }
 }

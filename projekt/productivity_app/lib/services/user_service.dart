@@ -5,7 +5,13 @@ class UserService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  String get _uid => _auth.currentUser!.uid;
+  String get _uid {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw StateError('Uzivatel neni prihlasen — nelze pristoupit k uid.');
+    }
+    return user.uid;
+  }
 
   Stream<DocumentSnapshot> profileStream() {
     return _firestore.collection('users').doc(_uid).snapshots();
@@ -20,5 +26,15 @@ class UserService {
     await _firestore.collection('users').doc(_uid).update({
       'nickname': nickname,
     });
+  }
+
+  Future<void> toggleNotifications(bool value) async {
+    await _firestore.collection('users').doc(_uid).update({
+      'notificationsEnabled': value,
+    });
+  }
+
+  Stream<DocumentSnapshot> notificationsSettingStream() {
+    return _firestore.collection('users').doc(_uid).snapshots();
   }
 }

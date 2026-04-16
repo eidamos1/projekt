@@ -2,49 +2,70 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/task.dart';
+import '../constants/game_config.dart';
+import '../utils/date_helpers.dart';
 
 class TaskService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  String get _uid => _auth.currentUser!.uid;
+  String get _uid {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw StateError('Uzivatel neni prihlasen — nelze pristoupit k uid.');
+    }
+    return user.uid;
+  }
 
   CollectionReference get _tasksCollection =>
       _firestore.collection('users').doc(_uid).collection('tasks');
 
-  // Stream ukolů pro konkrétní den
+  Future<void> checkAndResetStreak() async {
+    final userRef = _firestore.collection('users').doc(_uid);
+    final doc = await userRef.get();
+    if (!doc.exists) return;
+
+    final data = doc.data() as Map<String, dynamic>;
+    final lastActive = data['lastActiveDate'] as String?;
+    final streak = data['streak'] ?? 0;
+
+    if (streak == 0) return;
+
+    if (lastActive == null) {
+      await userRef.update({'streak': 0});
+      return;
+    }
+
+    final today = todayString();
+    final yesterday = yesterdayString();
+
+    if (lastActive == today || lastActive == yesterday) {
+      return;
+    }
+
+    await userRef.update({'streak': 0});
+  }
+
   Stream<List<Task>> tasksForDate(String date) {
     return _tasksCollection
         .where('date', isEqualTo: date)
         .snapshots()
         .map((snap) => snap.docs
-            .map((doc) => Task.fromMap(doc.id, doc.data() as Map<String, dynamic>))
+            .map((doc) =>
+                Task.fromMap(doc.id, doc.data() as Map<String, dynamic>))
             .toList());
   }
 
-  // Stream uzivatelskeho profilu
   Stream<DocumentSnapshot> userProfileStream() {
     return _firestore.collection('users').doc(_uid).snapshots();
   }
 
-  // Vytvorit ukol
   Future<void> createTask({
     required String title,
     required TaskType type,
     required String date,
   }) async {
-    int xp, coins;
-    switch (type) {
-      case TaskType.daily:
-        xp = 10;
-        coins = 5;
-      case TaskType.weekly:
-        xp = 50;
-        coins = 20;
-      case TaskType.monthly:
-        xp = 200;
-        coins = 100;
-    }
+    final rewards = GameConfig.rewardsFor(type);
 
     final random = Random();
     String code = (100000 + random.nextInt(900000)).toString();
@@ -54,44 +75,34 @@ class TaskService {
       title: title,
       type: type,
       date: date,
-      xp: xp,
-      coins: coins,
+      xp: rewards.xp,
+      coins: rewards.coins,
       code: code,
     );
 
     final docRef = await _tasksCollection.add(newTask.toMap());
 
-    // Ulozit kod do globalni kolekce taskCodes
     await _firestore.collection('taskCodes').doc(code).set({
       'userId': _uid,
       'taskId': docRef.id,
     });
   }
 
-  // Upravit ukol
-  Future<void> updateTask(String taskId, {String? title, TaskType? type}) async {
+  Future<void> updateTask(String taskId,
+      {String? title, TaskType? type}) async {
     final updates = <String, dynamic>{};
     if (title != null) updates['title'] = title;
     if (type != null) {
       updates['type'] = type.toString().split('.').last;
-      switch (type) {
-        case TaskType.daily:
-          updates['xp'] = 10;
-          updates['coins'] = 5;
-        case TaskType.weekly:
-          updates['xp'] = 50;
-          updates['coins'] = 20;
-        case TaskType.monthly:
-          updates['xp'] = 200;
-          updates['coins'] = 100;
-      }
+      final rewards = GameConfig.rewardsFor(type);
+      updates['xp'] = rewards.xp;
+      updates['coins'] = rewards.coins;
     }
     if (updates.isNotEmpty) {
       await _tasksCollection.doc(taskId).update(updates);
     }
   }
 
-  // Smazat ukol
   Future<void> deleteTask(String taskId) async {
     final doc = await _tasksCollection.doc(taskId).get();
     if (doc.exists) {
@@ -104,12 +115,10 @@ class TaskService {
     await _tasksCollection.doc(taskId).delete();
   }
 
-  // Ulozit fotku k ukolu
   Future<void> savePhoto(String taskId, String base64Image) async {
     await _tasksCollection.doc(taskId).update({'imageBase64': base64Image});
   }
 
-  // Najit ukol podle kodu (1 query misto N*M)
   Future<TaskLookupResult?> findTaskByCode(String code) async {
     final codeDoc = await _firestore.collection('taskCodes').doc(code).get();
     if (!codeDoc.exists) return null;
@@ -137,7 +146,6 @@ class TaskService {
     );
   }
 
-  // Ziskat nickname aktualniho uzivatele
   Future<String> _getCurrentNickname() async {
     final doc = await _firestore.collection('users').doc(_uid).get();
     if (doc.exists) {
@@ -147,7 +155,6 @@ class TaskService {
     return 'Nekdo';
   }
 
-  // Zkontrolovat jestli ma uzivatel zapnute notifikace
   Future<bool> _areNotificationsEnabled(DocumentReference userRef) async {
     final doc = await userRef.get();
     if (doc.exists) {
@@ -157,7 +164,6 @@ class TaskService {
     return true;
   }
 
-  // Vytvorit notifikaci
   Future<void> _createNotification({
     required DocumentReference ownerRef,
     required String type,
@@ -165,12 +171,12 @@ class TaskService {
     required String fromNickname,
     String? message,
   }) async {
-    // Zkontrolovat jestli ma uzivatel zapnute notifikace
     final enabled = await _areNotificationsEnabled(ownerRef);
     if (!enabled) return;
 
     final now = DateTime.now();
-    final createdAt = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    final createdAt =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
     await ownerRef.collection('notifications').add({
       'type': type,
@@ -182,7 +188,6 @@ class TaskService {
     });
   }
 
-  // Potvrdit ukol a pricist odmeny
   Future<void> confirmTask(TaskLookupResult lookup) async {
     final nickname = await _getCurrentNickname();
 
@@ -203,28 +208,27 @@ class TaskService {
 
       int newXp = currentXp + rewardXp;
       int newCoins = currentCoins + rewardCoins;
-      int newLevel = (newXp ~/ 100) + 1;
+      int newLevel = GameConfig.levelFromXp(newXp);
 
-      // Streak logika
-      String today = _todayString();
+      // Streak logic
+      String today = todayString();
       String? lastActive = userData['lastActiveDate'] as String?;
       int streak = userData['streak'] ?? 0;
 
-      if (lastActive == today) {
-        // Uz dnes splnil ukol — streak se nemeni
-      } else if (lastActive == _yesterdayString()) {
+      if (lastActive == null) {
+        streak = 1;
+      } else if (lastActive == today) {
+        // Already active today
+      } else if (lastActive == yesterdayString()) {
         streak += 1;
       } else {
         streak = 1;
       }
 
       // Streak bonus XP
-      int streakBonus = 0;
-      if (streak == 7) streakBonus = 50;
-      if (streak == 30) streakBonus = 200;
-      if (streak == 100) streakBonus = 1000;
-      newXp += streakBonus;
-      newLevel = (newXp ~/ 100) + 1;
+      int bonus = GameConfig.streakBonus(streak);
+      newXp += bonus;
+      newLevel = GameConfig.levelFromXp(newXp);
 
       tx.update(lookup.userRef, {
         'xp': newXp,
@@ -240,7 +244,6 @@ class TaskService {
       });
     });
 
-    // Vytvorit notifikaci pro vlastnika ukolu (mimo transakci)
     final taskTitle = lookup.taskData['title'] ?? 'Ukol';
     await _createNotification(
       ownerRef: lookup.userRef,
@@ -250,17 +253,14 @@ class TaskService {
     );
   }
 
-  // Odmitnout ukol
   Future<void> rejectTask(TaskLookupResult lookup, String reason) async {
     final nickname = await _getCurrentNickname();
 
-    // Nastavit rejected stav na ukolu
     await lookup.taskRef.update({
       'rejected': true,
       'rejectionReason': reason,
     });
 
-    // Vytvorit notifikaci pro vlastnika ukolu
     final taskTitle = lookup.taskData['title'] ?? 'Ukol';
     await _createNotification(
       ownerRef: lookup.userRef,
@@ -271,7 +271,6 @@ class TaskService {
     );
   }
 
-  // Reset rejected stavu (pro znovu odeslani)
   Future<void> resetRejected(String taskId) async {
     await _tasksCollection.doc(taskId).update({
       'rejected': false,
@@ -279,7 +278,6 @@ class TaskService {
     });
   }
 
-  // Stream neprectenych notifikaci
   Stream<int> unreadNotificationCount() {
     return _firestore
         .collection('users')
@@ -290,7 +288,6 @@ class TaskService {
         .map((snap) => snap.docs.length);
   }
 
-  // Stream vsech notifikaci
   Stream<List<Map<String, dynamic>>> notificationsStream() {
     return _firestore
         .collection('users')
@@ -305,7 +302,6 @@ class TaskService {
             }).toList());
   }
 
-  // Oznacit notifikaci jako prectenou
   Future<void> markNotificationRead(String notifId) async {
     await _firestore
         .collection('users')
@@ -315,7 +311,6 @@ class TaskService {
         .update({'read': true});
   }
 
-  // Oznacit vsechny notifikace jako prectene
   Future<void> markAllNotificationsRead() async {
     final snap = await _firestore
         .collection('users')
@@ -331,22 +326,58 @@ class TaskService {
     await batch.commit();
   }
 
-  // Vsechny ukoly uzivatele (pro statistiky)
+  Future<void> checkExpiringTasks() async {
+    final tomorrow = tomorrowString();
+    final tasksSnap = await _tasksCollection
+        .where('date', isEqualTo: tomorrow)
+        .where('completed', isEqualTo: false)
+        .get();
+
+    if (tasksSnap.docs.isEmpty) return;
+
+    final notifsRef =
+        _firestore.collection('users').doc(_uid).collection('notifications');
+
+    for (final doc in tasksSnap.docs) {
+      final taskId = doc.id;
+      final data = doc.data() as Map<String, dynamic>;
+
+      // Kontrola duplicit
+      final existing = await notifsRef
+          .where('type', isEqualTo: 'expiring')
+          .where('taskId', isEqualTo: taskId)
+          .get();
+      if (existing.docs.isNotEmpty) continue;
+
+      final now = DateTime.now();
+      final createdAt =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+      await notifsRef.add({
+        'type': 'expiring',
+        'taskTitle': data['title'] ?? 'Ukol',
+        'taskId': taskId,
+        'message': null,
+        'fromNickname': null,
+        'createdAt': createdAt,
+        'read': false,
+      });
+    }
+  }
+
   Future<List<Task>> allTasks() async {
     final snap = await _tasksCollection.get();
     return snap.docs
-        .map((doc) => Task.fromMap(doc.id, doc.data() as Map<String, dynamic>))
+        .map((doc) =>
+            Task.fromMap(doc.id, doc.data() as Map<String, dynamic>))
         .toList();
   }
 
-  String _todayString() {
-    final now = DateTime.now();
-    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-  }
-
-  String _yesterdayString() {
-    final yesterday = DateTime.now().subtract(const Duration(days: 1));
-    return '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+  Stream<List<Task>> allTasksStream() {
+    return _tasksCollection.snapshots().map((snap) => snap.docs
+        .map((doc) =>
+            Task.fromMap(doc.id, doc.data() as Map<String, dynamic>))
+        .toList());
   }
 }
 

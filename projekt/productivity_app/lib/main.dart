@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:app_links/app_links.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'firebase_options.dart';
 import 'pages/login.dart';
 import 'pages/calendar_page.dart';
@@ -11,6 +12,9 @@ import 'pages/confirm_task.dart';
 import 'pages/settings.dart';
 import 'pages/stats_page.dart';
 import 'pages/notifications_page.dart';
+import 'constants/app_colors.dart';
+import 'constants/neo_theme.dart';
+import 'constants/layout.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -31,8 +35,11 @@ void main() async {
 
 class ThemeProvider extends ChangeNotifier {
   ThemeMode themeMode = ThemeMode.system;
+  LayoutMode layoutMode = LayoutMode.compact;
+  Color primaryColor = AppColors.neonGreen;
 
   bool get isDarkMode => themeMode == ThemeMode.dark;
+  bool get isCompactMode => layoutMode == LayoutMode.compact;
 
   Future<void> loadPreference() async {
     final prefs = await SharedPreferences.getInstance();
@@ -42,6 +49,16 @@ class ThemeProvider extends ChangeNotifier {
     } else if (saved == 'light') {
       themeMode = ThemeMode.light;
     }
+
+    final savedLayout = prefs.getString('layoutMode');
+    if (savedLayout == 'spread') {
+      layoutMode = LayoutMode.spread;
+    }
+
+    final savedColor = prefs.getInt('primaryColor');
+    if (savedColor != null) {
+      primaryColor = Color(savedColor);
+    }
   }
 
   void toggleTheme(bool isOn) async {
@@ -49,6 +66,20 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('themeMode', isOn ? 'dark' : 'light');
+  }
+
+  void setLayoutMode(LayoutMode mode) async {
+    layoutMode = mode;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('layoutMode', mode == LayoutMode.spread ? 'spread' : 'compact');
+  }
+
+  void setPrimaryColor(Color color) async {
+    primaryColor = color;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('primaryColor', color.toARGB32());
   }
 }
 
@@ -93,7 +124,6 @@ class _MyAppState extends State<MyApp> {
   void _handleLink(Uri uri) {
     String? code = uri.queryParameters['code'];
 
-    // Zkontrolujeme, jestli je to nas odkaz pro potvrzeni
     if (uri.host == 'confirm' && code != null) {
       Future.delayed(const Duration(seconds: 1), () {
         navigatorKey.currentState?.pushNamed('/confirm', arguments: code);
@@ -101,7 +131,6 @@ class _MyAppState extends State<MyApp> {
       return;
     }
 
-    // Web s fragment (#)
     if (code == null && uri.fragment.isNotEmpty) {
       try {
         final fragmentUri = Uri.parse('dummy://dummy/${uri.fragment}');
@@ -130,31 +159,114 @@ class _MyAppState extends State<MyApp> {
       themeMode: themeProvider.themeMode,
       theme: ThemeData(
         brightness: Brightness.light,
-        primarySwatch: Colors.indigo,
-        scaffoldBackgroundColor: Colors.grey[50],
-        cardColor: Colors.white,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.indigo,
+        colorSchemeSeed: themeProvider.primaryColor,
+        scaffoldBackgroundColor: AppColors.scaffoldLight,
+        cardColor: AppColors.cardLight,
+        appBarTheme: AppBarTheme(
+          backgroundColor: themeProvider.primaryColor,
           foregroundColor: Colors.white,
+          elevation: 0,
+          scrolledUnderElevation: 0,
         ),
-        textTheme: const TextTheme(
-          bodyLarge: TextStyle(color: Colors.black),
-          bodyMedium: TextStyle(color: Colors.black87),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          elevation: 0,
+          backgroundColor: themeProvider.primaryColor,
+          foregroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
+            side: const BorderSide(color: AppColors.borderBold, width: NeoTheme.borderWidth),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
+            borderSide: const BorderSide(color: AppColors.borderBold, width: NeoTheme.borderWidth),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
+            borderSide: const BorderSide(color: AppColors.borderBold, width: NeoTheme.borderWidth),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
+            borderSide: BorderSide(color: themeProvider.primaryColor, width: NeoTheme.borderWidth),
+          ),
+        ),
+        dialogTheme: DialogThemeData(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
+            side: const BorderSide(color: AppColors.borderBold, width: NeoTheme.borderWidth),
+          ),
+        ),
+        textTheme: GoogleFonts.spaceGroteskTextTheme(
+          const TextTheme(
+            bodyLarge: TextStyle(color: Colors.black87),
+            bodyMedium: TextStyle(color: Colors.black54),
+          ),
         ),
         useMaterial3: true,
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
-        primarySwatch: Colors.indigo,
-        scaffoldBackgroundColor: const Color(0xFF121212),
-        cardColor: const Color(0xFF1E1E1E),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1E1E1E),
+        colorSchemeSeed: themeProvider.primaryColor,
+        scaffoldBackgroundColor: AppColors.scaffoldDark,
+        cardColor: AppColors.cardDark,
+        appBarTheme: AppBarTheme(
+          backgroundColor: AppColors.cardDark,
           foregroundColor: Colors.white,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          shape: const Border(
+            bottom: BorderSide(color: AppColors.borderSubtle, width: NeoTheme.borderWidth),
+          ),
         ),
-        textTheme: const TextTheme(
-          bodyLarge: TextStyle(color: Colors.white),
-          bodyMedium: TextStyle(color: Colors.white70),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          elevation: 0,
+          backgroundColor: AppColors.neonGreen,
+          foregroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
+            side: const BorderSide(color: Colors.white, width: NeoTheme.borderWidth),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.scaffoldDark,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
+            borderSide: const BorderSide(color: AppColors.borderSubtle, width: NeoTheme.borderWidth),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
+            borderSide: const BorderSide(color: AppColors.borderSubtle, width: NeoTheme.borderWidth),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
+            borderSide: BorderSide(color: themeProvider.primaryColor, width: NeoTheme.borderWidth),
+          ),
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: AppColors.cardDark,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
+            side: const BorderSide(color: AppColors.borderSubtle, width: NeoTheme.borderWidth),
+          ),
+        ),
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
+            side: const BorderSide(color: AppColors.borderSubtle, width: NeoTheme.borderWidth),
+          ),
+        ),
+        textTheme: GoogleFonts.spaceGroteskTextTheme(
+          const TextTheme(
+            bodyLarge: TextStyle(color: AppColors.textPrimary),
+            bodyMedium: TextStyle(color: AppColors.textSecondary),
+            headlineMedium: TextStyle(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ),
         useMaterial3: true,
       ),

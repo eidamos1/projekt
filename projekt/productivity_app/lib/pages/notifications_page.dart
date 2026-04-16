@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/task_service.dart';
+import '../constants/app_colors.dart';
+import '../constants/strings.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/responsive_layout.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -15,33 +19,29 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifikace'),
+        title: const Text(Strings.notifications),
         actions: [
           TextButton(
             onPressed: () => _taskService.markAllNotificationsRead(),
-            child: const Text('Precist vse',
-                style: TextStyle(color: Colors.white)),
+            child: const Text(Strings.readAll,
+                style: TextStyle(
+                    color: AppColors.neonGreen, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
-      body: StreamBuilder<List<Map<String, dynamic>>>(
+      body: ResponsiveLayout(
+        child: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _taskService.notificationsStream(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: CircularProgressIndicator(color: AppColors.neonCyan));
           }
           final notifications = snapshot.data!;
           if (notifications.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.notifications_none, size: 64, color: Colors.grey),
-                  SizedBox(height: 12),
-                  Text('Zadne notifikace',
-                      style: TextStyle(color: Colors.grey, fontSize: 16)),
-                ],
-              ),
+            return const EmptyState(
+              icon: Icons.notifications_none,
+              title: Strings.noNotifications,
             );
           }
 
@@ -49,37 +49,56 @@ class _NotificationsPageState extends State<NotificationsPage> {
             itemCount: notifications.length,
             itemBuilder: (context, index) {
               final notif = notifications[index];
-              final isConfirmed = notif['type'] == 'confirmed';
+              final type = notif['type'];
               final isRead = notif['read'] == true;
+
+              IconData icon;
+              Color iconColor;
+              String titleText;
+
+              if (type == 'confirmed') {
+                icon = Icons.check_circle;
+                iconColor = AppColors.neonGreen;
+                titleText = '${notif['fromNickname']} potvrdil/a ukol';
+              } else if (type == 'expiring') {
+                icon = Icons.schedule;
+                iconColor = AppColors.neonOrange;
+                titleText = Strings.expiringNotification;
+              } else {
+                icon = Icons.cancel;
+                iconColor = AppColors.neonPink;
+                titleText = '${notif['fromNickname']} odmitl/a ukol';
+              }
 
               return ListTile(
                 leading: Icon(
-                  isConfirmed ? Icons.check_circle : Icons.cancel,
-                  color: isConfirmed ? Colors.green : Colors.red,
+                  icon,
+                  color: iconColor,
                   size: 32,
                 ),
                 title: Text(
-                  isConfirmed
-                      ? '${notif['fromNickname']} potvrdil/a ukol'
-                      : '${notif['fromNickname']} odmitl/a ukol',
+                  titleText,
                   style: TextStyle(
-                    fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                    fontWeight:
+                        isRead ? FontWeight.normal : FontWeight.bold,
                   ),
                 ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('"${notif['taskTitle']}"'),
-                    if (!isConfirmed && notif['message'] != null)
-                      Text('Duvod: ${notif['message']}',
+                    if (type == 'rejected' && notif['message'] != null)
+                      Text('${Strings.reasonPrefix}${notif['message']}',
                           style: const TextStyle(
-                              color: Colors.red, fontSize: 12)),
+                              color: AppColors.neonPink, fontSize: 12)),
                     Text(notif['createdAt'] ?? '',
-                        style: const TextStyle(
-                            color: Colors.grey, fontSize: 11)),
+                        style: TextStyle(
+                            color: AppColors.textSecondary, fontSize: 11)),
                   ],
                 ),
-                tileColor: isRead ? null : Colors.indigo.withValues(alpha: 0.05),
+                tileColor: isRead
+                    ? null
+                    : AppColors.neonGreen.withValues(alpha: 0.06),
                 onTap: () {
                   if (!isRead) {
                     _taskService.markNotificationRead(notif['id']);
@@ -89,6 +108,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             },
           );
         },
+        ),
       ),
     );
   }

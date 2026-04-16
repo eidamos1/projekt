@@ -1,6 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/task_service.dart';
+import '../constants/app_colors.dart';
+import '../constants/neo_theme.dart';
+import '../constants/strings.dart';
+import '../utils/context_extensions.dart';
+import '../utils/ui_helpers.dart';
+import '../widgets/responsive_layout.dart';
 
 class ConfirmTaskPage extends StatefulWidget {
   const ConfirmTaskPage({super.key});
@@ -49,10 +55,10 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
       if (result != null) {
         setState(() => _lookup = result);
       } else {
-        if (mounted) _showSnack('Ukol s timto kodem nenalezen nebo uz byl potvrzen.');
+        if (mounted) showErrorSnack(context, Strings.taskNotFound);
       }
     } catch (e) {
-      if (mounted) _showSnack('Chyba pri hledani: Zkuste to znovu.');
+      if (mounted) showErrorSnack(context, Strings.taskSearchError);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -65,38 +71,44 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
     try {
       await _taskService.confirmTask(_lookup!);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Potvrzeno! Odmena pripsana.')),
-        );
+        showSuccessSnack(context, Strings.taskConfirmed);
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Chyba pri potvrzovani. Zkuste to znovu.')),
-        );
+        showErrorSnack(context, Strings.taskConfirmError);
         setState(() => _isLoading = false);
       }
     }
   }
 
   Future<void> _showRejectDialog() async {
+    final isDark = context.isDark;
     final reasonController = TextEditingController();
     final reason = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Odmitnout ukol'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
+          side: BorderSide(
+            color: isDark ? AppColors.borderSubtle : AppColors.borderBold,
+            width: NeoTheme.borderWidth,
+          ),
+        ),
+        title: const Text(Strings.rejectTask),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Proc odmitas tento ukol?'),
+            const Text(Strings.rejectReason),
             const SizedBox(height: 12),
             TextField(
               controller: reasonController,
-              decoration: const InputDecoration(
-                labelText: 'Duvod odmiteni',
-                border: OutlineInputBorder(),
-                hintText: 'Napr. Fotka neodpovida ukolu...',
+              decoration: InputDecoration(
+                labelText: Strings.rejectReasonLabel,
+                border: OutlineInputBorder(
+                    borderRadius:
+                        BorderRadius.circular(NeoTheme.radiusButton)),
+                hintText: Strings.rejectReasonHint,
               ),
               maxLines: 3,
             ),
@@ -105,24 +117,22 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Zrusit'),
+            child: const Text(Strings.cancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.neonPink,
               foregroundColor: Colors.white,
             ),
             onPressed: () {
               final text = reasonController.text.trim();
               if (text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Zadej duvod odmiteni')),
-                );
+                showErrorSnack(context, Strings.rejectReasonRequired);
                 return;
               }
               Navigator.pop(context, text);
             },
-            child: const Text('Odmitnout'),
+            child: const Text(Strings.statusRejected),
           ),
         ],
       ),
@@ -136,39 +146,33 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
     try {
       await _taskService.rejectTask(_lookup!, reason);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ukol byl odmitnut.')),
-        );
+        showSuccessSnack(context, Strings.taskRejected);
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Chyba pri odmitani. Zkuste to znovu.')),
-        );
+        showErrorSnack(context, Strings.taskRejectError);
         setState(() => _isLoading = false);
       }
     }
   }
 
-  void _showSnack(String msg) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-
   @override
   Widget build(BuildContext context) {
     final taskData = _lookup?.taskData;
+    final isDark = context.isDark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Potvrzeni ukolu')),
-      body: SingleChildScrollView(
+      appBar: AppBar(title: const Text(Strings.confirmTask)),
+      body: ResponsiveLayout(
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             TextField(
               controller: _codeController,
               decoration: InputDecoration(
-                labelText: 'Kod ukolu',
-                border: const OutlineInputBorder(),
+                labelText: Strings.taskCodeLabel,
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.search),
                   onPressed: _findTask,
@@ -176,66 +180,116 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
               ),
             ),
             const SizedBox(height: 20),
-            if (_isLoading) const CircularProgressIndicator(),
+            if (_isLoading)
+              const CircularProgressIndicator(color: AppColors.neonCyan),
             if (taskData != null && !_isLoading) ...[
-              Card(
-                elevation: 4,
+              Container(
+                decoration: NeoTheme.cardDecoration(isDark: isDark),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      Text('Potvrzujes ukol:',
-                          style: TextStyle(color: Colors.grey)),
+                      Text(Strings.confirmingTask,
+                          style: TextStyle(color: AppColors.textSecondary)),
                       Text(taskData['title'],
                           style: const TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.bold)),
+                              fontSize: 22, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 10),
                       if (taskData['imageBase64'] != null)
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.memory(
-                            base64Decode(taskData['imageBase64']),
-                            height: 250,
-                            fit: BoxFit.cover,
+                          borderRadius:
+                              BorderRadius.circular(NeoTheme.radiusCard),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 400),
+                            child: Image.memory(
+                              base64Decode(taskData['imageBase64']),
+                              width: double.infinity,
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         )
                       else
                         Container(
                           height: 100,
-                          color: Colors.grey[200],
-                          child: const Center(child: Text('Bez fotky')),
+                          decoration: BoxDecoration(
+                            color: AppColors.cardDark,
+                            borderRadius:
+                                BorderRadius.circular(NeoTheme.radiusCard),
+                            border: Border.all(
+                              color: isDark
+                                  ? AppColors.borderSubtle
+                                  : AppColors.borderBold,
+                              width: NeoTheme.borderWidth,
+                            ),
+                          ),
+                          child: Center(
+                              child: Text(Strings.noPhoto,
+                                  style: TextStyle(
+                                      color: AppColors.textSecondary))),
                         ),
                       const SizedBox(height: 20),
                       Text(
-                        'Odmena: ${taskData['xp']} XP | ${taskData['coins']} Minci',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        Strings.rewardText(
+                            taskData['xp'] ?? 0, taskData['coins'] ?? 0),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 14),
                       ),
                       const SizedBox(height: 20),
                       Row(
                         children: [
+                          // Reject button — neon pink
                           Expanded(
-                            child: ElevatedButton(
-                              onPressed: _showRejectDialog,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                                padding: const EdgeInsets.all(16),
+                            child: Container(
+                              decoration: NeoTheme.buttonDecoration(
+                                backgroundColor: AppColors.neonPink,
+                                borderColor: Colors.white,
                               ),
-                              child: const Text('ODMITNOUT',
-                                  style: TextStyle(
-                                      fontSize: 16, color: Colors.white)),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(
+                                      NeoTheme.radiusButton),
+                                  onTap: _showRejectDialog,
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(14),
+                                    child: Center(
+                                      child: Text(Strings.reject,
+                                          style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w700)),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
+                          // Confirm button — neon green
                           Expanded(
-                            child: ElevatedButton(
-                              onPressed: _confirm,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                padding: const EdgeInsets.all(16),
+                            child: Container(
+                              decoration: NeoTheme.buttonDecoration(
+                                backgroundColor: AppColors.neonGreen,
+                                borderColor: Colors.white,
                               ),
-                              child: const Text('POTVRDIT',
-                                  style: TextStyle(
-                                      fontSize: 16, color: Colors.white)),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(
+                                      NeoTheme.radiusButton),
+                                  onTap: _confirm,
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(14),
+                                    child: Center(
+                                      child: Text(Strings.confirmUpper,
+                                          style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w700)),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -247,7 +301,8 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
             ],
           ],
         ),
-      ),
+          ),
+        ),
     );
   }
 }

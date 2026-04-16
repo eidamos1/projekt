@@ -1,4 +1,5 @@
-// ... enum TaskType ... (nech stejné)
+import '../constants/strings.dart';
+
 enum TaskType { daily, weekly, monthly }
 
 class Task {
@@ -10,7 +11,7 @@ class Task {
   final int coins;
   final String code;
   final bool completed;
-  final String? imageBase64; // Nové: Obrázek jako text
+  final String? imageBase64;
   final bool rejected;
   final String? rejectionReason;
 
@@ -40,7 +41,7 @@ class Task {
       coins: data['coins'] ?? 0,
       code: data['code'] ?? '',
       completed: data['completed'] ?? false,
-      imageBase64: data['imageBase64'], // Načtení obrázku
+      imageBase64: data['imageBase64'],
       rejected: data['rejected'] ?? false,
       rejectionReason: data['rejectionReason'],
     );
@@ -55,18 +56,20 @@ class Task {
       'coins': coins,
       'code': code,
       'completed': completed,
-      'imageBase64': imageBase64, // Uložení obrázku
+      'imageBase64': imageBase64,
       'rejected': rejected,
       'rejectionReason': rejectionReason,
     };
   }
 
-  // ... typeLabel ...
   String get typeLabel {
     switch (type) {
-      case TaskType.daily: return 'Denní';
-      case TaskType.weekly: return 'Týdenní';
-      case TaskType.monthly: return 'Měsíční';
+      case TaskType.daily:
+        return Strings.typeDailyAccented;
+      case TaskType.weekly:
+        return Strings.typeWeeklyAccented;
+      case TaskType.monthly:
+        return Strings.typeMonthlyAccented;
     }
   }
 }

@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../main.dart';
 import '../services/auth_service.dart';
+import '../services/user_service.dart';
+import '../constants/app_colors.dart';
+import '../constants/neo_theme.dart';
+import '../constants/layout.dart';
+import '../constants/strings.dart';
+import '../utils/context_extensions.dart';
+import '../utils/ui_helpers.dart';
+import '../widgets/responsive_layout.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -13,35 +20,33 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
-
-  Future<void> _toggleNotifications(bool value) async {
-    final uid = _auth.currentUser?.uid;
-    if (uid == null) return;
-    await _firestore.collection('users').doc(uid).update({
-      'notificationsEnabled': value,
-    });
-  }
+  final _userService = UserService();
 
   Future<void> _deleteAccount(BuildContext context) async {
+    final isDark = context.isDark;
     bool confirm = await showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Smazat ucet?'),
-            content: const Text(
-                'Tato akce je nevratna. Prijdete o vsechny ukoly, XP a mince.'),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
+              side: BorderSide(
+                color: isDark ? AppColors.borderSubtle : AppColors.borderBold,
+                width: NeoTheme.borderWidth,
+              ),
+            ),
+            title: const Text(Strings.deleteAccount),
+            content: const Text(Strings.deleteAccountWarning),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Zrusit'),
+                child: const Text(Strings.cancel),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    backgroundColor: AppColors.neonPink,
                     foregroundColor: Colors.white),
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('SMAZAT NAVZDY'),
+                child: const Text(Strings.deleteAccountButton),
               ),
             ],
           ),
@@ -54,17 +59,11 @@ class _SettingsPageState extends State<SettingsPage> {
       await AuthService().deleteAccount();
       if (context.mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ucet byl uspesne smazan.')),
-        );
+        showSuccessSnack(context, Strings.accountDeleted);
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'Chyba mazani. Zkuste se odhlasit a znovu prihlasit.')),
-        );
+        showErrorSnack(context, Strings.accountDeleteError);
       }
     }
   }
@@ -72,24 +71,125 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final uid = _auth.currentUser?.uid;
+    final isDark = context.isDark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Nastaveni')),
-      body: ListView(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.dark_mode),
-            title: const Text('Tmavy rezim'),
-            trailing: Switch(
-              value: themeProvider.isDarkMode,
-              onChanged: (value) => themeProvider.toggleTheme(value),
+      appBar: AppBar(title: const Text(Strings.settings)),
+      body: ResponsiveLayout(
+        child: ListView(
+          children: [
+            // Dark mode
+            ListTile(
+              leading: const Icon(Icons.dark_mode),
+              title: const Text(Strings.darkMode),
+              trailing: Switch(
+                value: themeProvider.isDarkMode,
+                onChanged: (value) => themeProvider.toggleTheme(value),
+              ),
             ),
-          ),
-          const Divider(),
-          if (uid != null)
+            const Divider(),
+            // Layout mode
+            ListTile(
+              leading: const Icon(Icons.view_compact_outlined),
+              title: const Text(Strings.layoutMode),
+              trailing: SegmentedButton<LayoutMode>(
+                segments: const [
+                  ButtonSegment(
+                    value: LayoutMode.compact,
+                    label: Text(Strings.layoutCompact),
+                    icon: Icon(Icons.view_compact_outlined),
+                  ),
+                  ButtonSegment(
+                    value: LayoutMode.spread,
+                    label: Text(Strings.layoutSpread),
+                    icon: Icon(Icons.width_full_outlined),
+                  ),
+                ],
+                selected: {themeProvider.layoutMode},
+                onSelectionChanged: (selection) {
+                  themeProvider.setLayoutMode(selection.first);
+                },
+              ),
+            ),
+            const Divider(),
+            // Color theme
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.palette_outlined),
+                      const SizedBox(width: 16),
+                      const Text(
+                        Strings.colorTheme,
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: AppColors.themeOptions.map((option) {
+                      final isSelected =
+                          themeProvider.primaryColor.toARGB32() ==
+                              option.color.toARGB32();
+                      return GestureDetector(
+                        onTap: () => themeProvider.setPrimaryColor(option.color),
+                        child: Column(
+                          children: [
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: option.color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : (isDark
+                                          ? AppColors.borderSubtle
+                                          : AppColors.borderBold),
+                                  width: isSelected ? 3 : NeoTheme.borderWidth,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: option.color.withValues(alpha: 0.4),
+                                    offset: NeoTheme.shadowOffsetSmall,
+                                    blurRadius: 0,
+                                  ),
+                                ],
+                              ),
+                              child: isSelected
+                                  ? const Icon(Icons.check,
+                                      color: Colors.white, size: 22)
+                                  : null,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              option.name,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            // Notifications
             StreamBuilder<DocumentSnapshot>(
-              stream: _firestore.collection('users').doc(uid).snapshots(),
+              stream: _userService.notificationsSettingStream(),
               builder: (context, snapshot) {
                 bool notifEnabled = true;
                 if (snapshot.hasData && snapshot.data!.exists) {
@@ -98,25 +198,28 @@ class _SettingsPageState extends State<SettingsPage> {
                 }
                 return ListTile(
                   leading: const Icon(Icons.notifications),
-                  title: const Text('Notifikace'),
-                  subtitle: const Text('Prijmat notifikace pri potvrzeni/odmiteni ukolu'),
+                  title: const Text(Strings.notificationsTitle),
+                  subtitle: const Text(Strings.notificationsSubtitle),
                   trailing: Switch(
                     value: notifEnabled,
-                    onChanged: (value) => _toggleNotifications(value),
+                    onChanged: (value) =>
+                        _userService.toggleNotifications(value),
                   ),
                 );
               },
             ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.delete_forever, color: Colors.red),
-            title: const Text('Smazat ucet',
-                style: TextStyle(
-                    color: Colors.red, fontWeight: FontWeight.bold)),
-            subtitle: const Text('Kompletne odstrani vsechna data'),
-            onTap: () => _deleteAccount(context),
-          ),
-        ],
+            const Divider(),
+            // Delete account
+            ListTile(
+              leading: const Icon(Icons.delete_forever, color: AppColors.neonPink),
+              title: const Text(Strings.deleteAccountAction,
+                  style: TextStyle(
+                      color: AppColors.neonPink, fontWeight: FontWeight.bold)),
+              subtitle: const Text(Strings.deleteAccountSubtitle),
+              onTap: () => _deleteAccount(context),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -3,6 +3,11 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../models/task.dart';
 import '../services/task_service.dart';
+import '../constants/app_colors.dart';
+import '../constants/strings.dart';
+import '../utils/context_extensions.dart';
+import '../utils/date_helpers.dart';
+import '../widgets/responsive_layout.dart';
 
 class StatsPage extends StatefulWidget {
   const StatsPage({super.key});
@@ -40,7 +45,7 @@ class _StatsPageState extends State<StatsPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Statistiky')),
+        appBar: AppBar(title: const Text(Strings.stats)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -49,29 +54,26 @@ class _StatsPageState extends State<StatsPage> {
     final total = _allTasks.length;
     final completedCount = completed.length;
 
-    // Ukoly tento tyden
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     final thisWeekCompleted = completed.where((t) {
       try {
-        final d = DateFormat('yyyy-MM-dd').parse(t.date);
+        final d = parseDate(t.date);
         return d.isAfter(weekStart.subtract(const Duration(days: 1)));
       } catch (_) {
         return false;
       }
     }).length;
 
-    // Ukoly tento mesic
     final thisMonthCompleted = completed.where((t) {
       try {
-        final d = DateFormat('yyyy-MM-dd').parse(t.date);
+        final d = parseDate(t.date);
         return d.month == now.month && d.year == now.year;
       } catch (_) {
         return false;
       }
     }).length;
 
-    // Pomer typu
     final dailyCount =
         _allTasks.where((t) => t.type == TaskType.daily).length;
     final weeklyCount =
@@ -79,11 +81,10 @@ class _StatsPageState extends State<StatsPage> {
     final monthlyCount =
         _allTasks.where((t) => t.type == TaskType.monthly).length;
 
-    // Nejproduktivnejsi den
     final dayCount = <int, int>{};
     for (final t in completed) {
       try {
-        final d = DateFormat('yyyy-MM-dd').parse(t.date);
+        final d = parseDate(t.date);
         dayCount[d.weekday] = (dayCount[d.weekday] ?? 0) + 1;
       } catch (_) {}
     }
@@ -91,23 +92,13 @@ class _StatsPageState extends State<StatsPage> {
     if (dayCount.isNotEmpty) {
       final best =
           dayCount.entries.reduce((a, b) => a.value > b.value ? a : b);
-      const dayNames = {
-        1: 'Pondeli',
-        2: 'Utery',
-        3: 'Streda',
-        4: 'Ctvrtek',
-        5: 'Patek',
-        6: 'Sobota',
-        7: 'Nedele'
-      };
-      bestDay = dayNames[best.key] ?? '-';
+      bestDay = Strings.dayNames[best.key] ?? '-';
     }
 
-    // XP za poslednich 7 dni
     final xpPerDay = <String, int>{};
     for (int i = 6; i >= 0; i--) {
       final day = now.subtract(Duration(days: i));
-      final key = DateFormat('yyyy-MM-dd').format(day);
+      final key = formatDate(day);
       xpPerDay[key] = 0;
     }
     for (final t in completed) {
@@ -117,20 +108,22 @@ class _StatsPageState extends State<StatsPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Statistiky')),
-      body: SingleChildScrollView(
+      appBar: AppBar(title: const Text(Strings.stats)),
+      body: ResponsiveLayout(
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Prehledove karty
             Row(
               children: [
                 _StatCard(
-                    label: 'Celkem ukolu', value: '$total', color: Colors.indigo),
+                    label: Strings.totalTasks,
+                    value: '$total',
+                    color: context.primaryColor),
                 const SizedBox(width: 8),
                 _StatCard(
-                    label: 'Splneno',
+                    label: Strings.completedTasks,
                     value: '$completedCount',
                     color: Colors.green),
               ],
@@ -139,23 +132,22 @@ class _StatsPageState extends State<StatsPage> {
             Row(
               children: [
                 _StatCard(
-                    label: 'Tento tyden',
+                    label: Strings.thisWeek,
                     value: '$thisWeekCompleted',
-                    color: Colors.blue),
+                    color: AppColors.taskDaily),
                 const SizedBox(width: 8),
                 _StatCard(
-                    label: 'Tento mesic',
+                    label: Strings.thisMonth,
                     value: '$thisMonthCompleted',
-                    color: Colors.orange),
+                    color: AppColors.taskWeekly),
               ],
             ),
             const SizedBox(height: 16),
 
-            // Nejproduktivnejsi den
             Card(
               child: ListTile(
                 leading: const Icon(Icons.star, color: Colors.amber),
-                title: const Text('Nejproduktivnejsi den'),
+                title: const Text(Strings.bestDay),
                 trailing: Text(bestDay,
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16)),
@@ -163,9 +155,9 @@ class _StatsPageState extends State<StatsPage> {
             ),
             const SizedBox(height: 16),
 
-            // XP graf za 7 dni
-            const Text('XP za poslednich 7 dni',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(Strings.xpLast7Days,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             SizedBox(
               height: 200,
@@ -173,11 +165,12 @@ class _StatsPageState extends State<StatsPage> {
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
                   maxY: (xpPerDay.values.isEmpty
-                          ? 10
-                          : xpPerDay.values
-                              .reduce((a, b) => a > b ? a : b))
-                      .toDouble() *
-                      1.2 + 10,
+                              ? 10
+                              : xpPerDay.values
+                                  .reduce((a, b) => a > b ? a : b))
+                          .toDouble() *
+                      1.2 +
+                      10,
                   barTouchData: BarTouchData(enabled: true),
                   titlesData: FlTitlesData(
                     show: true,
@@ -187,8 +180,7 @@ class _StatsPageState extends State<StatsPage> {
                         getTitlesWidget: (value, meta) {
                           final keys = xpPerDay.keys.toList();
                           if (value.toInt() < keys.length) {
-                            final date = DateFormat('yyyy-MM-dd')
-                                .parse(keys[value.toInt()]);
+                            final date = parseDate(keys[value.toInt()]);
                             return Padding(
                               padding: const EdgeInsets.only(top: 4),
                               child: Text(
@@ -212,30 +204,29 @@ class _StatsPageState extends State<StatsPage> {
                     ),
                   ),
                   borderData: FlBorderData(show: false),
-                  barGroups: xpPerDay.entries.toList().asMap().entries.map(
-                    (entry) {
-                      return BarChartGroupData(
-                        x: entry.key,
-                        barRods: [
-                          BarChartRodData(
-                            toY: entry.value.value.toDouble(),
-                            color: Colors.indigo,
-                            width: 20,
-                            borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(4)),
-                          ),
-                        ],
-                      );
-                    },
-                  ).toList(),
+                  barGroups:
+                      xpPerDay.entries.toList().asMap().entries.map((entry) {
+                    return BarChartGroupData(
+                      x: entry.key,
+                      barRods: [
+                        BarChartRodData(
+                          toY: entry.value.value.toDouble(),
+                          color: context.primaryColor,
+                          width: 20,
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(4)),
+                        ),
+                      ],
+                    );
+                  }).toList(),
                 ),
               ),
             ),
             const SizedBox(height: 24),
 
-            // Pomer typu
-            const Text('Pomer typu ukolu',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(Strings.taskTypeRatio,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             if (total > 0)
               SizedBox(
@@ -246,8 +237,8 @@ class _StatsPageState extends State<StatsPage> {
                       if (dailyCount > 0)
                         PieChartSectionData(
                           value: dailyCount.toDouble(),
-                          title: 'Denni\n$dailyCount',
-                          color: Colors.blueAccent,
+                          title: '${Strings.typeDaily}\n$dailyCount',
+                          color: AppColors.taskDaily,
                           radius: 60,
                           titleStyle: const TextStyle(
                               fontSize: 12,
@@ -257,8 +248,8 @@ class _StatsPageState extends State<StatsPage> {
                       if (weeklyCount > 0)
                         PieChartSectionData(
                           value: weeklyCount.toDouble(),
-                          title: 'Tydenni\n$weeklyCount',
-                          color: Colors.orangeAccent,
+                          title: '${Strings.typeWeekly}\n$weeklyCount',
+                          color: AppColors.taskWeekly,
                           radius: 60,
                           titleStyle: const TextStyle(
                               fontSize: 12,
@@ -268,8 +259,8 @@ class _StatsPageState extends State<StatsPage> {
                       if (monthlyCount > 0)
                         PieChartSectionData(
                           value: monthlyCount.toDouble(),
-                          title: 'Mesicni\n$monthlyCount',
-                          color: Colors.purpleAccent,
+                          title: '${Strings.typeMonthly}\n$monthlyCount',
+                          color: AppColors.taskMonthly,
                           radius: 60,
                           titleStyle: const TextStyle(
                               fontSize: 12,
@@ -283,13 +274,14 @@ class _StatsPageState extends State<StatsPage> {
                 ),
               )
             else
-              const Center(
-                child: Text('Zadna data k zobrazeni',
-                    style: TextStyle(color: Colors.grey)),
+              Center(
+                child: Text(Strings.noStatsData,
+                    style: const TextStyle(color: Colors.grey)),
               ),
           ],
         ),
-      ),
+          ),
+        ),
     );
   }
 }
