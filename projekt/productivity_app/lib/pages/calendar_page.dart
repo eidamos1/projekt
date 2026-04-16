@@ -12,6 +12,7 @@ import '../widgets/xp_bar.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/dialogs/task_form_dialog.dart';
 import '../services/task_service.dart';
+import '../services/habit_service.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
@@ -30,6 +31,7 @@ class CalendarPage extends StatefulWidget {
 class _CalendarPageState extends State<CalendarPage> {
   final _auth = FirebaseAuth.instance;
   final _taskService = TaskService();
+  final _habitService = HabitService();
 
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
@@ -43,6 +45,7 @@ class _CalendarPageState extends State<CalendarPage> {
     super.initState();
     _taskService.checkAndResetStreak();
     _taskService.checkExpiringTasks();
+    _habitService.extendWindows();
     _tasksSubscription = _taskService.allTasksStream().listen((tasks) {
       final map = <String, List<TaskType>>{};
       for (final t in tasks) {
@@ -218,13 +221,22 @@ class _CalendarPageState extends State<CalendarPage> {
     showDialog(
       context: context,
       builder: (context) => TaskFormDialog(
-        onSubmit: (title, type, cfg) {
-          _taskService.createTask(
-            title: title,
-            type: type,
-            date: formatDate(
-                DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day)),
-          );
+        onSubmit: (title, type, cfg) async {
+          if (cfg != null) {
+            await _habitService.createHabit(
+              title: title,
+              type: type,
+              recurrence: cfg.recurrence,
+              customDays: cfg.customDays,
+            );
+          } else {
+            _taskService.createTask(
+              title: title,
+              type: type,
+              date: formatDate(DateTime(
+                  _selectedDay.year, _selectedDay.month, _selectedDay.day)),
+            );
+          }
         },
       ),
     );
