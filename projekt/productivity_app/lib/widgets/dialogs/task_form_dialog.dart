@@ -14,12 +14,14 @@ class HabitConfig {
 
 class TaskFormDialog extends StatefulWidget {
   final Task? existingTask;
+  final Habit? existingHabit;
   final void Function(String title, TaskType type, HabitConfig? habitConfig)
       onSubmit;
 
   const TaskFormDialog({
     super.key,
     this.existingTask,
+    this.existingHabit,
     required this.onSubmit,
   });
 
@@ -35,14 +37,22 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
   RecurrenceType _recurrence = RecurrenceType.everyday;
   final Set<int> _customDays = {};
 
-  bool get _isEdit => widget.existingTask != null;
+  bool get _isEdit =>
+      widget.existingTask != null || widget.existingHabit != null;
 
   @override
   void initState() {
     super.initState();
-    _titleController =
-        TextEditingController(text: widget.existingTask?.title ?? '');
-    _selectedType = widget.existingTask?.type ?? TaskType.daily;
+    _titleController = TextEditingController(
+        text: widget.existingTask?.title ?? widget.existingHabit?.title ?? '');
+    _selectedType = widget.existingTask?.type ??
+        widget.existingHabit?.type ??
+        TaskType.daily;
+    if (widget.existingHabit != null) {
+      _recurring = true;
+      _recurrence = widget.existingHabit!.recurrence;
+      _customDays.addAll(widget.existingHabit!.customDays);
+    }
   }
 
   @override
@@ -64,7 +74,9 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
         ),
       ),
       title: Text(
-        _isEdit ? Strings.editTask : Strings.newTask,
+        widget.existingHabit != null
+            ? Strings.editHabit
+            : (_isEdit ? Strings.editTask : Strings.newTask),
         style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.5),
       ),
       content: SingleChildScrollView(
@@ -122,14 +134,16 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
             const SizedBox(height: 16),
             SwitchListTile(
               value: _recurring,
-              onChanged: (v) => setState(() {
-                _recurring = v;
-                if (v &&
-                    _selectedType == TaskType.monthly &&
-                    _recurrence != RecurrenceType.custom) {
-                  _selectedType = TaskType.daily;
-                }
-              }),
+              onChanged: widget.existingHabit != null
+                  ? null
+                  : (v) => setState(() {
+                        _recurring = v;
+                        if (v &&
+                            _selectedType == TaskType.monthly &&
+                            _recurrence != RecurrenceType.custom) {
+                          _selectedType = TaskType.daily;
+                        }
+                      }),
               title: const Text(Strings.repeatTask),
               contentPadding: EdgeInsets.zero,
             ),

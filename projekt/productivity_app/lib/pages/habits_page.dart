@@ -5,6 +5,7 @@ import '../models/task.dart';
 import '../services/habit_service.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/neo_bottom_sheet.dart';
+import '../widgets/dialogs/task_form_dialog.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
@@ -81,32 +82,19 @@ class _HabitsPageState extends State<HabitsPage> {
   }
 
   void _edit(Habit h) {
-    final ctrl = TextEditingController(text: h.title);
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text(Strings.editTaskAction),
-        content: TextField(
-          controller: ctrl,
-          decoration: const InputDecoration(labelText: Strings.taskTitleLabel),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text(Strings.cancel)),
-          ElevatedButton(
-            onPressed: () async {
-              final v = ctrl.text.trim();
-              if (v.isEmpty) return;
-              Navigator.pop(ctx);
-              await _habitService.updateHabitAndRegenerate(
-                habitId: h.id,
-                title: v,
-              );
-            },
-            child: const Text(Strings.save),
-          ),
-        ],
+      builder: (context) => TaskFormDialog(
+        existingHabit: h,
+        onSubmit: (title, type, cfg) async {
+          await _habitService.updateHabitAndRegenerate(
+            habitId: h.id,
+            title: title,
+            type: type,
+            recurrence: cfg?.recurrence,
+            customDays: cfg?.customDays,
+          );
+        },
       ),
     );
   }

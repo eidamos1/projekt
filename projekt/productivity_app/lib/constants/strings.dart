@@ -156,6 +156,7 @@ abstract final class Strings {
   static const pauseHabit = 'Pozastavit';
   static const resumeHabit = 'Aktivovat';
   static const deleteHabit = 'Smazat navyk';
+  static const editHabit = 'Upravit navyk';
   static const deleteHabitConfirm = 'Smaze vsechny budouci instance. Minule zustanou.';
   static const noHabitsTitle = 'Jeste nemas zadne navyky';
   static const noHabitsSubtitle = 'Pridej jeden pri tvorbe ukolu.';
