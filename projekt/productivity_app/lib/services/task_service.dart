@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/task.dart';
+import '../models/habit.dart';
 import '../constants/game_config.dart';
 import '../utils/date_helpers.dart';
 
@@ -223,6 +224,15 @@ class TaskService {
         throw Exception('Tento ukol uz byl potvrzen!');
       }
 
+      // All reads must happen before any writes in a Firestore transaction.
+      final habitId = taskData?['habitId'] as String?;
+      DocumentReference? habitRef;
+      DocumentSnapshot? habitSnap;
+      if (habitId != null) {
+        habitRef = lookup.userRef.collection('habits').doc(habitId);
+        habitSnap = await tx.get(habitRef);
+      }
+
       final userData = userSnap.data() as Map<String, dynamic>;
       int currentXp = userData['xp'] ?? 0;
       int currentCoins = userData['coins'] ?? 0;
@@ -265,6 +275,37 @@ class TaskService {
         'completed': true,
         'completedAt': today,
       });
+
+      // Habit streak update (only if the task was actually a habit instance
+      // and the habit doc still exists)
+      if (habitRef != null && habitSnap != null && habitSnap.exists) {
+        final habitData = habitSnap.data() as Map<String, dynamic>;
+        final currentStreak = (habitData['streak'] ?? 0) as int;
+        final longest = (habitData['longestStreak'] ?? 0) as int;
+        final lastCompleted = habitData['lastCompletedDate'] as String?;
+        final habit = Habit.fromMap(habitId!, habitData);
+        final taskDate = taskData!['date'] as String;
+
+        int newStreak;
+        if (lastCompleted == null) {
+          newStreak = 1;
+        } else if (lastCompleted == taskDate) {
+          newStreak = currentStreak; // idempotent same-day
+        } else {
+          final prev = habit.previousExpectedDay(parseDate(taskDate));
+          if (prev != null && formatDate(prev) == lastCompleted) {
+            newStreak = currentStreak + 1;
+          } else {
+            newStreak = 1;
+          }
+        }
+
+        tx.update(habitRef, {
+          'streak': newStreak,
+          'longestStreak': newStreak > longest ? newStreak : longest,
+          'lastCompletedDate': taskDate,
+        });
+      }
     });
 
     final taskTitle = lookup.taskData['title'] ?? 'Ukol';
