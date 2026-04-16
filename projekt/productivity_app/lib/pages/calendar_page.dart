@@ -247,9 +247,51 @@ class _CalendarPageState extends State<CalendarPage> {
       context: context,
       builder: (context) => TaskFormDialog(
         existingTask: task,
-        onSubmit: (title, type, cfg) {
-          _taskService.updateTask(task.id, title: title, type: type);
+        onSubmit: (title, type, cfg) async {
+          if (task.habitId != null) {
+            final choice = await _askHabitEditChoice();
+            if (choice == null) return;
+            if (choice == 'whole') {
+              await _habitService.updateHabitAndRegenerate(
+                habitId: task.habitId!,
+                title: title,
+                type: type,
+              );
+            } else {
+              _taskService.updateTask(task.id, title: title, type: type);
+            }
+          } else {
+            _taskService.updateTask(task.id, title: title, type: type);
+          }
         },
+      ),
+    );
+  }
+
+  Future<String?> _askHabitEditChoice() async {
+    return showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(Strings.editHabitOrInstance,
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.assignment_rounded),
+              title: const Text(Strings.thisOnly),
+              onTap: () => Navigator.pop(ctx, 'instance'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.autorenew_rounded),
+              title: const Text(Strings.wholeHabit),
+              onTap: () => Navigator.pop(ctx, 'whole'),
+            ),
+          ],
+        ),
       ),
     );
   }
