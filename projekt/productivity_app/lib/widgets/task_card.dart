@@ -9,6 +9,7 @@ import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
 import '../utils/context_extensions.dart';
 import '../utils/ui_helpers.dart';
+import 'neo_bottom_sheet.dart';
 import 'status_badge.dart';
 
 class TaskCard extends StatefulWidget {
@@ -134,50 +135,28 @@ class _TaskCardState extends State<TaskCard> {
       onLongPress: isFullyCompleted
           ? null
           : () {
-              showModalBottomSheet(
+              showNeoBottomSheet<void>(
                 context: context,
-                shape: RoundedRectangleBorder(
-                  borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(NeoTheme.radiusCard)),
-                  side: BorderSide(
-                    color: isDark ? AppColors.borderSubtle : AppColors.borderBold,
-                    width: NeoTheme.borderWidth,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.edit_rounded),
+                    title: const Text(Strings.editTaskAction),
+                    onTap: () {
+                      Navigator.pop(context);
+                      widget.onEdit?.call();
+                    },
                   ),
-                ),
-                builder: (context) => SafeArea(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.only(top: 8),
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.borderSubtle : Colors.black12,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.edit_rounded),
-                        title: const Text(Strings.editTaskAction),
-                        onTap: () {
-                          Navigator.pop(context);
-                          widget.onEdit?.call();
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.delete_rounded,
-                            color: AppColors.neonPink),
-                        title: const Text(Strings.deleteTaskAction,
-                            style: TextStyle(color: AppColors.neonPink)),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _showDeleteConfirmation();
-                        },
-                      ),
-                    ],
+                  ListTile(
+                    leading: const Icon(Icons.delete_rounded,
+                        color: AppColors.neonPink),
+                    title: const Text(Strings.deleteTaskAction,
+                        style: TextStyle(color: AppColors.neonPink)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showDeleteConfirmation();
+                    },
                   ),
-                ),
+                ],
               );
             },
       child: Container(

@@ -4,6 +4,7 @@ import '../models/habit.dart';
 import '../models/task.dart';
 import '../services/habit_service.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/neo_bottom_sheet.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
@@ -41,43 +42,41 @@ class _HabitsPageState extends State<HabitsPage> {
   }
 
   void _showActions(Habit h) {
-    showModalBottomSheet(
+    showNeoBottomSheet<void>(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(
-            leading: const Icon(Icons.edit_rounded),
-            title: const Text(Strings.editTaskAction),
-            onTap: () {
-              Navigator.pop(ctx);
-              _edit(h);
-            },
-          ),
-          ListTile(
-            leading: Icon(
-                h.active ? Icons.pause_rounded : Icons.play_arrow_rounded),
-            title: Text(h.active ? Strings.pauseHabit : Strings.resumeHabit),
-            onTap: () async {
-              Navigator.pop(ctx);
-              if (h.active) {
-                await _habitService.pauseHabit(h.id);
-              } else {
-                await _habitService.resumeHabit(h.id);
-              }
-            },
-          ),
-          ListTile(
-            leading:
-                const Icon(Icons.delete_rounded, color: AppColors.neonPink),
-            title: const Text(Strings.deleteHabit,
-                style: TextStyle(color: AppColors.neonPink)),
-            onTap: () {
-              Navigator.pop(ctx);
-              _confirmDelete(h);
-            },
-          ),
-        ]),
-      ),
+      children: [
+        ListTile(
+          leading: const Icon(Icons.edit_rounded),
+          title: const Text(Strings.editTaskAction),
+          onTap: () {
+            Navigator.pop(context);
+            _edit(h);
+          },
+        ),
+        ListTile(
+          leading: Icon(
+              h.active ? Icons.pause_rounded : Icons.play_arrow_rounded),
+          title: Text(h.active ? Strings.pauseHabit : Strings.resumeHabit),
+          onTap: () async {
+            Navigator.pop(context);
+            if (h.active) {
+              await _habitService.pauseHabit(h.id);
+            } else {
+              await _habitService.resumeHabit(h.id);
+            }
+          },
+        ),
+        ListTile(
+          leading:
+              const Icon(Icons.delete_rounded, color: AppColors.neonPink),
+          title: const Text(Strings.deleteHabit,
+              style: TextStyle(color: AppColors.neonPink)),
+          onTap: () {
+            Navigator.pop(context);
+            _confirmDelete(h);
+          },
+        ),
+      ],
     );
   }
 

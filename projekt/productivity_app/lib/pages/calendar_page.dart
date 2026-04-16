@@ -20,6 +20,7 @@ import '../utils/context_extensions.dart';
 import '../utils/date_helpers.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/stats_sidebar.dart';
+import '../widgets/neo_bottom_sheet.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -283,30 +284,25 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   Future<String?> _askHabitEditChoice() async {
-    return showModalBottomSheet<String>(
+    return showNeoBottomSheet<String>(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(Strings.editHabitOrInstance,
-                  style: TextStyle(fontWeight: FontWeight.w600)),
-            ),
-            ListTile(
-              leading: const Icon(Icons.assignment_rounded),
-              title: const Text(Strings.thisOnly),
-              onTap: () => Navigator.pop(ctx, 'instance'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.autorenew_rounded),
-              title: const Text(Strings.wholeHabit),
-              onTap: () => Navigator.pop(ctx, 'whole'),
-            ),
-          ],
+      children: [
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text(Strings.editHabitOrInstance,
+              style: TextStyle(fontWeight: FontWeight.w600)),
         ),
-      ),
+        ListTile(
+          leading: const Icon(Icons.assignment_rounded),
+          title: const Text(Strings.thisOnly),
+          onTap: () => Navigator.pop(context, 'instance'),
+        ),
+        ListTile(
+          leading: const Icon(Icons.autorenew_rounded),
+          title: const Text(Strings.wholeHabit),
+          onTap: () => Navigator.pop(context, 'whole'),
+        ),
+      ],
     );
   }
 
