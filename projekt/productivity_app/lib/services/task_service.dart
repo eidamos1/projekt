@@ -60,17 +60,17 @@ class TaskService {
     return _firestore.collection('users').doc(_uid).snapshots();
   }
 
-  Future<void> createTask({
+  Future<String> _createTaskInstance({
     required String title,
     required TaskType type,
     required String date,
+    String? habitId,
   }) async {
     final rewards = GameConfig.rewardsFor(type);
-
     final random = Random();
-    String code = (100000 + random.nextInt(900000)).toString();
+    final code = (100000 + random.nextInt(900000)).toString();
 
-    Task newTask = Task(
+    final taskMap = Task(
       id: '',
       title: title,
       type: type,
@@ -78,14 +78,37 @@ class TaskService {
       xp: rewards.xp,
       coins: rewards.coins,
       code: code,
-    );
+      habitId: habitId,
+    ).toMap();
 
-    final docRef = await _tasksCollection.add(newTask.toMap());
-
+    final docRef = await _tasksCollection.add(taskMap);
     await _firestore.collection('taskCodes').doc(code).set({
       'userId': _uid,
       'taskId': docRef.id,
     });
+    return docRef.id;
+  }
+
+  Future<void> createTask({
+    required String title,
+    required TaskType type,
+    required String date,
+  }) async {
+    await _createTaskInstance(title: title, type: type, date: date);
+  }
+
+  Future<String> createHabitInstance({
+    required String title,
+    required TaskType type,
+    required String date,
+    required String habitId,
+  }) {
+    return _createTaskInstance(
+      title: title,
+      type: type,
+      date: date,
+      habitId: habitId,
+    );
   }
 
   Future<void> updateTask(String taskId,
