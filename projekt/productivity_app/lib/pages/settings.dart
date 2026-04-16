@@ -209,6 +209,14 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
             const Divider(),
+            // Habits
+            ListTile(
+              leading: const Icon(Icons.autorenew_rounded),
+              title: const Text(Strings.habitsMine),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pushNamed(context, '/habits'),
+            ),
+            const Divider(),
             // Delete account
             ListTile(
               leading: const Icon(Icons.delete_forever, color: AppColors.neonPink),

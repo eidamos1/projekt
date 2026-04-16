@@ -131,6 +131,8 @@ class _CalendarPageState extends State<CalendarPage> {
                 Navigator.pushNamed(context, '/stats');
               case 'confirm':
                 Navigator.pushNamed(context, '/confirm');
+              case 'habits':
+                Navigator.pushNamed(context, '/habits');
               case 'settings':
                 Navigator.pushNamed(context, '/settings');
               case 'logout':
@@ -152,6 +154,13 @@ class _CalendarPageState extends State<CalendarPage> {
                 child: ListTile(
                   leading: const Icon(Icons.task_alt),
                   title: const Text(Strings.confirmCode),
+                  contentPadding: EdgeInsets.zero,
+                )),
+            PopupMenuItem(
+                value: 'habits',
+                child: ListTile(
+                  leading: const Icon(Icons.autorenew_rounded),
+                  title: const Text(Strings.habitsMine),
                   contentPadding: EdgeInsets.zero,
                 )),
             PopupMenuItem(
@@ -180,6 +189,11 @@ class _CalendarPageState extends State<CalendarPage> {
         icon: const Icon(Icons.bar_chart_rounded),
         tooltip: Strings.stats,
         onPressed: () => Navigator.pushNamed(context, '/stats'),
+      ),
+      IconButton(
+        icon: const Icon(Icons.autorenew_rounded),
+        tooltip: Strings.habitsMine,
+        onPressed: () => Navigator.pushNamed(context, '/habits'),
       ),
       IconButton(
         icon: const Icon(Icons.task_alt_rounded),

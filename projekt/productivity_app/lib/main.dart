@@ -12,6 +12,7 @@ import 'pages/confirm_task.dart';
 import 'pages/settings.dart';
 import 'pages/stats_page.dart';
 import 'pages/notifications_page.dart';
+import 'pages/habits_page.dart';
 import 'constants/app_colors.dart';
 import 'constants/neo_theme.dart';
 import 'constants/layout.dart';
@@ -278,6 +279,7 @@ class _MyAppState extends State<MyApp> {
         '/settings': (context) => const SettingsPage(),
         '/stats': (context) => const StatsPage(),
         '/notifications': (context) => const NotificationsPage(),
+        '/habits': (context) => const HabitsPage(),
       },
     );
   }
