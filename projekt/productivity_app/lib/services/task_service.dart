@@ -7,6 +7,10 @@ import '../constants/game_config.dart';
 import '../utils/date_helpers.dart';
 
 class TaskService {
+  static TaskService? _instance;
+  factory TaskService() => _instance ??= TaskService._();
+  TaskService._();
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 

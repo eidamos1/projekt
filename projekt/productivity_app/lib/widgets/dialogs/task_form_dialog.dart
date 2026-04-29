@@ -5,6 +5,7 @@ import '../../constants/app_colors.dart';
 import '../../constants/neo_theme.dart';
 import '../../constants/strings.dart';
 import '../../utils/context_extensions.dart';
+import '../neo_pressable.dart';
 
 class HabitConfig {
   final RecurrenceType recurrence;
@@ -205,42 +206,38 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text(Strings.cancel),
         ),
-        Container(
-          decoration: NeoTheme.buttonDecoration(
-            backgroundColor: AppColors.neonGreen,
-            borderColor: Colors.white,
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
-              onTap: () {
-                final title = _titleController.text.trim();
-                if (title.isEmpty) return;
-                if (_recurring &&
-                    _recurrence == RecurrenceType.custom &&
-                    _customDays.isEmpty) {
-                  return; // custom needs at least one day
-                }
-                Navigator.pop(context);
-                HabitConfig? cfg;
-                if (_recurring) {
-                  cfg = HabitConfig(
-                    recurrence: _recurrence,
-                    customDays: _customDays.toList()..sort(),
-                  );
-                }
-                widget.onSubmit(title, _selectedType, cfg);
-              },
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                child: Text(
-                  _isEdit ? Strings.save : Strings.createTask,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.w700,
-                  ),
+        NeoPressable(
+          onTap: () {
+            final title = _titleController.text.trim();
+            if (title.isEmpty) return;
+            if (_recurring &&
+                _recurrence == RecurrenceType.custom &&
+                _customDays.isEmpty) {
+              return; // custom needs at least one day
+            }
+            Navigator.pop(context);
+            HabitConfig? cfg;
+            if (_recurring) {
+              cfg = HabitConfig(
+                recurrence: _recurrence,
+                customDays: _customDays.toList()..sort(),
+              );
+            }
+            widget.onSubmit(title, _selectedType, cfg);
+          },
+          child: Container(
+            decoration: NeoTheme.buttonDecoration(
+              backgroundColor: AppColors.neonGreen,
+              borderColor: Colors.white,
+            ),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Text(
+                _isEdit ? Strings.save : Strings.createTask,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),

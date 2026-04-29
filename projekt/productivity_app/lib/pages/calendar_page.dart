@@ -21,6 +21,7 @@ import '../utils/date_helpers.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/stats_sidebar.dart';
 import '../widgets/neo_bottom_sheet.dart';
+import '../widgets/neo_pressable.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -40,6 +41,8 @@ class _CalendarPageState extends State<CalendarPage> {
   /// Map from date string (yyyy-MM-dd) to list of task types for that day.
   Map<String, List<TaskType>> _tasksByDate = {};
   StreamSubscription<List<Task>>? _tasksSubscription;
+  StreamSubscription<int>? _unreadSubscription;
+  int _unreadCount = 0;
 
   @override
   void initState() {
@@ -54,11 +57,18 @@ class _CalendarPageState extends State<CalendarPage> {
       }
       if (mounted) setState(() => _tasksByDate = map);
     });
+    _unreadSubscription =
+        _taskService.unreadNotificationCount().listen((value) {
+      if (mounted && value != _unreadCount) {
+        setState(() => _unreadCount = value);
+      }
+    });
   }
 
   @override
   void dispose() {
     _tasksSubscription?.cancel();
+    _unreadSubscription?.cancel();
     super.dispose();
   }
 
@@ -101,23 +111,16 @@ class _CalendarPageState extends State<CalendarPage> {
           )
         : null;
 
-    final notifButton = StreamBuilder<int>(
-      stream: _taskService.unreadNotificationCount(),
-      builder: (context, notifSnapshot) {
-        final count = notifSnapshot.data ?? 0;
-        return IconButton(
-          icon: Badge(
-            isLabelVisible: count > 0,
-            backgroundColor: AppColors.neonPink,
-            label: Text('$count',
-                style:
-                    const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-            child: const Icon(Icons.notifications_outlined),
-          ),
-          tooltip: Strings.notifications,
-          onPressed: () => Navigator.pushNamed(context, '/notifications'),
-        );
-      },
+    final notifButton = IconButton(
+      icon: Badge(
+        isLabelVisible: _unreadCount > 0,
+        backgroundColor: AppColors.neonPink,
+        label: Text('$_unreadCount',
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+        child: const Icon(Icons.notifications_outlined),
+      ),
+      tooltip: Strings.notifications,
+      onPressed: () => Navigator.pushNamed(context, '/notifications'),
     );
 
     if (isNarrow) {
@@ -621,17 +624,31 @@ class _CalendarPageState extends State<CalendarPage> {
           ),
           floatingActionButton: _isDayInPast(_selectedDay)
               ? null
-              : FloatingActionButton(
-                  backgroundColor: AppColors.neonGreen,
-                  elevation: 0,
-                  onPressed: _showAddTaskDialog,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
-                    side: const BorderSide(
-                        color: Colors.white, width: NeoTheme.borderWidth),
+              : NeoPressable(
+                  onTap: _showAddTaskDialog,
+                  pressOffset: NeoTheme.shadowOffset,
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: AppColors.neonGreen,
+                      borderRadius:
+                          BorderRadius.circular(NeoTheme.radiusButton),
+                      border: Border.all(
+                        color: Colors.white,
+                        width: NeoTheme.borderWidth,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          offset: NeoTheme.shadowOffset,
+                          blurRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.add_rounded,
+                        color: Colors.black, size: 30),
                   ),
-                  child: const Icon(Icons.add_rounded,
-                      color: Colors.black, size: 30),
                 ),
         );
       },

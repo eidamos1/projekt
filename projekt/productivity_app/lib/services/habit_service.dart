@@ -6,6 +6,10 @@ import '../utils/date_helpers.dart';
 import 'task_service.dart';
 
 class HabitService {
+  static HabitService? _instance;
+  factory HabitService() => _instance ??= HabitService._();
+  HabitService._();
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final TaskService _taskService = TaskService();

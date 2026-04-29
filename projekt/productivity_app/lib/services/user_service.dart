@@ -2,6 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class UserService {
+  static UserService? _instance;
+  factory UserService() => _instance ??= UserService._();
+  UserService._();
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 

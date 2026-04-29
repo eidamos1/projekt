@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/task.dart';
@@ -10,6 +11,7 @@ import '../constants/strings.dart';
 import '../utils/context_extensions.dart';
 import '../utils/ui_helpers.dart';
 import 'neo_bottom_sheet.dart';
+import 'neo_pressable.dart';
 import 'status_badge.dart';
 
 class TaskCard extends StatefulWidget {
@@ -22,9 +24,72 @@ class TaskCard extends StatefulWidget {
   State<TaskCard> createState() => _TaskCardState();
 }
 
-class _TaskCardState extends State<TaskCard> {
+class _TaskCardState extends State<TaskCard>
+    with SingleTickerProviderStateMixin {
   final _taskService = TaskService();
   bool _isProcessing = false;
+  Uint8List? _decodedImage;
+  String? _decodedFor;
+
+  late final AnimationController _pulseController;
+  late final Animation<double> _scaleAnim;
+  late final Animation<double> _flashAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshDecodedImage();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+      value: 1.0, // start at rest (no flash, scale 1.0)
+    );
+    _scaleAnim = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 1.04)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.04, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeIn)),
+        weight: 1,
+      ),
+    ]).animate(_pulseController);
+    _flashAnim = Tween<double>(begin: 0.3, end: 0.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant TaskCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.task.imageBase64 != widget.task.imageBase64) {
+      _refreshDecodedImage();
+    }
+    // Pulse on transition false -> true (skip on mount-with-completed).
+    if (!oldWidget.task.completed && widget.task.completed) {
+      _pulseController.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  void _refreshDecodedImage() {
+    final src = widget.task.imageBase64;
+    if (src == null) {
+      _decodedImage = null;
+      _decodedFor = null;
+      return;
+    }
+    if (_decodedFor == src) return;
+    _decodedImage = base64Decode(src);
+    _decodedFor = src;
+  }
 
   IconData _getTypeIcon(TaskType type) {
     switch (type) {
@@ -131,7 +196,13 @@ class _TaskCardState extends State<TaskCard> {
     final isDark = context.isDark;
     final typeColor = AppColors.colorForTaskType(widget.task.type);
 
-    return GestureDetector(
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) => Transform.scale(
+        scale: _scaleAnim.value,
+        child: child,
+      ),
+      child: GestureDetector(
       onLongPress: isFullyCompleted
           ? null
           : () {
@@ -182,7 +253,9 @@ class _TaskCardState extends State<TaskCard> {
             ),
           ],
         ),
-        child: Column(
+        child: Stack(
+          children: [
+            Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Colored top accent — taller
@@ -333,7 +406,7 @@ class _TaskCardState extends State<TaskCard> {
                     ),
 
                   // Photo proof
-                  if (widget.task.imageBase64 != null) ...[
+                  if (_decodedImage != null) ...[
                     const SizedBox(height: 10),
                     ClipRRect(
                       borderRadius:
@@ -341,9 +414,10 @@ class _TaskCardState extends State<TaskCard> {
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxHeight: 300),
                         child: Image.memory(
-                          base64Decode(widget.task.imageBase64!),
+                          _decodedImage!,
                           width: double.infinity,
                           fit: BoxFit.contain,
+                          gaplessPlayback: true,
                         ),
                       ),
                     ),
@@ -391,69 +465,64 @@ class _TaskCardState extends State<TaskCard> {
                                 ),
                         ),
                         // Share/confirm button with neo style
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius:
-                                BorderRadius.circular(NeoTheme.radiusButton),
-                            color: widget.task.imageBase64 != null
-                                ? typeColor
-                                : (isDark
-                                    ? Colors.white10
-                                    : Colors.grey.shade200),
-                            border: widget.task.imageBase64 != null
-                                ? Border.all(
-                                    color: Colors.white,
-                                    width: NeoTheme.borderWidthThin,
-                                  )
-                                : null,
-                            boxShadow: widget.task.imageBase64 != null
-                                ? [
-                                    BoxShadow(
-                                      color: typeColor.withValues(alpha: 0.3),
-                                      offset: NeoTheme.shadowOffsetSmall,
-                                      blurRadius: 0,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius:
-                                  BorderRadius.circular(NeoTheme.radiusButton),
-                              onTap: widget.task.imageBase64 != null
-                                  ? _shareTask
+                        NeoPressable(
+                          onTap: widget.task.imageBase64 != null
+                              ? _shareTask
+                              : null,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(
+                                  NeoTheme.radiusButton),
+                              color: widget.task.imageBase64 != null
+                                  ? typeColor
+                                  : (isDark
+                                      ? Colors.white10
+                                      : Colors.grey.shade200),
+                              border: widget.task.imageBase64 != null
+                                  ? Border.all(
+                                      color: Colors.white,
+                                      width: NeoTheme.borderWidthThin,
+                                    )
                                   : null,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.send_rounded,
-                                        size: 16,
+                              boxShadow: widget.task.imageBase64 != null
+                                  ? [
+                                      BoxShadow(
                                         color:
-                                            widget.task.imageBase64 != null
-                                                ? Colors.white
-                                                : (isDark
-                                                    ? Colors.white24
-                                                    : Colors.grey)),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      Strings.confirm,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13,
-                                        color:
-                                            widget.task.imageBase64 != null
-                                                ? Colors.white
-                                                : (isDark
-                                                    ? Colors.white24
-                                                    : Colors.grey),
+                                            typeColor.withValues(alpha: 0.3),
+                                        offset: NeoTheme.shadowOffsetSmall,
+                                        blurRadius: 0,
                                       ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.send_rounded,
+                                      size: 16,
+                                      color: widget.task.imageBase64 != null
+                                          ? Colors.white
+                                          : (isDark
+                                              ? Colors.white24
+                                              : Colors.grey)),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    Strings.confirm,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color:
+                                          widget.task.imageBase64 != null
+                                              ? Colors.white
+                                              : (isDark
+                                                  ? Colors.white24
+                                                  : Colors.grey),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -466,6 +535,27 @@ class _TaskCardState extends State<TaskCard> {
             ),
           ],
         ),
+            Positioned.fill(
+              child: IgnorePointer(
+                child: AnimatedBuilder(
+                  animation: _flashAnim,
+                  builder: (_, _) {
+                    final v = _flashAnim.value;
+                    if (v <= 0) return const SizedBox.shrink();
+                    return DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius:
+                            BorderRadius.circular(NeoTheme.radiusCard),
+                        color: AppColors.neonGreen.withValues(alpha: v),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
       ),
     );
   }
