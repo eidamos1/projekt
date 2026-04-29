@@ -160,8 +160,10 @@ class _MyAppState extends State<MyApp> {
       themeMode: themeProvider.themeMode,
       theme: ThemeData(
         brightness: Brightness.light,
-        colorSchemeSeed: themeProvider.primaryColor,
-        primaryColor: themeProvider.primaryColor,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: themeProvider.primaryColor,
+          brightness: Brightness.light,
+        ).copyWith(primary: themeProvider.primaryColor),
         scaffoldBackgroundColor: AppColors.scaffoldLight,
         cardColor: AppColors.cardLight,
         appBarTheme: AppBarTheme(
@@ -209,8 +211,10 @@ class _MyAppState extends State<MyApp> {
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
-        colorSchemeSeed: themeProvider.primaryColor,
-        primaryColor: themeProvider.primaryColor,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: themeProvider.primaryColor,
+          brightness: Brightness.dark,
+        ).copyWith(primary: themeProvider.primaryColor),
         scaffoldBackgroundColor: AppColors.scaffoldDark,
         cardColor: AppColors.cardDark,
         appBarTheme: AppBarTheme(
