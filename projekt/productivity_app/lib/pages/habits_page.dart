@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/habit.dart';
 import '../models/task.dart';
 import '../services/habit_service.dart';
+import '../constants/task_categories.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/neo_bottom_nav.dart';
 import '../widgets/neo_bottom_sheet.dart';
@@ -199,6 +200,46 @@ class _HabitsPageState extends State<HabitsPage> {
                                   '${Strings.habitRecord}: ${h.longestStreak}',
                                   style: const TextStyle(fontSize: 12)),
                             ]),
+                            if (h.categories.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 4,
+                                runSpacing: 4,
+                                children: h.categories
+                                    .map((key) => Categories.byKey(key))
+                                    .whereType<TaskCategory>()
+                                    .map((cat) => Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(
+                                                    NeoTheme.radiusSmall),
+                                            border: Border.all(
+                                              color: cat.color,
+                                              width: NeoTheme.borderWidthThin,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(cat.icon,
+                                                  size: 11, color: cat.color),
+                                              const SizedBox(width: 3),
+                                              Text(
+                                                cat.label,
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: cat.color,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ))
+                                    .toList(),
+                              ),
+                            ],
                           ],
                         ),
                       ),

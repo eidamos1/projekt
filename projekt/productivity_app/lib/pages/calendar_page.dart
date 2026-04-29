@@ -628,28 +628,77 @@ class _CalendarPageState extends State<CalendarPage> {
                       ),
                     ),
                     const Spacer(),
-                    IconButton(
-                      tooltip: 'Filtr',
-                      onPressed: _showFilterSheet,
-                      icon: Badge(
-                        isLabelVisible: _activeFilterCount > 0,
-                        backgroundColor: context.primaryColor,
-                        textColor: Colors.black,
-                        label: Text('$_activeFilterCount',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            )),
-                        child: Icon(
-                          Icons.filter_list_rounded,
+                    NeoPressable(
+                      onTap: _showFilterSheet,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          borderRadius:
+                              BorderRadius.circular(NeoTheme.radiusButton),
                           color: _activeFilterCount > 0
-                              ? context.primaryColor
-                              : (isDark
-                                  ? AppColors.textSecondary
-                                  : Colors.black54),
+                              ? context.primaryColor.withValues(alpha: 0.15)
+                              : Colors.transparent,
+                          border: Border.all(
+                            color: _activeFilterCount > 0
+                                ? context.primaryColor
+                                : (isDark
+                                    ? AppColors.borderSubtle
+                                    : AppColors.borderBold),
+                            width: NeoTheme.borderWidthThin,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.filter_list_rounded,
+                              size: 16,
+                              color: _activeFilterCount > 0
+                                  ? context.primaryColor
+                                  : (isDark
+                                      ? AppColors.textPrimary
+                                      : Colors.black87),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Filtr',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                                color: _activeFilterCount > 0
+                                    ? context.primaryColor
+                                    : (isDark
+                                        ? AppColors.textPrimary
+                                        : Colors.black87),
+                              ),
+                            ),
+                            if (_activeFilterCount > 0) ...[
+                              const SizedBox(width: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: context.primaryColor,
+                                  borderRadius: BorderRadius.circular(
+                                      NeoTheme.radiusSmall),
+                                ),
+                                child: Text(
+                                  '$_activeFilterCount',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ),
+                    const SizedBox(width: 12),
                   ],
                 ),
               ),
