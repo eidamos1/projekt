@@ -88,13 +88,14 @@ class _HabitsPageState extends State<HabitsPage> {
       context: context,
       builder: (context) => TaskFormDialog(
         existingHabit: h,
-        onSubmit: (title, type, cfg) async {
+        onSubmit: (title, type, cfg, categories) async {
           await _habitService.updateHabitAndRegenerate(
             habitId: h.id,
             title: title,
             type: type,
             recurrence: cfg?.recurrence,
             customDays: cfg?.customDays,
+            categories: categories,
           );
         },
       ),

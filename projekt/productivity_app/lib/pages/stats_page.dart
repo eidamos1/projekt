@@ -6,6 +6,7 @@ import '../services/task_service.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
+import '../constants/task_categories.dart';
 import '../utils/context_extensions.dart';
 import '../utils/date_helpers.dart';
 import '../widgets/neo_bottom_nav.dart';
@@ -83,6 +84,20 @@ class _StatsPageState extends State<StatsPage> {
         _allTasks.where((t) => t.type == TaskType.weekly).length;
     final monthlyCount =
         _allTasks.where((t) => t.type == TaskType.monthly).length;
+
+    // Category counts — a task with multiple categories contributes to each.
+    // Tasks with no category fall into the "Bez kategorie" bucket.
+    final categoryCounts = <String, int>{};
+    int uncategorizedCount = 0;
+    for (final t in _allTasks) {
+      if (t.categories.isEmpty) {
+        uncategorizedCount++;
+      } else {
+        for (final key in t.categories) {
+          categoryCounts[key] = (categoryCounts[key] ?? 0) + 1;
+        }
+      }
+    }
 
     final dayCount = <int, int>{};
     for (final t in completed) {
@@ -299,6 +314,55 @@ class _StatsPageState extends State<StatsPage> {
                               : Colors.black38)),
                 ),
               ),
+
+            // Category breakdown
+            if (categoryCounts.isNotEmpty || uncategorizedCount > 0) ...[
+              const SizedBox(height: NeoTheme.spaceLg),
+              const Text('Pomer kategorii', style: NeoTheme.subhead),
+              const SizedBox(height: NeoTheme.spaceSm),
+              Container(
+                decoration: NeoTheme.cardDecoration(isDark: isDark),
+                padding: const EdgeInsets.all(NeoTheme.spaceMd),
+                child: SizedBox(
+                  height: 220,
+                  child: PieChart(
+                    PieChartData(
+                      sections: [
+                        ...categoryCounts.entries.map((e) {
+                          final cat = Categories.byKey(e.key);
+                          if (cat == null) return null;
+                          return PieChartSectionData(
+                            value: e.value.toDouble(),
+                            title: '${cat.label}\n${e.value}',
+                            color: cat.color,
+                            radius: 60,
+                            titleStyle: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          );
+                        }).whereType<PieChartSectionData>(),
+                        if (uncategorizedCount > 0)
+                          PieChartSectionData(
+                            value: uncategorizedCount.toDouble(),
+                            title: 'Bez kat.\n$uncategorizedCount',
+                            color: const Color(0xFF8888AA),
+                            radius: 60,
+                            titleStyle: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                      ],
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 30,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
           ),

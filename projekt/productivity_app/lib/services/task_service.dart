@@ -70,6 +70,7 @@ class TaskService {
     required TaskType type,
     required String date,
     String? habitId,
+    List<String> categories = const [],
   }) async {
     final rewards = GameConfig.rewardsFor(type);
     final random = Random();
@@ -84,6 +85,7 @@ class TaskService {
       coins: rewards.coins,
       code: code,
       habitId: habitId,
+      categories: categories,
     ).toMap();
 
     final docRef = await _tasksCollection.add(taskMap);
@@ -98,8 +100,14 @@ class TaskService {
     required String title,
     required TaskType type,
     required String date,
+    List<String> categories = const [],
   }) async {
-    await _createTaskInstance(title: title, type: type, date: date);
+    await _createTaskInstance(
+      title: title,
+      type: type,
+      date: date,
+      categories: categories,
+    );
   }
 
   Future<String> createHabitInstance({
@@ -107,17 +115,19 @@ class TaskService {
     required TaskType type,
     required String date,
     required String habitId,
+    List<String> categories = const [],
   }) {
     return _createTaskInstance(
       title: title,
       type: type,
       date: date,
       habitId: habitId,
+      categories: categories,
     );
   }
 
   Future<void> updateTask(String taskId,
-      {String? title, TaskType? type}) async {
+      {String? title, TaskType? type, List<String>? categories}) async {
     final updates = <String, dynamic>{};
     if (title != null) updates['title'] = title;
     if (type != null) {
@@ -126,6 +136,7 @@ class TaskService {
       updates['xp'] = rewards.xp;
       updates['coins'] = rewards.coins;
     }
+    if (categories != null) updates['categories'] = categories;
     if (updates.isNotEmpty) {
       await _tasksCollection.doc(taskId).update(updates);
     }

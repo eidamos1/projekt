@@ -4,6 +4,7 @@ import '../../models/habit.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/neo_theme.dart';
 import '../../constants/strings.dart';
+import '../../constants/task_categories.dart';
 import '../../utils/context_extensions.dart';
 import '../neo_pressable.dart';
 
@@ -16,8 +17,12 @@ class HabitConfig {
 class TaskFormDialog extends StatefulWidget {
   final Task? existingTask;
   final Habit? existingHabit;
-  final void Function(String title, TaskType type, HabitConfig? habitConfig)
-      onSubmit;
+  final void Function(
+    String title,
+    TaskType type,
+    HabitConfig? habitConfig,
+    List<String> categories,
+  ) onSubmit;
 
   const TaskFormDialog({
     super.key,
@@ -37,6 +42,7 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
   bool _recurring = false;
   RecurrenceType _recurrence = RecurrenceType.everyday;
   final Set<int> _customDays = {};
+  final Set<String> _selectedCategories = {};
 
   bool get _isEdit =>
       widget.existingTask != null || widget.existingHabit != null;
@@ -53,6 +59,9 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
       _recurring = true;
       _recurrence = widget.existingHabit!.recurrence;
       _customDays.addAll(widget.existingHabit!.customDays);
+      _selectedCategories.addAll(widget.existingHabit!.categories);
+    } else if (widget.existingTask != null) {
+      _selectedCategories.addAll(widget.existingTask!.categories);
     }
   }
 
@@ -198,6 +207,41 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                         TextStyle(color: AppColors.neonPink, fontSize: 12)),
               ],
             ],
+            const SizedBox(height: NeoTheme.spaceMd),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(Strings.categoriesLabel, style: NeoTheme.caption),
+            ),
+            const SizedBox(height: NeoTheme.spaceSm),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: Categories.all.map((cat) {
+                final selected = _selectedCategories.contains(cat.key);
+                return FilterChip(
+                  label: Text(cat.label),
+                  avatar: Icon(cat.icon, size: 16, color: cat.color),
+                  selected: selected,
+                  showCheckmark: false,
+                  selectedColor: cat.color.withValues(alpha: 0.18),
+                  side: BorderSide(
+                    color: selected
+                        ? cat.color
+                        : (isDark
+                            ? AppColors.borderSubtle
+                            : AppColors.borderBold),
+                    width: NeoTheme.borderWidthThin,
+                  ),
+                  onSelected: (sel) => setState(() {
+                    if (sel) {
+                      _selectedCategories.add(cat.key);
+                    } else {
+                      _selectedCategories.remove(cat.key);
+                    }
+                  }),
+                );
+              }).toList(),
+            ),
           ],
         ),
       ),
@@ -223,7 +267,12 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                 customDays: _customDays.toList()..sort(),
               );
             }
-            widget.onSubmit(title, _selectedType, cfg);
+            widget.onSubmit(
+              title,
+              _selectedType,
+              cfg,
+              _selectedCategories.toList()..sort(),
+            );
           },
           child: Container(
             decoration: NeoTheme.buttonDecoration(

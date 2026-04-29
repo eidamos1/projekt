@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../models/task.dart';
+import '../constants/task_categories.dart';
 import '../widgets/task_card.dart';
 import '../widgets/xp_bar.dart';
 import '../widgets/empty_state.dart';
@@ -43,6 +44,13 @@ class _CalendarPageState extends State<CalendarPage> {
   /// Map from date string (yyyy-MM-dd) to list of task types for that day.
   Map<String, List<TaskType>> _tasksByDate = {};
   StreamSubscription<List<Task>>? _tasksSubscription;
+
+  // Filter state — null type means "all types"; empty categories set means "all".
+  TaskType? _filterType;
+  final Set<String> _filterCategories = {};
+
+  int get _activeFilterCount =>
+      (_filterType != null ? 1 : 0) + _filterCategories.length;
 
   @override
   void initState() {
@@ -138,13 +146,14 @@ class _CalendarPageState extends State<CalendarPage> {
     showDialog(
       context: context,
       builder: (context) => TaskFormDialog(
-        onSubmit: (title, type, cfg) async {
+        onSubmit: (title, type, cfg, categories) async {
           if (cfg != null) {
             await _habitService.createHabit(
               title: title,
               type: type,
               recurrence: cfg.recurrence,
               customDays: cfg.customDays,
+              categories: categories,
             );
           } else {
             _taskService.createTask(
@@ -152,6 +161,7 @@ class _CalendarPageState extends State<CalendarPage> {
               type: type,
               date: formatDate(DateTime(
                   _selectedDay.year, _selectedDay.month, _selectedDay.day)),
+              categories: categories,
             );
           }
         },
@@ -164,7 +174,7 @@ class _CalendarPageState extends State<CalendarPage> {
       context: context,
       builder: (context) => TaskFormDialog(
         existingTask: task,
-        onSubmit: (title, type, cfg) async {
+        onSubmit: (title, type, cfg, categories) async {
           if (task.habitId != null) {
             final choice = await _askHabitEditChoice();
             if (choice == null) return;
@@ -173,15 +183,154 @@ class _CalendarPageState extends State<CalendarPage> {
                 habitId: task.habitId!,
                 title: title,
                 type: type,
+                categories: categories,
               );
             } else {
-              _taskService.updateTask(task.id, title: title, type: type);
+              _taskService.updateTask(task.id,
+                  title: title, type: type, categories: categories);
             }
           } else {
-            _taskService.updateTask(task.id, title: title, type: type);
+            _taskService.updateTask(task.id,
+                title: title, type: type, categories: categories);
           }
         },
       ),
+    );
+  }
+
+  Future<void> _showFilterSheet() async {
+    await showNeoBottomSheet<void>(
+      context: context,
+      children: [
+        StatefulBuilder(builder: (context, setSheetState) {
+          final isDark = context.isDark;
+          void setBoth(VoidCallback fn) {
+            setSheetState(fn);
+            setState(fn);
+          }
+
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(
+              NeoTheme.spaceMd,
+              NeoTheme.spaceSm,
+              NeoTheme.spaceMd,
+              NeoTheme.spaceLg,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(Strings.filterByType, style: NeoTheme.caption),
+                const SizedBox(height: NeoTheme.spaceSm),
+                Wrap(
+                  spacing: 6,
+                  children: [
+                    _typeFilterChip(null, Strings.filterAll, setBoth, isDark),
+                    _typeFilterChip(
+                        TaskType.daily, Strings.typeDaily, setBoth, isDark),
+                    _typeFilterChip(
+                        TaskType.weekly, Strings.typeWeekly, setBoth, isDark),
+                    _typeFilterChip(
+                        TaskType.monthly, Strings.typeMonthly, setBoth, isDark),
+                  ],
+                ),
+                const SizedBox(height: NeoTheme.spaceMd),
+                Text(Strings.filterByCategory, style: NeoTheme.caption),
+                const SizedBox(height: NeoTheme.spaceSm),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: Categories.all.map((cat) {
+                    final selected = _filterCategories.contains(cat.key);
+                    return FilterChip(
+                      label: Text(cat.label),
+                      avatar: Icon(cat.icon, size: 16, color: cat.color),
+                      selected: selected,
+                      showCheckmark: false,
+                      selectedColor: cat.color.withValues(alpha: 0.18),
+                      side: BorderSide(
+                        color: selected
+                            ? cat.color
+                            : (isDark
+                                ? AppColors.borderSubtle
+                                : AppColors.borderBold),
+                        width: NeoTheme.borderWidthThin,
+                      ),
+                      onSelected: (sel) => setBoth(() {
+                        if (sel) {
+                          _filterCategories.add(cat.key);
+                        } else {
+                          _filterCategories.remove(cat.key);
+                        }
+                      }),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: NeoTheme.spaceMd),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _activeFilterCount == 0
+                            ? null
+                            : () => setBoth(() {
+                                  _filterType = null;
+                                  _filterCategories.clear();
+                                }),
+                        child: const Text('Vymazat'),
+                      ),
+                    ),
+                    const SizedBox(width: NeoTheme.spaceSm),
+                    Expanded(
+                      child: NeoPressable(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          decoration: NeoTheme.buttonDecoration(
+                            backgroundColor: context.primaryColor,
+                            borderColor: Colors.white,
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 10),
+                            child: Center(
+                              child: Text('Hotovo',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w700,
+                                  )),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _typeFilterChip(
+    TaskType? value,
+    String label,
+    void Function(VoidCallback) setBoth,
+    bool isDark,
+  ) {
+    final selected = _filterType == value;
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      showCheckmark: false,
+      selectedColor: context.primaryColor.withValues(alpha: 0.2),
+      side: BorderSide(
+        color: selected
+            ? context.primaryColor
+            : (isDark ? AppColors.borderSubtle : AppColors.borderBold),
+        width: NeoTheme.borderWidthThin,
+      ),
+      onSelected: (_) => setBoth(() => _filterType = value),
     );
   }
 
@@ -454,9 +603,9 @@ class _CalendarPageState extends State<CalendarPage> {
                   ),
                 ),
               ),
-              // Date label
+              // Date label + filter button
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                padding: const EdgeInsets.fromLTRB(20, 12, 12, 4),
                 child: Row(
                   children: [
                     Container(
@@ -478,6 +627,29 @@ class _CalendarPageState extends State<CalendarPage> {
                         color: isDark ? AppColors.textSecondary : Colors.black54,
                       ),
                     ),
+                    const Spacer(),
+                    IconButton(
+                      tooltip: 'Filtr',
+                      onPressed: _showFilterSheet,
+                      icon: Badge(
+                        isLabelVisible: _activeFilterCount > 0,
+                        backgroundColor: context.primaryColor,
+                        textColor: Colors.black,
+                        label: Text('$_activeFilterCount',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            )),
+                        child: Icon(
+                          Icons.filter_list_rounded,
+                          color: _activeFilterCount > 0
+                              ? context.primaryColor
+                              : (isDark
+                                  ? AppColors.textSecondary
+                                  : Colors.black54),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -490,12 +662,31 @@ class _CalendarPageState extends State<CalendarPage> {
                     if (!snapshot.hasData) {
                       return const NeoSkeletonList(count: 3, itemHeight: 110);
                     }
-                    final tasks = snapshot.data!;
-                    if (tasks.isEmpty) {
+                    final allTasks = snapshot.data!;
+                    final tasks = allTasks.where((t) {
+                      if (_filterType != null && t.type != _filterType) {
+                        return false;
+                      }
+                      if (_filterCategories.isNotEmpty &&
+                          !t.categories
+                              .any(_filterCategories.contains)) {
+                        return false;
+                      }
+                      return true;
+                    }).toList();
+
+                    if (allTasks.isEmpty) {
                       return const EmptyState(
                         icon: Icons.assignment_outlined,
                         title: Strings.noTasksTitle,
                         subtitle: Strings.noTasksSubtitle,
+                      );
+                    }
+                    if (tasks.isEmpty) {
+                      return const EmptyState(
+                        icon: Icons.filter_list_off_rounded,
+                        title: 'Filtr nic neprusti.',
+                        subtitle: 'Zkus jine kategorie nebo typ.',
                       );
                     }
 

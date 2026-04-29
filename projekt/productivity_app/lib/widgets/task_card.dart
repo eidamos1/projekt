@@ -8,6 +8,7 @@ import '../services/image_service.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
+import '../constants/task_categories.dart';
 import '../utils/context_extensions.dart';
 import '../utils/ui_helpers.dart';
 import 'neo_bottom_sheet.dart';
@@ -382,6 +383,47 @@ class _TaskCardState extends State<TaskCard>
                       ),
                     ],
                   ),
+
+                  // Category chips
+                  if (widget.task.categories.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: widget.task.categories
+                          .map((key) => Categories.byKey(key))
+                          .whereType<TaskCategory>()
+                          .map((cat) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(
+                                NeoTheme.radiusSmall),
+                            border: Border.all(
+                              color: cat.color,
+                              width: NeoTheme.borderWidthThin,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(cat.icon, size: 11, color: cat.color),
+                              const SizedBox(width: 3),
+                              Text(
+                                cat.label,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: cat.color,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
 
                   // Status badges
                   if (isFullyCompleted)

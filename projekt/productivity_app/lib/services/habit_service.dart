@@ -42,6 +42,7 @@ class HabitService {
     required TaskType type,
     required RecurrenceType recurrence,
     List<int> customDays = const [],
+    List<String> categories = const [],
   }) async {
     final startDate = todayString();
     final habit = Habit(
@@ -52,6 +53,7 @@ class HabitService {
       customDays: customDays,
       startDate: startDate,
       active: true,
+      categories: categories,
     );
     final docRef = await _habitsCollection.add({
       ...habit.toMap(),
@@ -82,6 +84,7 @@ class HabitService {
         type: habit.type,
         date: dateStr,
         habitId: habitId,
+        categories: habit.categories,
       );
     }
   }
@@ -135,6 +138,7 @@ class HabitService {
     TaskType? type,
     RecurrenceType? recurrence,
     List<int>? customDays,
+    List<String>? categories,
   }) async {
     final doc = await _habitsCollection.doc(habitId).get();
     if (!doc.exists) return;
@@ -147,6 +151,7 @@ class HabitService {
       updates['recurrence'] = recurrence.toString().split('.').last;
     }
     if (customDays != null) updates['customDays'] = customDays;
+    if (categories != null) updates['categories'] = categories;
     if (updates.isNotEmpty) {
       await _habitsCollection.doc(habitId).update(updates);
     }
@@ -157,6 +162,7 @@ class HabitService {
       type: type,
       recurrence: recurrence,
       customDays: customDays,
+      categories: categories,
     );
     await _generateInstancesForHabit(habitId, fresh, days: 30);
   }

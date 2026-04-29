@@ -96,6 +96,13 @@ abstract final class Strings {
   static const appName = 'MOTIVATOR';
   static const tagline = 'Potvrzeno = odmeneno.';
 
+  // Categories
+  static const categoriesLabel = 'KATEGORIE';
+  static const filterAll = 'Vse';
+  static const filterByType = 'Typ';
+  static const filterByCategory = 'Kategorie';
+  static const noCategoryLabel = 'Bez kategorie';
+
   // Login
   static const login = 'Prihlaseni';
   static const register = 'Registrace';

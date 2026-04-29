@@ -14,6 +14,8 @@ class Habit {
   final int streak;
   final int longestStreak;
   final String? lastCompletedDate;
+  /// Category keys inherited by every generated task instance.
+  final List<String> categories;
 
   Habit({
     required this.id,
@@ -26,6 +28,7 @@ class Habit {
     this.streak = 0,
     this.longestStreak = 0,
     this.lastCompletedDate,
+    this.categories = const [],
   });
 
   factory Habit.fromMap(String id, Map<String, dynamic> data) {
@@ -45,6 +48,7 @@ class Habit {
       streak: data['streak'] ?? 0,
       longestStreak: data['longestStreak'] ?? 0,
       lastCompletedDate: data['lastCompletedDate'],
+      categories: (data['categories'] as List?)?.cast<String>() ?? const [],
     );
   }
 
@@ -59,6 +63,7 @@ class Habit {
       'streak': streak,
       'longestStreak': longestStreak,
       'lastCompletedDate': lastCompletedDate,
+      'categories': categories,
     };
   }
 
@@ -99,6 +104,7 @@ class Habit {
     int? streak,
     int? longestStreak,
     String? lastCompletedDate,
+    List<String>? categories,
   }) {
     return Habit(
       id: id,
@@ -111,6 +117,7 @@ class Habit {
       streak: streak ?? this.streak,
       longestStreak: longestStreak ?? this.longestStreak,
       lastCompletedDate: lastCompletedDate ?? this.lastCompletedDate,
+      categories: categories ?? this.categories,
     );
   }
 }

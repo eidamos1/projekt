@@ -15,6 +15,8 @@ class Task {
   final bool rejected;
   final String? rejectionReason;
   final String? habitId;
+  /// Category keys (see Categories.byKey). Empty list = uncategorized.
+  final List<String> categories;
 
   Task({
     required this.id,
@@ -29,6 +31,7 @@ class Task {
     this.rejected = false,
     this.rejectionReason,
     this.habitId,
+    this.categories = const [],
   });
 
   factory Task.fromMap(String id, Map<String, dynamic> data) {
@@ -47,6 +50,7 @@ class Task {
       rejected: data['rejected'] ?? false,
       rejectionReason: data['rejectionReason'],
       habitId: data['habitId'],
+      categories: (data['categories'] as List?)?.cast<String>() ?? const [],
     );
   }
 
@@ -63,6 +67,7 @@ class Task {
       'rejected': rejected,
       'rejectionReason': rejectionReason,
       'habitId': habitId,
+      'categories': categories,
     };
   }
 

@@ -139,6 +139,26 @@ void main() {
       expect(restored.code, original.code);
       expect(restored.completed, original.completed);
     });
+
+    test('categories default to empty list when missing', () {
+      final task = Task.fromMap('id', {'title': 't'});
+      expect(task.categories, isEmpty);
+    });
+
+    test('categories survive fromMap/toMap roundtrip', () {
+      final original = Task(
+        id: 'cat',
+        title: 'Categorized',
+        type: TaskType.daily,
+        date: '2026-04-29',
+        xp: 10,
+        coins: 5,
+        code: '111222',
+        categories: const ['work', 'personal'],
+      );
+      final restored = Task.fromMap('cat', original.toMap());
+      expect(restored.categories, ['work', 'personal']);
+    });
   });
 
   group('typeLabel', () {
