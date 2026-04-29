@@ -8,6 +8,7 @@ import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
 import '../utils/context_extensions.dart';
 import '../utils/date_helpers.dart';
+import '../widgets/neo_bottom_nav.dart';
 import '../widgets/responsive_layout.dart';
 
 class StatsPage extends StatefulWidget {
@@ -48,6 +49,7 @@ class _StatsPageState extends State<StatsPage> {
       return Scaffold(
         appBar: AppBar(title: const Text(Strings.stats)),
         body: const Center(child: CircularProgressIndicator()),
+        bottomNavigationBar: const NeoBottomNav(currentIndex: 2),
       );
     }
 
@@ -301,6 +303,7 @@ class _StatsPageState extends State<StatsPage> {
         ),
           ),
         ),
+      bottomNavigationBar: const NeoBottomNav(currentIndex: 2),
     );
   }
 }

@@ -10,6 +10,7 @@ import '../constants/layout.dart';
 import '../constants/strings.dart';
 import '../utils/context_extensions.dart';
 import '../utils/ui_helpers.dart';
+import '../widgets/neo_bottom_nav.dart';
 import '../widgets/responsive_layout.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -229,6 +230,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ],
         ),
       ),
+      bottomNavigationBar: const NeoBottomNav(currentIndex: 4),
     );
   }
 }

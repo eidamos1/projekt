@@ -21,6 +21,7 @@ import '../utils/date_helpers.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/stats_sidebar.dart';
 import '../widgets/neo_bottom_sheet.dart';
+import '../widgets/neo_bottom_nav.dart';
 import '../widgets/neo_pressable.dart';
 import '../widgets/neo_skeleton.dart';
 
@@ -42,8 +43,6 @@ class _CalendarPageState extends State<CalendarPage> {
   /// Map from date string (yyyy-MM-dd) to list of task types for that day.
   Map<String, List<TaskType>> _tasksByDate = {};
   StreamSubscription<List<Task>>? _tasksSubscription;
-  StreamSubscription<int>? _unreadSubscription;
-  int _unreadCount = 0;
 
   @override
   void initState() {
@@ -58,25 +57,15 @@ class _CalendarPageState extends State<CalendarPage> {
       }
       if (mounted) setState(() => _tasksByDate = map);
     });
-    _unreadSubscription =
-        _taskService.unreadNotificationCount().listen((value) {
-      if (mounted && value != _unreadCount) {
-        setState(() => _unreadCount = value);
-      }
-    });
   }
 
   @override
   void dispose() {
     _tasksSubscription?.cancel();
-    _unreadSubscription?.cancel();
     super.dispose();
   }
 
   List<Widget> _buildActions(BuildContext context, int streak) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isNarrow = screenWidth < 500;
-
     final streakWidget = streak > 0
         ? Container(
             margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -112,103 +101,12 @@ class _CalendarPageState extends State<CalendarPage> {
           )
         : null;
 
-    final notifButton = IconButton(
-      icon: Badge(
-        isLabelVisible: _unreadCount > 0,
-        backgroundColor: AppColors.neonPink,
-        label: Text('$_unreadCount',
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-        child: const Icon(Icons.notifications_outlined),
-      ),
-      tooltip: Strings.notifications,
-      onPressed: () => Navigator.pushNamed(context, '/notifications'),
-    );
-
-    if (isNarrow) {
-      return [
-        if (streakWidget != null) streakWidget,
-        notifButton,
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
-          onSelected: (value) async {
-            switch (value) {
-              case 'stats':
-                Navigator.pushNamed(context, '/stats');
-              case 'confirm':
-                Navigator.pushNamed(context, '/confirm');
-              case 'habits':
-                Navigator.pushNamed(context, '/habits');
-              case 'settings':
-                Navigator.pushNamed(context, '/settings');
-              case 'logout':
-                await _auth.signOut();
-                if (!mounted) return;
-                Navigator.pushReplacementNamed(context, '/');
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-                value: 'stats',
-                child: ListTile(
-                  leading: const Icon(Icons.bar_chart),
-                  title: const Text(Strings.stats),
-                  contentPadding: EdgeInsets.zero,
-                )),
-            PopupMenuItem(
-                value: 'confirm',
-                child: ListTile(
-                  leading: const Icon(Icons.task_alt),
-                  title: const Text(Strings.confirmCode),
-                  contentPadding: EdgeInsets.zero,
-                )),
-            PopupMenuItem(
-                value: 'habits',
-                child: ListTile(
-                  leading: const Icon(Icons.autorenew_rounded),
-                  title: const Text(Strings.habitsMine),
-                  contentPadding: EdgeInsets.zero,
-                )),
-            PopupMenuItem(
-                value: 'settings',
-                child: ListTile(
-                  leading: const Icon(Icons.settings),
-                  title: const Text(Strings.settings),
-                  contentPadding: EdgeInsets.zero,
-                )),
-            PopupMenuItem(
-                value: 'logout',
-                child: ListTile(
-                  leading: const Icon(Icons.logout),
-                  title: const Text(Strings.logout),
-                  contentPadding: EdgeInsets.zero,
-                )),
-          ],
-        ),
-      ];
-    }
-
     return [
       if (streakWidget != null) streakWidget,
-      notifButton,
-      IconButton(
-        icon: const Icon(Icons.bar_chart_rounded),
-        tooltip: Strings.stats,
-        onPressed: () => Navigator.pushNamed(context, '/stats'),
-      ),
-      IconButton(
-        icon: const Icon(Icons.autorenew_rounded),
-        tooltip: Strings.habitsMine,
-        onPressed: () => Navigator.pushNamed(context, '/habits'),
-      ),
       IconButton(
         icon: const Icon(Icons.task_alt_rounded),
         tooltip: Strings.confirmCode,
         onPressed: () => Navigator.pushNamed(context, '/confirm'),
-      ),
-      IconButton(
-        icon: const Icon(Icons.settings_outlined),
-        tooltip: Strings.settings,
-        onPressed: () => Navigator.pushNamed(context, '/settings'),
       ),
       IconButton(
         icon: const Icon(Icons.logout_rounded),
@@ -647,6 +545,7 @@ class _CalendarPageState extends State<CalendarPage> {
                         color: Colors.black, size: 30),
                   ),
                 ),
+          bottomNavigationBar: const NeoBottomNav(currentIndex: 0),
         );
       },
     );

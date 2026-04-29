@@ -4,6 +4,7 @@ import '../models/habit.dart';
 import '../models/task.dart';
 import '../services/habit_service.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/neo_bottom_nav.dart';
 import '../widgets/neo_bottom_sheet.dart';
 import '../widgets/neo_skeleton.dart';
 import '../widgets/dialogs/task_form_dialog.dart';
@@ -208,6 +209,7 @@ class _HabitsPageState extends State<HabitsPage> {
           );
         },
       ),
+      bottomNavigationBar: const NeoBottomNav(currentIndex: 1),
     );
   }
 }

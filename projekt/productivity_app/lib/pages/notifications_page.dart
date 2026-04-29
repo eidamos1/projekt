@@ -5,6 +5,7 @@ import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
 import '../utils/context_extensions.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/neo_bottom_nav.dart';
 import '../widgets/neo_skeleton.dart';
 import '../widgets/responsive_layout.dart';
 
@@ -168,6 +169,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         },
         ),
       ),
+      bottomNavigationBar: const NeoBottomNav(currentIndex: 3),
     );
   }
 }
