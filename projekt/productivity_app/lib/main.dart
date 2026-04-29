@@ -224,8 +224,11 @@ class _MyAppState extends State<MyApp> {
           foregroundColor: Colors.white,
           elevation: 0,
           scrolledUnderElevation: 0,
-          shape: const Border(
-            bottom: BorderSide(color: AppColors.borderSubtle, width: NeoTheme.borderWidth),
+          shape: Border(
+            bottom: BorderSide(
+              color: themeProvider.primaryColor,
+              width: NeoTheme.borderWidth,
+            ),
           ),
         ),
         floatingActionButtonTheme: FloatingActionButtonThemeData(

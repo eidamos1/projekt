@@ -42,12 +42,12 @@ abstract final class Strings {
   static const taskTypeLabel = 'Typ ukolu';
   static const taskCodeLabel = 'Kod ukolu';
 
-  // Empty states
-  static const noTasksTitle = 'Zadne ukoly pro tento den';
-  static const noTasksSubtitle = 'Klikni na + a pridej novy ukol!';
-  static const noNotifications = 'Zadne notifikace';
+  // Empty states — short, confident voice (no exclamation marks, no "klikni na").
+  static const noTasksTitle = 'Cisty stol.';
+  static const noTasksSubtitle = 'Pridej ukol, vydelej XP.';
+  static const noNotifications = 'Klid. Nikdo se neozyva.';
   static const expiringNotification = 'Ukol vyprsí zitra!';
-  static const noStatsData = 'Zadna data k zobrazeni';
+  static const noStatsData = 'Zatim nuly. Splnis ukol, prijdou cisla.';
 
   // Snackbar messages
   static const photoSaved = 'Dukaz ulozen!';
@@ -166,8 +166,8 @@ abstract final class Strings {
   static const deleteHabit = 'Smazat navyk';
   static const editHabit = 'Upravit navyk';
   static const deleteHabitConfirm = 'Smaze vsechny budouci instance. Minule zustanou.';
-  static const noHabitsTitle = 'Jeste nemas zadne navyky';
-  static const noHabitsSubtitle = 'Pridej jeden pri tvorbe ukolu.';
+  static const noHabitsTitle = 'Zadne navyky.';
+  static const noHabitsSubtitle = 'Pridej jeden v dialogu noveho ukolu.';
   static const rewardTierWarning = 'Pozor: casta frekvence + mesicni tier = hodne XP.';
 
   static const weekdayShort = {

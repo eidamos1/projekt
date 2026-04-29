@@ -29,30 +29,43 @@ class NeoPressable extends StatefulWidget {
 
 class _NeoPressableState extends State<NeoPressable> {
   bool _pressed = false;
+  bool _hovered = false;
 
-  void _set(bool v) {
+  void _setPressed(bool v) {
     if (_pressed != v) setState(() => _pressed = v);
+  }
+
+  void _setHovered(bool v) {
+    if (_hovered != v) setState(() => _hovered = v);
   }
 
   @override
   Widget build(BuildContext context) {
     final disabled = widget.onTap == null && widget.onLongPress == null;
-    return GestureDetector(
-      behavior: widget.behavior,
-      onTapDown: disabled ? null : (_) => _set(true),
-      onTapUp: disabled ? null : (_) => _set(false),
-      onTapCancel: disabled ? null : () => _set(false),
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0, end: _pressed ? 1.0 : 0.0),
-        duration: widget.duration,
-        curve: Curves.easeOut,
-        builder: (context, t, child) => Transform.translate(
-          offset: widget.pressOffset * t,
-          child: child,
+    // t: -1 = lifted on hover, 0 = at rest, 1 = pressed in
+    final double t = _pressed ? 1.0 : (_hovered ? -1.0 : 0.0);
+    final hoverScale = _hovered && !_pressed ? 0.5 : 1.0;
+    return MouseRegion(
+      cursor: disabled ? MouseCursor.defer : SystemMouseCursors.click,
+      onEnter: disabled ? null : (_) => _setHovered(true),
+      onExit: disabled ? null : (_) => _setHovered(false),
+      child: GestureDetector(
+        behavior: widget.behavior,
+        onTapDown: disabled ? null : (_) => _setPressed(true),
+        onTapUp: disabled ? null : (_) => _setPressed(false),
+        onTapCancel: disabled ? null : () => _setPressed(false),
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: t * hoverScale),
+          duration: widget.duration,
+          curve: Curves.easeOut,
+          builder: (context, value, child) => Transform.translate(
+            offset: widget.pressOffset * value,
+            child: child,
+          ),
+          child: widget.child,
         ),
-        child: widget.child,
       ),
     );
   }

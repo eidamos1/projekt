@@ -18,49 +18,56 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
+    final accentColor = context.primaryColor;
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.transparent,
-              border: Border.all(
-                color: isDark ? AppColors.borderSubtle : AppColors.borderBold,
-                width: NeoTheme.borderWidth,
+      child: Padding(
+        padding: const EdgeInsets.all(NeoTheme.spaceLg),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 84,
+              height: 84,
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
+                border: Border.all(
+                  color: accentColor,
+                  width: NeoTheme.borderWidth,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: accentColor.withValues(alpha: 0.25),
+                    offset: NeoTheme.shadowOffset,
+                    blurRadius: 0,
+                  ),
+                ],
               ),
+              child: Icon(icon, size: 40, color: accentColor),
             ),
-            child: Icon(
-              icon,
-              size: 36,
-              color: isDark ? AppColors.textSecondary : Colors.black26,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? AppColors.textSecondary : Colors.black38,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-            ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: NeoTheme.spaceLg),
             Text(
-              subtitle!,
-              style: TextStyle(
-                color: isDark ? Colors.white24 : Colors.black26,
-                fontSize: 13,
+              title,
+              textAlign: TextAlign.center,
+              style: NeoTheme.headline.copyWith(
+                fontSize: 20,
+                color: isDark ? AppColors.textPrimary : Colors.black87,
               ),
             ),
+            if (subtitle != null) ...[
+              const SizedBox(height: NeoTheme.spaceXs),
+              Text(
+                subtitle!,
+                textAlign: TextAlign.center,
+                style: NeoTheme.body.copyWith(
+                  color:
+                      isDark ? AppColors.textSecondary : Colors.black54,
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
