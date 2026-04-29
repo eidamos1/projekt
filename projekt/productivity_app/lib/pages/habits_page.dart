@@ -5,6 +5,7 @@ import '../models/task.dart';
 import '../services/habit_service.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/neo_bottom_sheet.dart';
+import '../widgets/neo_skeleton.dart';
 import '../widgets/dialogs/task_form_dialog.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
@@ -133,7 +134,7 @@ class _HabitsPageState extends State<HabitsPage> {
         stream: _habitService.habitsStream(),
         builder: (context, snap) {
           if (!snap.hasData) {
-            return const Center(child: CircularProgressIndicator());
+            return const NeoSkeletonList(count: 3, itemHeight: 96);
           }
           final habits = snap.data!;
           if (habits.isEmpty) {

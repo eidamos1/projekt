@@ -22,6 +22,7 @@ import '../widgets/responsive_layout.dart';
 import '../widgets/stats_sidebar.dart';
 import '../widgets/neo_bottom_sheet.dart';
 import '../widgets/neo_pressable.dart';
+import '../widgets/neo_skeleton.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -589,12 +590,7 @@ class _CalendarPageState extends State<CalendarPage> {
                       _taskService.tasksForDate(formatDate(_selectedDay)),
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
-                      return const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.neonCyan,
-                          strokeWidth: 3,
-                        ),
-                      );
+                      return const NeoSkeletonList(count: 3, itemHeight: 110);
                     }
                     final tasks = snapshot.data!;
                     if (tasks.isEmpty) {

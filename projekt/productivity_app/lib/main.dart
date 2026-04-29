@@ -168,6 +168,13 @@ class _MyAppState extends State<MyApp> {
         ).copyWith(primary: themeProvider.primaryColor),
         scaffoldBackgroundColor: AppColors.scaffoldLight,
         cardColor: AppColors.cardLight,
+        pageTransitionsTheme: const PageTransitionsTheme(builders: {
+          TargetPlatform.android: _NeoPageTransitionsBuilder(),
+          TargetPlatform.iOS: _NeoPageTransitionsBuilder(),
+          TargetPlatform.linux: _NeoPageTransitionsBuilder(),
+          TargetPlatform.macOS: _NeoPageTransitionsBuilder(),
+          TargetPlatform.windows: _NeoPageTransitionsBuilder(),
+        }),
         appBarTheme: AppBarTheme(
           backgroundColor: themeProvider.primaryColor,
           foregroundColor: Colors.white,
@@ -219,6 +226,13 @@ class _MyAppState extends State<MyApp> {
         ).copyWith(primary: themeProvider.primaryColor),
         scaffoldBackgroundColor: AppColors.scaffoldDark,
         cardColor: AppColors.cardDark,
+        pageTransitionsTheme: const PageTransitionsTheme(builders: {
+          TargetPlatform.android: _NeoPageTransitionsBuilder(),
+          TargetPlatform.iOS: _NeoPageTransitionsBuilder(),
+          TargetPlatform.linux: _NeoPageTransitionsBuilder(),
+          TargetPlatform.macOS: _NeoPageTransitionsBuilder(),
+          TargetPlatform.windows: _NeoPageTransitionsBuilder(),
+        }),
         appBarTheme: AppBarTheme(
           backgroundColor: AppColors.cardDark,
           foregroundColor: Colors.white,
@@ -292,6 +306,35 @@ class _MyAppState extends State<MyApp> {
         '/notifications': (context) => const NotificationsPage(),
         '/habits': (context) => const HabitsPage(),
       },
+    );
+  }
+}
+
+/// Snappy slide-from-right transition (180ms, easeOutCubic) used on every
+/// platform — Material's default fade-and-slide felt too soft for the neo
+/// aesthetic, and Flutter web has no transition by default.
+class _NeoPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _NeoPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0.05, 0),
+        end: Offset.zero,
+      ).animate(curved),
+      child: FadeTransition(opacity: curved, child: child),
     );
   }
 }

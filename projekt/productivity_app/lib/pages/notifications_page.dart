@@ -5,6 +5,7 @@ import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
 import '../utils/context_extensions.dart';
 import '../widgets/empty_state.dart';
+import '../widgets/neo_skeleton.dart';
 import '../widgets/responsive_layout.dart';
 
 class NotificationsPage extends StatefulWidget {
@@ -39,8 +40,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         stream: _taskService.notificationsStream(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return const Center(
-                child: CircularProgressIndicator(color: AppColors.neonCyan));
+            return const NeoSkeletonList(count: 4, itemHeight: 80);
           }
           final notifications = snapshot.data!;
           if (notifications.isEmpty) {
