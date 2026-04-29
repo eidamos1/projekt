@@ -405,18 +405,18 @@ class _TaskCardState extends State<TaskCard>
                       child: StatusBadge(status: StatusType.pending),
                     ),
 
-                  // Photo proof
+                  // Photo proof — uniform 4:3 with cover-fit so portrait
+                  // photos don't leave letterbox bars on the sides.
                   if (_decodedImage != null) ...[
-                    const SizedBox(height: 10),
+                    const SizedBox(height: NeoTheme.spaceSm),
                     ClipRRect(
                       borderRadius:
                           BorderRadius.circular(NeoTheme.radiusButton),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxHeight: 300),
+                      child: AspectRatio(
+                        aspectRatio: NeoTheme.photoAspectRatio,
                         child: Image.memory(
                           _decodedImage!,
-                          width: double.infinity,
-                          fit: BoxFit.contain,
+                          fit: BoxFit.cover,
                           gaplessPlayback: true,
                         ),
                       ),

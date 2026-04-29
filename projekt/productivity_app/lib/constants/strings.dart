@@ -92,6 +92,10 @@ abstract final class Strings {
   static const confirmedHeadline = 'Hotovo!';
   static const confirmedSubtitle = 'Odmena byla pripsana kamaradovi.';
 
+  // Brand
+  static const appName = 'MOTIVATOR';
+  static const tagline = 'Potvrzeno = odmeneno.';
+
   // Login
   static const login = 'Prihlaseni';
   static const register = 'Registrace';

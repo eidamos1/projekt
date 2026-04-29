@@ -80,6 +80,47 @@ class _LoginPageState extends State<LoginPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            const SizedBox(height: NeoTheme.spaceXl),
+            // Brand block
+            Container(
+              decoration: NeoTheme.cardDecoration(
+                isDark: isDark,
+                borderColor: context.primaryColor,
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: NeoTheme.spaceLg,
+                vertical: NeoTheme.spaceMd,
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.bolt_rounded,
+                          color: context.primaryColor, size: 38),
+                      const SizedBox(width: NeoTheme.spaceSm),
+                      Text(
+                        Strings.appName,
+                        style: NeoTheme.display.copyWith(
+                          color: context.primaryColor,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: NeoTheme.spaceXs),
+                  Text(
+                    Strings.tagline,
+                    style: NeoTheme.caption.copyWith(
+                      color: isDark
+                          ? AppColors.textSecondary
+                          : Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: NeoTheme.spaceLg),
             if (!isLogin) ...[
               TextField(
                 controller: nicknameController,

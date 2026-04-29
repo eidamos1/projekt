@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/task_service.dart';
 import '../constants/app_colors.dart';
+import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
+import '../utils/context_extensions.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/responsive_layout.dart';
 
@@ -17,15 +19,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(Strings.notifications),
         actions: [
           TextButton(
             onPressed: () => _taskService.markAllNotificationsRead(),
-            child: const Text(Strings.readAll,
+            child: Text(Strings.readAll,
                 style: TextStyle(
-                    color: AppColors.neonGreen, fontWeight: FontWeight.w700)),
+                    color: context.primaryColor,
+                    fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -46,6 +51,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           }
 
           return ListView.builder(
+            padding: const EdgeInsets.all(NeoTheme.spaceMd),
             itemCount: notifications.length,
             itemBuilder: (context, index) {
               final notif = notifications[index];
@@ -53,57 +59,109 @@ class _NotificationsPageState extends State<NotificationsPage> {
               final isRead = notif['read'] == true;
 
               IconData icon;
-              Color iconColor;
+              Color accentColor;
               String titleText;
 
               if (type == 'confirmed') {
-                icon = Icons.check_circle;
-                iconColor = AppColors.neonGreen;
+                icon = Icons.check_circle_rounded;
+                accentColor = AppColors.neonGreen;
                 titleText = '${notif['fromNickname']} potvrdil/a ukol';
               } else if (type == 'expiring') {
-                icon = Icons.schedule;
-                iconColor = AppColors.neonOrange;
+                icon = Icons.schedule_rounded;
+                accentColor = AppColors.neonOrange;
                 titleText = Strings.expiringNotification;
               } else {
-                icon = Icons.cancel;
-                iconColor = AppColors.neonPink;
+                icon = Icons.cancel_rounded;
+                accentColor = AppColors.neonPink;
                 titleText = '${notif['fromNickname']} odmitl/a ukol';
               }
 
-              return ListTile(
-                leading: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 32,
-                ),
-                title: Text(
-                  titleText,
-                  style: TextStyle(
-                    fontWeight:
-                        isRead ? FontWeight.normal : FontWeight.bold,
-                  ),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('"${notif['taskTitle']}"'),
-                    if (type == 'rejected' && notif['message'] != null)
-                      Text('${Strings.reasonPrefix}${notif['message']}',
-                          style: const TextStyle(
-                              color: AppColors.neonPink, fontSize: 12)),
-                    Text(notif['createdAt'] ?? '',
-                        style: TextStyle(
-                            color: AppColors.textSecondary, fontSize: 11)),
-                  ],
-                ),
-                tileColor: isRead
-                    ? null
-                    : AppColors.neonGreen.withValues(alpha: 0.06),
+              return GestureDetector(
                 onTap: () {
                   if (!isRead) {
                     _taskService.markNotificationRead(notif['id']);
                   }
                 },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: NeoTheme.spaceSm),
+                  decoration: NeoTheme.cardDecoration(
+                    isDark: isDark,
+                    borderColor:
+                        isRead ? null : accentColor,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Top accent bar (only for unread)
+                      if (!isRead)
+                        Container(
+                          height: NeoTheme.accentBarHeight,
+                          decoration: BoxDecoration(
+                            color: accentColor,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(NeoTheme.radiusCard - 2),
+                            ),
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.all(NeoTheme.spaceMd),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(icon, color: accentColor, size: 28),
+                            const SizedBox(width: NeoTheme.spaceMd),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    titleText,
+                                    style: NeoTheme.subhead.copyWith(
+                                      color: isRead
+                                          ? (isDark
+                                              ? AppColors.textSecondary
+                                              : Colors.black54)
+                                          : null,
+                                      fontWeight: isRead
+                                          ? FontWeight.w600
+                                          : FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: NeoTheme.spaceXs),
+                                  Text(
+                                    '"${notif['taskTitle']}"',
+                                    style: NeoTheme.body,
+                                  ),
+                                  if (type == 'rejected' &&
+                                      notif['message'] != null) ...[
+                                    const SizedBox(height: NeoTheme.spaceXs),
+                                    Text(
+                                      '${Strings.reasonPrefix}${notif['message']}',
+                                      style: NeoTheme.body.copyWith(
+                                        color: AppColors.neonPink,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                  const SizedBox(height: NeoTheme.spaceXs),
+                                  Text(
+                                    notif['createdAt'] ?? '',
+                                    style: NeoTheme.caption.copyWith(
+                                      color: isDark
+                                          ? AppColors.textSecondary
+                                          : Colors.black45,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               );
             },
           );

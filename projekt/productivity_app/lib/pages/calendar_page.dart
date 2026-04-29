@@ -427,6 +427,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
                   child: TableCalendar(
+                    locale: 'cs',
                     firstDay: DateTime(2000),
                     lastDay: DateTime(2100),
                     focusedDay: _focusedDay,

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/task.dart';
 import '../services/task_service.dart';
 import '../constants/app_colors.dart';
+import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
 import '../utils/context_extensions.dart';
 import '../utils/date_helpers.dart';
@@ -107,11 +108,13 @@ class _StatsPageState extends State<StatsPage> {
       }
     }
 
+    final isDark = context.isDark;
+
     return Scaffold(
       appBar: AppBar(title: const Text(Strings.stats)),
       body: ResponsiveLayout(
         child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(NeoTheme.spaceMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -121,45 +124,52 @@ class _StatsPageState extends State<StatsPage> {
                     label: Strings.totalTasks,
                     value: '$total',
                     color: context.primaryColor),
-                const SizedBox(width: 8),
+                const SizedBox(width: NeoTheme.spaceSm),
                 _StatCard(
                     label: Strings.completedTasks,
                     value: '$completedCount',
-                    color: Colors.green),
+                    color: AppColors.neonGreen),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: NeoTheme.spaceSm),
             Row(
               children: [
                 _StatCard(
                     label: Strings.thisWeek,
                     value: '$thisWeekCompleted',
                     color: AppColors.taskDaily),
-                const SizedBox(width: 8),
+                const SizedBox(width: NeoTheme.spaceSm),
                 _StatCard(
                     label: Strings.thisMonth,
                     value: '$thisMonthCompleted',
                     color: AppColors.taskWeekly),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: NeoTheme.spaceMd),
 
-            Card(
+            Container(
+              decoration: NeoTheme.cardDecoration(isDark: isDark),
               child: ListTile(
-                leading: const Icon(Icons.star, color: Colors.amber),
-                title: const Text(Strings.bestDay),
+                leading: const Icon(Icons.star_rounded,
+                    color: AppColors.neonYellow, size: 28),
+                title: const Text(Strings.bestDay,
+                    style: NeoTheme.subhead),
                 trailing: Text(bestDay,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16)),
+                    style: NeoTheme.headline.copyWith(
+                      color: AppColors.neonYellow,
+                      fontSize: 18,
+                    )),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: NeoTheme.spaceLg),
 
-            Text(Strings.xpLast7Days,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            SizedBox(
+            Text(Strings.xpLast7Days, style: NeoTheme.subhead),
+            const SizedBox(height: NeoTheme.spaceSm),
+            Container(
+              decoration: NeoTheme.cardDecoration(isDark: isDark),
+              padding: const EdgeInsets.fromLTRB(
+                  NeoTheme.spaceSm, NeoTheme.spaceMd, NeoTheme.spaceSm, NeoTheme.spaceSm),
+              child: SizedBox(
               height: 200,
               child: BarChart(
                 BarChartData(
@@ -221,15 +231,17 @@ class _StatsPageState extends State<StatsPage> {
                   }).toList(),
                 ),
               ),
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: NeoTheme.spaceLg),
 
-            Text(Strings.taskTypeRatio,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
+            Text(Strings.taskTypeRatio, style: NeoTheme.subhead),
+            const SizedBox(height: NeoTheme.spaceSm),
             if (total > 0)
-              SizedBox(
+              Container(
+                decoration: NeoTheme.cardDecoration(isDark: isDark),
+                padding: const EdgeInsets.all(NeoTheme.spaceMd),
+                child: SizedBox(
                 height: 200,
                 child: PieChart(
                   PieChartData(
@@ -272,11 +284,18 @@ class _StatsPageState extends State<StatsPage> {
                     centerSpaceRadius: 30,
                   ),
                 ),
+                ),
               )
             else
-              Center(
-                child: Text(Strings.noStatsData,
-                    style: const TextStyle(color: Colors.grey)),
+              Padding(
+                padding: const EdgeInsets.all(NeoTheme.spaceLg),
+                child: Center(
+                  child: Text(Strings.noStatsData,
+                      style: TextStyle(
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : Colors.black38)),
+                ),
               ),
           ],
         ),
@@ -296,21 +315,25 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDark;
     return Expanded(
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Text(value,
-                  style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: color)),
-              const SizedBox(height: 4),
-              Text(label, style: const TextStyle(fontSize: 13)),
-            ],
-          ),
+      child: Container(
+        decoration: NeoTheme.cardDecoration(isDark: isDark),
+        padding: const EdgeInsets.all(NeoTheme.spaceMd),
+        child: Column(
+          children: [
+            Text(value,
+                style: NeoTheme.display.copyWith(
+                  fontSize: 28,
+                  color: color,
+                )),
+            const SizedBox(height: NeoTheme.spaceXs),
+            Text(label,
+                style: NeoTheme.body.copyWith(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                )),
+          ],
         ),
       ),
     );
