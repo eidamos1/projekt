@@ -227,7 +227,7 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
           },
           child: Container(
             decoration: NeoTheme.buttonDecoration(
-              backgroundColor: AppColors.neonGreen,
+              backgroundColor: context.primaryColor,
               borderColor: Colors.white,
             ),
             child: Padding(

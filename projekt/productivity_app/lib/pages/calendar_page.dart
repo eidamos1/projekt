@@ -339,7 +339,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.neonGreen,
+                        color: context.primaryColor,
                         width: NeoTheme.borderWidth,
                       ),
                     ),
@@ -351,7 +351,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   )
                 else
                   CircleAvatar(
-                    backgroundColor: AppColors.neonGreen,
+                    backgroundColor: context.primaryColor,
                     radius: 18,
                     child: Text(
                       nickname.isNotEmpty ? nickname[0].toUpperCase() : '?',
@@ -494,18 +494,18 @@ class _CalendarPageState extends State<CalendarPage> {
                       todayDecoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: AppColors.neonGreen,
+                          color: context.primaryColor,
                           width: NeoTheme.borderWidth,
                         ),
                       ),
                       todayTextStyle: TextStyle(
-                        color: isDark ? AppColors.textPrimary : AppColors.neonGreen,
+                        color: isDark ? AppColors.textPrimary : context.primaryColor,
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
                       ),
                       selectedDecoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.neonGreen,
+                        color: context.primaryColor,
                         border: Border.all(
                           color: Colors.white,
                           width: NeoTheme.borderWidthThin,
@@ -564,7 +564,7 @@ class _CalendarPageState extends State<CalendarPage> {
                       height: 18,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(2),
-                        color: AppColors.neonGreen,
+                        color: context.primaryColor,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -631,7 +631,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: AppColors.neonGreen,
+                      color: context.primaryColor,
                       borderRadius:
                           BorderRadius.circular(NeoTheme.radiusButton),
                       border: Border.all(

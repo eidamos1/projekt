@@ -105,7 +105,7 @@ class _LoginPageState extends State<LoginPage> {
               width: double.infinity,
               child: Container(
                 decoration: NeoTheme.buttonDecoration(
-                  backgroundColor: AppColors.neonGreen,
+                  backgroundColor: context.primaryColor,
                   borderColor: Colors.white,
                 ),
                 child: Material(

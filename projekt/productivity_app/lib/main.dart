@@ -161,6 +161,7 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         brightness: Brightness.light,
         colorSchemeSeed: themeProvider.primaryColor,
+        primaryColor: themeProvider.primaryColor,
         scaffoldBackgroundColor: AppColors.scaffoldLight,
         cardColor: AppColors.cardLight,
         appBarTheme: AppBarTheme(
@@ -209,6 +210,7 @@ class _MyAppState extends State<MyApp> {
       darkTheme: ThemeData(
         brightness: Brightness.dark,
         colorSchemeSeed: themeProvider.primaryColor,
+        primaryColor: themeProvider.primaryColor,
         scaffoldBackgroundColor: AppColors.scaffoldDark,
         cardColor: AppColors.cardDark,
         appBarTheme: AppBarTheme(
@@ -222,7 +224,7 @@ class _MyAppState extends State<MyApp> {
         ),
         floatingActionButtonTheme: FloatingActionButtonThemeData(
           elevation: 0,
-          backgroundColor: AppColors.neonGreen,
+          backgroundColor: themeProvider.primaryColor,
           foregroundColor: Colors.black,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(NeoTheme.radiusButton),

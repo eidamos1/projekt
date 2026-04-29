@@ -426,7 +426,9 @@ class _TaskCardState extends State<TaskCard>
                   // Action buttons
                   if (!isFullyCompleted) ...[
                     const SizedBox(height: 10),
-                    Row(
+                    IntrinsicHeight(
+                      child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Expanded(
                           child: _isProcessing
@@ -528,6 +530,7 @@ class _TaskCardState extends State<TaskCard>
                           ),
                         ),
                       ],
+                    ),
                     ),
                   ],
                 ],

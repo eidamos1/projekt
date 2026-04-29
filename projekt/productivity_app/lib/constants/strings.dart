@@ -87,6 +87,10 @@ abstract final class Strings {
   static const today = 'Dnes';
   static const confirmTask = 'Potvrzeni ukolu';
   static const confirmingTask = 'Potvrzujes ukol:';
+  static const confirmAnother = 'Potvrdit dalsi';
+  static const goBack = 'Zpet';
+  static const confirmedHeadline = 'Hotovo!';
+  static const confirmedSubtitle = 'Odmena byla pripsana kamaradovi.';
 
   // Login
   static const login = 'Prihlaseni';
