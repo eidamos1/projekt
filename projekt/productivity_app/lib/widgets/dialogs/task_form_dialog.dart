@@ -219,10 +219,17 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
               children: Categories.all.map((cat) {
                 final selected = _selectedCategories.contains(cat.key);
                 return FilterChip(
-                  label: Text(cat.label),
-                  avatar: Icon(cat.icon, size: 16, color: cat.color),
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(cat.icon, size: 14, color: cat.color),
+                      const SizedBox(width: 5),
+                      Text(cat.label),
+                    ],
+                  ),
                   selected: selected,
                   showCheckmark: false,
+                  visualDensity: VisualDensity.compact,
                   selectedColor: cat.color.withValues(alpha: 0.18),
                   side: BorderSide(
                     color: selected
