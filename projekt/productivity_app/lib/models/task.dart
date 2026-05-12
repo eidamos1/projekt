@@ -60,7 +60,7 @@ class Task {
       habitId: data['habitId'],
       categories: (data['categories'] as List?)?.cast<String>() ?? const [],
       wasRejected: data['wasRejected'] ?? false,
-      completedAt: data['completedAt'] as String?,
+      completedAt: data['completedAt'] is String ? data['completedAt'] as String : null,
     );
   }
 
