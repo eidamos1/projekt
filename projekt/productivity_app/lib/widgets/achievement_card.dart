@@ -18,6 +18,10 @@ class AchievementCard extends StatelessWidget {
   final int? progressTarget;
   final VoidCallback? onTap;
 
+  /// When true, the card briefly pulses a colored ring to draw attention —
+  /// used when arriving here from an unlock notif tap or toast tap.
+  final bool highlighted;
+
   const AchievementCard({
     super.key,
     required this.achievement,
@@ -25,6 +29,7 @@ class AchievementCard extends StatelessWidget {
     this.progressCurrent,
     this.progressTarget,
     this.onTap,
+    this.highlighted = false,
   });
 
   @override
@@ -142,9 +147,38 @@ class AchievementCard extends StatelessWidget {
 
     // onTap is null for locked cards — NeoPressable detects this and disables
     // the press animation as well.
-    return NeoPressable(
+    final pressable = NeoPressable(
       onTap: isUnlocked ? onTap : null,
       child: card,
+    );
+
+    if (!highlighted) return pressable;
+
+    // Pulse a colored outer glow that ramps in fast and fades out over ~2s.
+    // The triangle wave (0 -> 1 -> 0) gives a single full pulse; StatsPage
+    // clears the highlight flag after 3s so the card returns to baseline.
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 2000),
+      curve: Curves.easeInOut,
+      builder: (context, t, child) {
+        // Triangle wave 0->1->0 across the tween.
+        final pulse = t < 0.5 ? t * 2 : (1 - t) * 2;
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(NeoTheme.radiusCard + 2),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.55 * pulse),
+                blurRadius: 18 * pulse,
+                spreadRadius: 4 * pulse,
+              ),
+            ],
+          ),
+          child: child,
+        );
+      },
+      child: pressable,
     );
   }
 }

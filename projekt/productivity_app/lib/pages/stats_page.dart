@@ -31,6 +31,10 @@ class _StatsPageState extends State<StatsPage> {
   Map<String, String> _unlockedAtMap = {};
   bool _isLoading = true;
 
+  /// When set, the matching AchievementCard pulses a colored ring for ~3s.
+  /// Populated from route arguments on first frame (notif tap / toast tap).
+  String? _highlightId;
+
   @override
   void initState() {
     super.initState();
@@ -38,6 +42,18 @@ class _StatsPageState extends State<StatsPage> {
     // Lazy eval: catch up any achievements that haven't been written yet
     // (offline sync, missed trigger). Fire-and-forget.
     AchievementService().evaluate().catchError((_) => <Achievement>[]);
+    // ModalRoute.of() needs context up the tree — wait for first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map && args['highlightId'] is String) {
+        setState(() => _highlightId = args['highlightId'] as String);
+        // Auto-clear after a brief pulse window so reload doesn't keep
+        // highlighting indefinitely.
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) setState(() => _highlightId = null);
+        });
+      }
+    });
   }
 
   Future<void> _loadStats() async {
@@ -349,6 +365,7 @@ class _StatsPageState extends State<StatsPage> {
             AchievementGrid(
               unlockedAtMap: _unlockedAtMap,
               totalCompletedTasks: completedCount,
+              highlightId: _highlightId,
               onTapCard: (ach) {
                 final unlockedAt = _unlockedAtMap[ach.id];
                 showAchievementDetailSheet(context, ach, unlockedAt);

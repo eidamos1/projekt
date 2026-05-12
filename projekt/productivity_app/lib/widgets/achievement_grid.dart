@@ -17,11 +17,16 @@ class AchievementGrid extends StatefulWidget {
   final int totalCompletedTasks;
   final void Function(Achievement) onTapCard;
 
+  /// When non-null, the card with this id renders a pulsing ring to draw the
+  /// eye after navigating from a notif tap or unlock toast.
+  final String? highlightId;
+
   const AchievementGrid({
     super.key,
     required this.unlockedAtMap,
     required this.totalCompletedTasks,
     required this.onTapCard,
+    this.highlightId,
   });
 
   @override
@@ -120,11 +125,13 @@ class _AchievementGridState extends State<AchievementGrid> {
               ...unlocked.map((a) => AchievementCard(
                     achievement: a,
                     isUnlocked: true,
+                    highlighted: widget.highlightId == a.id,
                     onTap: () => widget.onTapCard(a),
                   )),
               ...locked.map((a) => AchievementCard(
                     achievement: a,
                     isUnlocked: false,
+                    highlighted: widget.highlightId == a.id,
                     progressCurrent: _progressCurrentFor(a),
                     progressTarget: _progressTargetFor(a),
                   )),
