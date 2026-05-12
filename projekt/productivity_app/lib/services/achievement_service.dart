@@ -76,6 +76,11 @@ class AchievementService {
         totalCoins += a.coinReward;
       }
 
+      // Commit achievement docs FIRST. If the XP transaction below fails
+      // (network drop, kill), the user has a badge but no XP — recoverable
+      // and safe. Reverse order would risk double-reward on re-eval.
+      await batch.commit();
+
       if (totalXp > 0 || totalCoins > 0) {
         final userRef = _firestore.collection('users').doc(_uid);
         await _firestore.runTransaction((tx) async {
@@ -92,7 +97,6 @@ class AchievementService {
         });
       }
 
-      await batch.commit();
       await _createUnlockNotifications(newly, now);
       return newly;
     } finally {
