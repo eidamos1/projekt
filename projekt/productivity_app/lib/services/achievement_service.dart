@@ -9,10 +9,11 @@ class AchievementService {
   factory AchievementService() => _instance ??= AchievementService._();
   AchievementService._();
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  // Lazy so that pure unit tests of evaluatePredicates() can instantiate
+  // AchievementService without Firebase.initializeApp().
+  FirebaseFirestore get _firestore => FirebaseFirestore.instance;
+  FirebaseAuth get _auth => FirebaseAuth.instance;
 
-  // ignore: unused_field, prefer_final_fields
   bool _running = false;
 
   String get _uid {
