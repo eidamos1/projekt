@@ -124,6 +124,34 @@ abstract final class Achievements {
     },
   );
 
+  static final Achievement _nedelniKlid = Achievement(
+    id: 'nedelni_klid',
+    title: 'Nedelni klid',
+    teaser: 'Den odpocinku, ale ne od habitu.',
+    description: 'Splnil jsi habit ctyri nedele po sobe.',
+    type: AchType.situational,
+    icon: Icons.self_improvement_rounded,
+    color: AppColors.neonCyan,
+    evaluate: (ctx) {
+      final sundays = <String>{};
+      for (final t in ctx.recentTasks) {
+        if (t.habitId == null || !t.completed) continue;
+        final d = parseDate(t.date);
+        if (d.weekday == DateTime.sunday) sundays.add(t.date);
+      }
+      if (sundays.length < 4) return false;
+      final sortedDesc = sundays.toList()..sort((a, b) => b.compareTo(a));
+      DateTime prev = parseDate(sortedDesc[0]);
+      for (int i = 1; i < 4; i++) {
+        final cur = parseDate(sortedDesc[i]);
+        final diff = prev.difference(cur).inDays;
+        if (diff != 7) return false;
+        prev = cur;
+      }
+      return true;
+    },
+  );
+
   static final List<Achievement> all = [
     _prvniKrok,
     _patecniHrdina,
@@ -132,6 +160,7 @@ abstract final class Achievements {
     _ranoJeMoudrejsi,
     _bourak,
     _hatTrick,
+    _nedelniKlid,
   ];
 
   static Achievement? byId(String id) {

@@ -165,6 +165,37 @@ void main() {
     });
   });
 
+  group('nedelni_klid', () {
+    final ach = Achievements.byId('nedelni_klid');
+
+    test('unlocks for 4 consecutive Sundays with habit task', () {
+      final sun1 = '2026-05-10';
+      final sun2 = '2026-05-03';
+      final sun3 = '2026-04-26';
+      final sun4 = '2026-04-19';
+      final ctx = buildContext(
+        recentTasks: [
+          buildTask(date: sun1, habitId: 'h1'),
+          buildTask(date: sun2, habitId: 'h1'),
+          buildTask(date: sun3, habitId: 'h1'),
+          buildTask(date: sun4, habitId: 'h1'),
+        ],
+      );
+      expect(ach!.evaluate(ctx), isTrue);
+    });
+
+    test('does NOT unlock with only 3 Sundays', () {
+      final ctx = buildContext(
+        recentTasks: [
+          buildTask(date: '2026-05-10', habitId: 'h1'),
+          buildTask(date: '2026-05-03', habitId: 'h1'),
+          buildTask(date: '2026-04-26', habitId: 'h1'),
+        ],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+  });
+
   group('patecni_hrdina', () {
     final ach = Achievements.byId('patecni_hrdina');
 
