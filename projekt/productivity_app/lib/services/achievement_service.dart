@@ -16,6 +16,10 @@ class AchievementService {
   FirebaseFirestore get _firestore => FirebaseFirestore.instance;
   FirebaseAuth get _auth => FirebaseAuth.instance;
 
+  /// Re-entry guard. We intentionally drop concurrent evaluate() calls —
+  /// the 4-site trigger fan-out (app start, notif stream, createTask,
+  /// createHabit) is redundant by design: a missed eval will be picked
+  /// up by the next trigger or by lazy eval on /stats open.
   bool _running = false;
 
   String get _uid {
@@ -48,8 +52,12 @@ class AchievementService {
       if (ctx.alreadyUnlocked.contains(a.id)) continue;
       try {
         if (a.evaluate(ctx)) result.add(a);
-      } catch (_) {
-        // Predikat selhal (napr. stary data format) — skip, nelogujeme.
+      } catch (e, st) {
+        assert(() {
+          // ignore: avoid_print
+          print('Achievement predicate ${a.id} threw: $e\n$st');
+          return true;
+        }());
       }
     }
     return result;
