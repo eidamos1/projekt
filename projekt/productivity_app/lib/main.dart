@@ -2,11 +2,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:app_links/app_links.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart';
+import 'models/achievement.dart';
+import 'services/task_service.dart';
+import 'services/achievement_service.dart';
 import 'pages/login.dart';
 import 'pages/calendar_page.dart';
 import 'pages/confirm_task.dart';
@@ -96,17 +100,54 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   late AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSubscription;
+  StreamSubscription<User?>? _authSub;
+  StreamSubscription<List<Map<String, dynamic>>>? _notifSub;
+  int _lastNotifSeen = -1;
 
   @override
   void initState() {
     super.initState();
     _initDeepLinks();
+    _hookAchievementTrigger();
   }
 
   @override
   void dispose() {
     _linkSubscription?.cancel();
+    _notifSub?.cancel();
+    _authSub?.cancel();
     super.dispose();
+  }
+
+  /// Listen to the notif stream and fire AchievementService.evaluate() when
+  /// the list grows (new notification arrived). Resubscribes on auth changes
+  /// because notificationsStream() requires a logged-in user.
+  void _hookAchievementTrigger() {
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
+      _notifSub?.cancel();
+      _notifSub = null;
+      _lastNotifSeen = -1;
+      if (user == null) return;
+      try {
+        _notifSub = TaskService().notificationsStream().listen((notifs) {
+          if (_lastNotifSeen < 0) {
+            _lastNotifSeen = notifs.length;
+            return;
+          }
+          if (notifs.length > _lastNotifSeen) {
+            _lastNotifSeen = notifs.length;
+            AchievementService()
+                .evaluate()
+                .catchError((_) => <Achievement>[]);
+          } else {
+            _lastNotifSeen = notifs.length;
+          }
+        }, onError: (_) {});
+      } catch (_) {
+        // Stream construction failed (e.g. transient auth state) — silently
+        // skip; we'll get another authStateChanges tick.
+      }
+    });
   }
 
   Future<void> _initDeepLinks() async {
