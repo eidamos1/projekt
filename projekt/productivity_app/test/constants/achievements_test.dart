@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:productivity_app/constants/achievements.dart';
 import 'package:productivity_app/models/eval_context.dart';
 
+import '../_achievement_fixtures.dart';
+
 void main() {
   group('Achievements registry', () {
     test('byId returns matching achievement', () {
@@ -36,6 +38,38 @@ void main() {
 
     test('does not unlock at 0 tasks', () {
       expect(ach.evaluate(EvalContext.empty()), isFalse);
+    });
+  });
+
+  group('patecni_hrdina', () {
+    final ach = Achievements.byId('patecni_hrdina');
+
+    test('unlocks for 4 consecutive Fridays with habit task', () {
+      // 2026-05-08, 2026-05-01, 2026-04-24, 2026-04-17 are consecutive Fridays.
+      final friday1 = '2026-05-08';
+      final friday2 = '2026-05-01';
+      final friday3 = '2026-04-24';
+      final friday4 = '2026-04-17';
+      final ctx = buildContext(
+        recentTasks: [
+          buildTask(date: friday1, completedAt: '$friday1 18:00', habitId: 'h1'),
+          buildTask(date: friday2, completedAt: '$friday2 18:00', habitId: 'h1'),
+          buildTask(date: friday3, completedAt: '$friday3 18:00', habitId: 'h1'),
+          buildTask(date: friday4, completedAt: '$friday4 18:00', habitId: 'h1'),
+        ],
+      );
+      expect(ach!.evaluate(ctx), isTrue);
+    });
+
+    test('does NOT unlock with only 3 Fridays', () {
+      final ctx = buildContext(
+        recentTasks: [
+          buildTask(date: '2026-05-08', habitId: 'h1'),
+          buildTask(date: '2026-05-01', habitId: 'h1'),
+          buildTask(date: '2026-04-24', habitId: 'h1'),
+        ],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
     });
   });
 }
