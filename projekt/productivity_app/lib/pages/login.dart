@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
+import '../services/achievement_service.dart';
+import '../models/achievement.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
@@ -36,6 +38,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await _authService.signInWithGoogle();
       if (mounted) Navigator.pushReplacementNamed(context, '/calendar');
+      AchievementService().evaluate().catchError((_) => <Achievement>[]);
     } catch (e) {
       debugPrint('Google Sign-In error: $e');
       if (mounted) {
@@ -61,6 +64,7 @@ class _LoginPageState extends State<LoginPage> {
         await _authService.registerWithEmail(email, password, nickname);
       }
       if (mounted) Navigator.pushReplacementNamed(context, '/calendar');
+      AchievementService().evaluate().catchError((_) => <Achievement>[]);
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         showErrorSnack(context, e.message ?? Strings.loginError);
