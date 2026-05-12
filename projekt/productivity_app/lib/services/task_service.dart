@@ -291,7 +291,7 @@ class TaskService {
 
       tx.update(lookup.taskRef, {
         'completed': true,
-        'completedAt': today,
+        'completedAt': nowMinuteString(),
       });
 
       // Habit streak update (only if the task was actually a habit instance
