@@ -17,6 +17,12 @@ class Task {
   final String? habitId;
   /// Category keys (see Categories.byKey). Empty list = uncategorized.
   final List<String> categories;
+  /// Persistent flag — true if this task was ever rejected, even after reset.
+  /// Drives achievements like comeback_kid.
+  final bool wasRejected;
+  /// Completion timestamp. Either 'yyyy-MM-dd' (legacy) or 'yyyy-MM-dd HH:mm'.
+  /// Null until task is confirmed.
+  final String? completedAt;
 
   Task({
     required this.id,
@@ -32,6 +38,8 @@ class Task {
     this.rejectionReason,
     this.habitId,
     this.categories = const [],
+    this.wasRejected = false,
+    this.completedAt,
   });
 
   factory Task.fromMap(String id, Map<String, dynamic> data) {
@@ -51,6 +59,8 @@ class Task {
       rejectionReason: data['rejectionReason'],
       habitId: data['habitId'],
       categories: (data['categories'] as List?)?.cast<String>() ?? const [],
+      wasRejected: data['wasRejected'] ?? false,
+      completedAt: data['completedAt'] as String?,
     );
   }
 
@@ -68,6 +78,8 @@ class Task {
       'rejectionReason': rejectionReason,
       'habitId': habitId,
       'categories': categories,
+      'wasRejected': wasRejected,
+      'completedAt': completedAt,
     };
   }
 

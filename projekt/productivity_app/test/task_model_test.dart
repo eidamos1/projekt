@@ -161,6 +161,71 @@ void main() {
     });
   });
 
+  group('wasRejected and completedAt extensions', () {
+    test('wasRejected defaults to false in constructor', () {
+      final t = Task(
+        id: '1', title: 'x', type: TaskType.daily,
+        date: '2026-05-13', xp: 10, coins: 5, code: '123456',
+      );
+      expect(t.wasRejected, isFalse);
+    });
+
+    test('completedAt defaults to null in constructor', () {
+      final t = Task(
+        id: '1', title: 'x', type: TaskType.daily,
+        date: '2026-05-13', xp: 10, coins: 5, code: '123456',
+      );
+      expect(t.completedAt, isNull);
+    });
+
+    test('fromMap reads wasRejected when present', () {
+      final t = Task.fromMap('1', {
+        'title': 'x', 'type': 'daily', 'date': '2026-05-13',
+        'xp': 10, 'coins': 5, 'code': '123456',
+        'wasRejected': true,
+      });
+      expect(t.wasRejected, isTrue);
+    });
+
+    test('fromMap defaults wasRejected to false for legacy doc', () {
+      final t = Task.fromMap('1', {
+        'title': 'x', 'type': 'daily', 'date': '2026-05-13',
+        'xp': 10, 'coins': 5, 'code': '123456',
+      });
+      expect(t.wasRejected, isFalse);
+    });
+
+    test('fromMap reads completedAt (date-only legacy format)', () {
+      final t = Task.fromMap('1', {
+        'title': 'x', 'type': 'daily', 'date': '2026-05-13',
+        'xp': 10, 'coins': 5, 'code': '123456',
+        'completedAt': '2026-05-12',
+      });
+      expect(t.completedAt, '2026-05-12');
+    });
+
+    test('fromMap reads completedAt (new HH:mm format)', () {
+      final t = Task.fromMap('1', {
+        'title': 'x', 'type': 'daily', 'date': '2026-05-13',
+        'xp': 10, 'coins': 5, 'code': '123456',
+        'completedAt': '2026-05-12 23:45',
+      });
+      expect(t.completedAt, '2026-05-12 23:45');
+    });
+
+    test('toMap includes wasRejected and completedAt', () {
+      final t = Task(
+        id: '1', title: 'x', type: TaskType.daily,
+        date: '2026-05-13', xp: 10, coins: 5, code: '123456',
+        wasRejected: true,
+        completedAt: '2026-05-13 14:30',
+      );
+      final map = t.toMap();
+      expect(map['wasRejected'], isTrue);
+      expect(map['completedAt'], '2026-05-13 14:30');
+    });
+  });
+
   group('typeLabel', () {
     test('daily returns Denní', () {
       final task = Task(
