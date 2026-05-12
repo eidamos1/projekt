@@ -109,6 +109,35 @@ void main() {
     });
   });
 
+  group('bourak', () {
+    final ach = Achievements.byId('bourak');
+
+    test('unlocks with 3 tasks on same date', () {
+      final ctx = buildContext(
+        recentTasks: [
+          buildTask(id: 'a', date: '2026-05-12'),
+          buildTask(id: 'b', date: '2026-05-12'),
+          buildTask(id: 'c', date: '2026-05-12'),
+        ],
+      );
+      expect(ach!.evaluate(ctx), isTrue);
+    });
+
+    test('does NOT unlock with 2 same-day + scattered other days', () {
+      final ctx = buildContext(
+        recentTasks: [
+          buildTask(id: 'a', date: '2026-05-12'),
+          buildTask(id: 'b', date: '2026-05-12'),
+          buildTask(id: 'c', date: '2026-05-11'),
+          buildTask(id: 'd', date: '2026-05-10'),
+          buildTask(id: 'e', date: '2026-05-09'),
+          buildTask(id: 'f', date: '2026-05-08'),
+        ],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+  });
+
   group('patecni_hrdina', () {
     final ach = Achievements.byId('patecni_hrdina');
 

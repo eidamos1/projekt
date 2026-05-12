@@ -84,12 +84,31 @@ abstract final class Achievements {
     }),
   );
 
+  static final Achievement _bourak = Achievement(
+    id: 'bourak',
+    title: 'Bourak',
+    teaser: 'Manana? Tak ne dnes.',
+    description: 'Splnil jsi 3+ tasku za jeden den.',
+    type: AchType.situational,
+    icon: Icons.bolt_rounded,
+    color: AppColors.neonCyan,
+    evaluate: (ctx) {
+      final counts = <String, int>{};
+      for (final t in ctx.recentTasks) {
+        if (!t.completed) continue;
+        counts.update(t.date, (v) => v + 1, ifAbsent: () => 1);
+      }
+      return counts.values.any((c) => c >= 3);
+    },
+  );
+
   static final List<Achievement> all = [
     _prvniKrok,
     _patecniHrdina,
     _comebackKid,
     _pulnocniZachrana,
     _ranoJeMoudrejsi,
+    _bourak,
   ];
 
   static Achievement? byId(String id) {
