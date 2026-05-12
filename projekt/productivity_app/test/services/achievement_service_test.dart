@@ -7,21 +7,21 @@ void main() {
   group('AchievementService.evaluatePredicates', () {
     final svc = AchievementService();
 
-    test('returns prvni_krok when totalCompletedTasks >= 1 and not already unlocked', () {
-      final ctx = buildContext(totalCompletedTasks: 1);
-      final result = svc.evaluatePredicates(ctx);
-      expect(result.map((a) => a.id), contains('prvni_krok'));
-    });
-
-    test('skips already unlocked', () {
+    test('returns comeback_kid when a completed wasRejected task is present', () {
       final ctx = buildContext(
-        totalCompletedTasks: 1,
-        alreadyUnlocked: const {'prvni_krok'},
+        recentTasks: [buildTask(wasRejected: true, completed: true)],
       );
       final result = svc.evaluatePredicates(ctx);
-      // comeback_kid etc won't trigger from an empty recentTasks list,
-      // so the only candidate (prvni_krok) is filtered out.
-      expect(result.where((a) => a.id == 'prvni_krok'), isEmpty);
+      expect(result.map((a) => a.id), contains('comeback_kid'));
+    });
+
+    test('skips already unlocked comeback_kid', () {
+      final ctx = buildContext(
+        recentTasks: [buildTask(wasRejected: true, completed: true)],
+        alreadyUnlocked: const {'comeback_kid'},
+      );
+      final result = svc.evaluatePredicates(ctx);
+      expect(result.where((a) => a.id == 'comeback_kid'), isEmpty);
     });
   });
 }

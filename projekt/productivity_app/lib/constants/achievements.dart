@@ -5,18 +5,6 @@ import '../utils/date_helpers.dart';
 import 'app_colors.dart';
 
 abstract final class Achievements {
-  static final Achievement _prvniKrok = Achievement(
-    id: 'prvni_krok',
-    title: 'Prvni krok',
-    teaser: 'Kazdy nekdy zacina.',
-    description: 'Potvrdil jsi svuj prvni task.',
-    type: AchType.situational,
-    icon: Icons.flag_rounded,
-    color: AppColors.neonPink,
-    isTitleEligible: false,
-    evaluate: (ctx) => ctx.totalCompletedTasks >= 1,
-  );
-
   static final Achievement _patecniHrdina = Achievement(
     id: 'patecni_hrdina',
     title: 'Patecni hrdina',
@@ -278,21 +266,10 @@ abstract final class Achievements {
   );
 
   static final List<Achievement> all = [
-    _prvniKrok,
-    _patecniHrdina,
-    _comebackKid,
-    _pulnocniZachrana,
-    _ranoJeMoudrejsi,
-    _bourak,
-    _hatTrick,
-    _nedelniKlid,
-    _univerzal,
-    _prokrastinator,
-    _zlomenySlib,
-    _krasovePanstvi,
-    _fantom,
-    _nocniSova,
-    _spartanek,
+    _patecniHrdina, _comebackKid, _pulnocniZachrana, _ranoJeMoudrejsi,
+    _bourak, _hatTrick, _nedelniKlid, _univerzal,
+    _prokrastinator, _zlomenySlib, _krasovePanstvi, _fantom,
+    _nocniSova, _spartanek,
     _stovkar,
   ];
 

@@ -1,19 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:productivity_app/constants/achievements.dart';
-import 'package:productivity_app/models/eval_context.dart';
 import 'package:productivity_app/models/task.dart';
 import 'package:productivity_app/utils/date_helpers.dart';
 
 import '../_achievement_fixtures.dart';
 
-// EvalContext.empty() is used below — keep the eval_context import.
-
 void main() {
   group('Achievements registry', () {
     test('byId returns matching achievement', () {
-      final a = Achievements.byId('prvni_krok');
+      final a = Achievements.byId('comeback_kid');
       expect(a, isNotNull);
-      expect(a!.title, 'Prvni krok');
+      expect(a!.title, 'Comeback');
     });
 
     test('byId returns null for unknown id', () {
@@ -24,18 +21,9 @@ void main() {
       final ids = Achievements.all.map((a) => a.id).toList();
       expect(ids.toSet().length, ids.length);
     });
-  });
 
-  group('prvni_krok smoke predicate', () {
-    final ach = Achievements.byId('prvni_krok')!;
-
-    test('unlocks when totalCompletedTasks >= 1', () {
-      final ctx = buildContext(totalCompletedTasks: 1);
-      expect(ach.evaluate(ctx), isTrue);
-    });
-
-    test('does not unlock at 0 tasks', () {
-      expect(ach.evaluate(EvalContext.empty()), isFalse);
+    test('registry has 15 production achievements', () {
+      expect(Achievements.all.length, 15);
     });
   });
 
