@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../services/task_service.dart';
+import '../constants/achievements.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
+import '../models/achievement.dart';
 import '../utils/context_extensions.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/neo_bottom_nav.dart';
@@ -62,6 +64,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
               IconData icon;
               Color accentColor;
               String titleText;
+              Achievement? achievement;
+              final achievementId = notif['achievementId'] as String?;
 
               if (type == 'confirmed') {
                 icon = Icons.check_circle_rounded;
@@ -71,16 +75,37 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 icon = Icons.schedule_rounded;
                 accentColor = AppColors.neonOrange;
                 titleText = Strings.expiringNotification;
+              } else if (type == 'achievement') {
+                achievement = achievementId != null
+                    ? Achievements.byId(achievementId)
+                    : null;
+                icon = Icons.emoji_events_rounded;
+                accentColor = achievement?.color ?? AppColors.neonYellow;
+                titleText = 'ODEMKL JSI ACHIEVEMENT';
               } else {
                 icon = Icons.cancel_rounded;
                 accentColor = AppColors.neonPink;
                 titleText = '${notif['fromNickname']} odmitl/a ukol';
               }
 
+              // For achievement notifs, show achievement title in the subtitle
+              // instead of taskTitle (taskTitle is a fallback set by the
+              // service, but achievement.title is the canonical name).
+              final subText = type == 'achievement'
+                  ? (achievement?.title ?? notif['taskTitle'] ?? '')
+                  : (notif['taskTitle'] ?? '');
+
               return GestureDetector(
                 onTap: () {
                   if (!isRead) {
                     _taskService.markNotificationRead(notif['id']);
+                  }
+                  if (type == 'achievement' && achievementId != null) {
+                    Navigator.pushNamed(
+                      context,
+                      '/stats',
+                      arguments: {'highlightId': achievementId},
+                    );
                   }
                 },
                 child: Container(
@@ -131,7 +156,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                   ),
                                   const SizedBox(height: NeoTheme.spaceXs),
                                   Text(
-                                    '"${notif['taskTitle']}"',
+                                    '"$subText"',
                                     style: NeoTheme.body,
                                   ),
                                   if (type == 'rejected' &&
