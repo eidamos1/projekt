@@ -172,14 +172,9 @@ class AchievementService {
         .collection('notifications');
 
     for (final a in newly) {
-      final existing = await notifsRef
-          .where('type', isEqualTo: 'achievement')
-          .where('achievementId', isEqualTo: a.id)
-          .limit(1)
-          .get();
-      if (existing.docs.isNotEmpty) continue;
-
-      await notifsRef.add({
+      // Deterministic doc id makes the write idempotent at the Firestore
+      // level — no race between query+add under concurrent evaluate() calls.
+      await notifsRef.doc('achievement_${a.id}').set({
         'type': 'achievement',
         'achievementId': a.id,
         'taskTitle': a.title,
