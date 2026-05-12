@@ -6,6 +6,8 @@ import 'package:productivity_app/utils/date_helpers.dart';
 
 import '../_achievement_fixtures.dart';
 
+// EvalContext.empty() is used below — keep the eval_context import.
+
 void main() {
   group('Achievements registry', () {
     test('byId returns matching achievement', () {
@@ -28,13 +30,7 @@ void main() {
     final ach = Achievements.byId('prvni_krok')!;
 
     test('unlocks when totalCompletedTasks >= 1', () {
-      final ctx = EvalContext(
-        user: const UserSnapshot(xp: 0, level: 1, streak: 0, coins: 0),
-        recentTasks: const [],
-        habits: const [],
-        alreadyUnlocked: const {},
-        totalCompletedTasks: 1,
-      );
+      final ctx = buildContext(totalCompletedTasks: 1);
       expect(ach.evaluate(ctx), isTrue);
     });
 
@@ -296,6 +292,20 @@ void main() {
           buildTask(id: 'c', date: dateNDaysAgo(12), wasRejected: true),
         ],
       );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+  });
+
+  group('fantom', () {
+    final ach = Achievements.byId('fantom');
+
+    test('unlocks at expiredUncompletedCount=5', () {
+      final ctx = buildContext(expiredUncompletedCount: 5);
+      expect(ach!.evaluate(ctx), isTrue);
+    });
+
+    test('does NOT unlock at expiredUncompletedCount=4', () {
+      final ctx = buildContext(expiredUncompletedCount: 4);
       expect(ach!.evaluate(ctx), isFalse);
     });
   });

@@ -64,6 +64,7 @@ EvalContext buildContext({
   List<Habit> habits = const [],
   Set<String> alreadyUnlocked = const {},
   int totalCompletedTasks = 0,
+  int expiredUncompletedCount = 0,
   int userXp = 0,
   int userLevel = 1,
   int userStreak = 0,
@@ -79,4 +80,5 @@ EvalContext buildContext({
       habits: habits,
       alreadyUnlocked: alreadyUnlocked,
       totalCompletedTasks: totalCompletedTasks,
+      expiredUncompletedCount: expiredUncompletedCount,
     );

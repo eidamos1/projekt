@@ -23,6 +23,9 @@ class EvalContext {
   final List<Habit> habits;
   final Set<String> alreadyUnlocked;
   final int totalCompletedTasks;
+  /// Count of tasks with completed=false and date < today. Tracked as an
+  /// aggregate because recentTasks is pre-filtered to completed=true.
+  final int expiredUncompletedCount;
 
   const EvalContext({
     required this.user,
@@ -30,6 +33,7 @@ class EvalContext {
     required this.habits,
     required this.alreadyUnlocked,
     required this.totalCompletedTasks,
+    required this.expiredUncompletedCount,
   });
 
   factory EvalContext.empty() => const EvalContext(
@@ -38,5 +42,6 @@ class EvalContext {
         habits: [],
         alreadyUnlocked: {},
         totalCompletedTasks: 0,
+        expiredUncompletedCount: 0,
       );
 }

@@ -221,6 +221,17 @@ abstract final class Achievements {
     },
   );
 
+  static final Achievement _fantom = Achievement(
+    id: 'fantom',
+    title: 'Fantom kalendare',
+    teaser: 'Planovat je snadnejsi nez plnit.',
+    description: 'Pet plus tvych tasku vyprshelo bez splneni.',
+    type: AchType.antiAchievement,
+    icon: Icons.event_busy_rounded,
+    color: AppColors.neonPink,
+    evaluate: (ctx) => ctx.expiredUncompletedCount >= 5,
+  );
+
   static final List<Achievement> all = [
     _prvniKrok,
     _patecniHrdina,
@@ -234,6 +245,7 @@ abstract final class Achievements {
     _prokrastinator,
     _zlomenySlib,
     _krasovePanstvi,
+    _fantom,
   ];
 
   static Achievement? byId(String id) {

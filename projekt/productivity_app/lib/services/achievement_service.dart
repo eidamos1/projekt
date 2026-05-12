@@ -5,6 +5,7 @@ import '../models/achievement.dart';
 import '../models/eval_context.dart';
 import '../models/task.dart';
 import '../models/habit.dart';
+import '../utils/date_helpers.dart';
 
 class AchievementService {
   static AchievementService? _instance;
@@ -129,9 +130,19 @@ class AchievementService {
         .where('completed', isEqualTo: true)
         .count()
         .get();
+    final expiredCountFuture = tasksCol
+        .where('completed', isEqualTo: false)
+        .where('date', isLessThan: todayString())
+        .count()
+        .get();
 
     final results = await Future.wait([
-      userFuture, tasksFuture, habitsFuture, unlockedFuture, countFuture,
+      userFuture,
+      tasksFuture,
+      habitsFuture,
+      unlockedFuture,
+      countFuture,
+      expiredCountFuture,
     ]);
 
     final userSnap = results[0] as DocumentSnapshot;
@@ -139,6 +150,7 @@ class AchievementService {
     final habitsSnap = results[2] as QuerySnapshot;
     final unlockedSnap = results[3] as QuerySnapshot;
     final countSnap = results[4] as AggregateQuerySnapshot;
+    final expiredCountSnap = results[5] as AggregateQuerySnapshot;
 
     final userData = userSnap.exists
         ? userSnap.data() as Map<String, dynamic>
@@ -160,6 +172,7 @@ class AchievementService {
           .toList(),
       alreadyUnlocked: unlockedSnap.docs.map((d) => d.id).toSet(),
       totalCompletedTasks: countSnap.count ?? 0,
+      expiredUncompletedCount: expiredCountSnap.count ?? 0,
     );
   }
 
