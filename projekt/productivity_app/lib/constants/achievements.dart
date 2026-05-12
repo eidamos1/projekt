@@ -201,6 +201,26 @@ abstract final class Achievements {
     ),
   );
 
+  static final Achievement _krasovePanstvi = Achievement(
+    id: 'krasove_panstvi',
+    title: 'Krasove panstvi',
+    teaser: 'Vsechno chce trening.',
+    description: 'Mas 3 zamitnuti za jeden tyden.',
+    type: AchType.antiAchievement,
+    icon: Icons.do_not_disturb_rounded,
+    color: AppColors.neonOrange,
+    evaluate: (ctx) {
+      final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
+      int count = 0;
+      for (final t in ctx.recentTasks) {
+        if (!t.wasRejected) continue;
+        final d = parseDate(t.date);
+        if (d.isAfter(sevenDaysAgo)) count++;
+      }
+      return count >= 3;
+    },
+  );
+
   static final List<Achievement> all = [
     _prvniKrok,
     _patecniHrdina,
@@ -213,6 +233,7 @@ abstract final class Achievements {
     _univerzal,
     _prokrastinator,
     _zlomenySlib,
+    _krasovePanstvi,
   ];
 
   static Achievement? byId(String id) {

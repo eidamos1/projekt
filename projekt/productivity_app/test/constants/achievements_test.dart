@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:productivity_app/constants/achievements.dart';
 import 'package:productivity_app/models/eval_context.dart';
 import 'package:productivity_app/models/task.dart';
+import 'package:productivity_app/utils/date_helpers.dart';
 
 import '../_achievement_fixtures.dart';
 
@@ -265,6 +266,35 @@ void main() {
     test('does NOT unlock when current streak equals longestStreak', () {
       final ctx = buildContext(
         habits: [buildHabit(longestStreak: 10, streak: 10)],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+  });
+
+  group('krasove_panstvi', () {
+    final ach = Achievements.byId('krasove_panstvi');
+
+    String dateNDaysAgo(int n) =>
+        formatDate(DateTime.now().subtract(Duration(days: n)));
+
+    test('unlocks with 3 rejected tasks within last 7 days', () {
+      final ctx = buildContext(
+        recentTasks: [
+          buildTask(id: 'a', date: dateNDaysAgo(1), wasRejected: true),
+          buildTask(id: 'b', date: dateNDaysAgo(3), wasRejected: true),
+          buildTask(id: 'c', date: dateNDaysAgo(5), wasRejected: true),
+        ],
+      );
+      expect(ach!.evaluate(ctx), isTrue);
+    });
+
+    test('does NOT unlock when all rejections are older than 7 days', () {
+      final ctx = buildContext(
+        recentTasks: [
+          buildTask(id: 'a', date: dateNDaysAgo(10), wasRejected: true),
+          buildTask(id: 'b', date: dateNDaysAgo(11), wasRejected: true),
+          buildTask(id: 'c', date: dateNDaysAgo(12), wasRejected: true),
+        ],
       );
       expect(ach!.evaluate(ctx), isFalse);
     });
