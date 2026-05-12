@@ -170,6 +170,24 @@ abstract final class Achievements {
     },
   );
 
+  static final Achievement _prokrastinator = Achievement(
+    id: 'prokrastinator',
+    title: 'Prokrastinator',
+    teaser: 'Cas leti nejak rychle, ze?',
+    description: 'Splnil jsi 5 tasku v posledni hodine pred pulnoci.',
+    type: AchType.antiAchievement,
+    icon: Icons.hourglass_bottom_rounded,
+    color: AppColors.neonOrange,
+    evaluate: (ctx) {
+      int count = 0;
+      for (final t in ctx.recentTasks) {
+        final h = hourOf(t.completedAt);
+        if (h != null && h >= 23) count++;
+      }
+      return count >= 5;
+    },
+  );
+
   static final List<Achievement> all = [
     _prvniKrok,
     _patecniHrdina,
@@ -180,6 +198,7 @@ abstract final class Achievements {
     _hatTrick,
     _nedelniKlid,
     _univerzal,
+    _prokrastinator,
   ];
 
   static Achievement? byId(String id) {

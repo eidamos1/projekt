@@ -222,6 +222,36 @@ void main() {
     });
   });
 
+  group('prokrastinator', () {
+    final ach = Achievements.byId('prokrastinator');
+
+    test('unlocks with 5 tasks completed at or after 23:00', () {
+      final ctx = buildContext(
+        recentTasks: [
+          buildTask(id: 'a', completedAt: '2026-05-12 23:01'),
+          buildTask(id: 'b', completedAt: '2026-05-11 23:15'),
+          buildTask(id: 'c', completedAt: '2026-05-10 23:30'),
+          buildTask(id: 'd', completedAt: '2026-05-09 23:45'),
+          buildTask(id: 'e', completedAt: '2026-05-08 23:59'),
+        ],
+      );
+      expect(ach!.evaluate(ctx), isTrue);
+    });
+
+    test('does NOT unlock with only 4 late-night tasks', () {
+      final ctx = buildContext(
+        recentTasks: [
+          buildTask(id: 'a', completedAt: '2026-05-12 23:01'),
+          buildTask(id: 'b', completedAt: '2026-05-11 23:15'),
+          buildTask(id: 'c', completedAt: '2026-05-10 23:30'),
+          buildTask(id: 'd', completedAt: '2026-05-09 23:45'),
+          buildTask(id: 'e', completedAt: '2026-05-08 22:59'),
+        ],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+  });
+
   group('patecni_hrdina', () {
     final ach = Achievements.byId('patecni_hrdina');
 
