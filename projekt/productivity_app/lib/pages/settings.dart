@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../main.dart';
+import '../services/achievement_service.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
+import '../constants/achievements.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 import '../constants/layout.dart';
@@ -11,7 +13,9 @@ import '../constants/strings.dart';
 import '../utils/context_extensions.dart';
 import '../utils/ui_helpers.dart';
 import '../widgets/neo_bottom_nav.dart';
+import '../widgets/neo_bottom_sheet.dart';
 import '../widgets/responsive_layout.dart';
+import '../widgets/title_chip.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -69,6 +73,37 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  void _openTitleSheet(BuildContext context) {
+    showNeoBottomSheet<void>(
+      context: context,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            NeoTheme.spaceLg,
+            NeoTheme.spaceMd,
+            NeoTheme.spaceLg,
+            NeoTheme.spaceLg,
+          ),
+          child: ListTile(
+            leading: const Icon(Icons.emoji_events_outlined),
+            title: const Text(
+              'OTEVRIT STATS',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
+              ),
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/stats');
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -79,6 +114,27 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ResponsiveLayout(
         child: ListView(
           children: [
+            // Active title chip
+            StreamBuilder<String?>(
+              stream: AchievementService().activeTitleStream(),
+              builder: (context, snapshot) {
+                final id = snapshot.data;
+                if (id == null) return const SizedBox.shrink();
+                final ach = Achievements.byId(id);
+                if (ach == null) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Row(
+                    children: [
+                      TitleChip(
+                        achievement: ach,
+                        onTap: () => _openTitleSheet(context),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
             // Dark mode
             ListTile(
               leading: const Icon(Icons.dark_mode),
