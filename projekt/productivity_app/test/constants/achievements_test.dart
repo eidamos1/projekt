@@ -84,6 +84,31 @@ void main() {
     });
   });
 
+  group('rano_je_moudrejsi', () {
+    final ach = Achievements.byId('rano_je_moudrejsi');
+
+    test('unlocks before 7:00', () {
+      final ctx = buildContext(
+        recentTasks: [buildTask(completedAt: '2026-05-12 06:30')],
+      );
+      expect(ach!.evaluate(ctx), isTrue);
+    });
+
+    test('does NOT unlock at 7:00', () {
+      final ctx = buildContext(
+        recentTasks: [buildTask(completedAt: '2026-05-12 07:00')],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+
+    test('skips legacy date-only completedAt', () {
+      final ctx = buildContext(
+        recentTasks: [buildTask(completedAt: '2026-05-12')],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+  });
+
   group('patecni_hrdina', () {
     final ach = Achievements.byId('patecni_hrdina');
 
