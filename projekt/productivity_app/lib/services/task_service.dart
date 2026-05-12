@@ -340,6 +340,7 @@ class TaskService {
 
     await lookup.taskRef.update({
       'rejected': true,
+      'wasRejected': true,    // persistent flag, nikdy se nemaze
       'rejectionReason': reason,
     });
 
@@ -354,6 +355,7 @@ class TaskService {
   }
 
   Future<void> resetRejected(String taskId) async {
+    // wasRejected NEZASAHUJEME — chceme aby comeback_kid se mohl odemknout
     await _tasksCollection.doc(taskId).update({
       'rejected': false,
       'rejectionReason': null,
