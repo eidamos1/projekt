@@ -3,8 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/task.dart';
 import '../models/habit.dart';
+import '../models/achievement.dart';
 import '../constants/game_config.dart';
 import '../utils/date_helpers.dart';
+import 'achievement_service.dart';
 
 class TaskService {
   static TaskService? _instance;
@@ -108,6 +110,7 @@ class TaskService {
       date: date,
       categories: categories,
     );
+    AchievementService().evaluate().catchError((_) => <Achievement>[]);
   }
 
   Future<String> createHabitInstance({

@@ -2,8 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/habit.dart';
 import '../models/task.dart';
+import '../models/achievement.dart';
 import '../utils/date_helpers.dart';
 import 'task_service.dart';
+import 'achievement_service.dart';
 
 class HabitService {
   static HabitService? _instance;
@@ -60,6 +62,7 @@ class HabitService {
       'createdAt': FieldValue.serverTimestamp(),
     });
     await _generateInstancesForHabit(docRef.id, habit, days: 30);
+    AchievementService().evaluate().catchError((_) => <Achievement>[]);
     return docRef.id;
   }
 
