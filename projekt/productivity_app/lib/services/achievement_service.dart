@@ -155,8 +155,17 @@ class AchievementService {
     );
   }
 
+  Future<bool> _areNotificationsEnabled() async {
+    final doc = await _firestore.collection('users').doc(_uid).get();
+    if (!doc.exists) return true;
+    final data = doc.data() as Map<String, dynamic>;
+    return data['notificationsEnabled'] ?? true;
+  }
+
   Future<void> _createUnlockNotifications(
       List<Achievement> newly, String now) async {
+    if (!await _areNotificationsEnabled()) return;
+
     final notifsRef = _firestore
         .collection('users')
         .doc(_uid)
