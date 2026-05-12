@@ -1,7 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import '../models/achievement.dart';
 import '../models/task.dart';
+import '../services/achievement_service.dart';
 import '../services/task_service.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
@@ -9,6 +13,8 @@ import '../constants/strings.dart';
 import '../constants/task_categories.dart';
 import '../utils/context_extensions.dart';
 import '../utils/date_helpers.dart';
+import '../widgets/achievement_grid.dart';
+import '../widgets/dialogs/achievement_detail_sheet.dart';
 import '../widgets/neo_bottom_nav.dart';
 import '../widgets/responsive_layout.dart';
 
@@ -22,25 +28,49 @@ class StatsPage extends StatefulWidget {
 class _StatsPageState extends State<StatsPage> {
   final _taskService = TaskService();
   List<Task> _allTasks = [];
+  Map<String, String> _unlockedAtMap = {};
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadStats();
+    // Lazy eval: catch up any achievements that haven't been written yet
+    // (offline sync, missed trigger). Fire-and-forget.
+    AchievementService().evaluate().catchError((_) => <Achievement>[]);
   }
 
   Future<void> _loadStats() async {
     try {
       final tasks = await _taskService.allTasks();
+      final unlockedAtMap = await _loadUnlockedAchievements();
       if (mounted) {
         setState(() {
           _allTasks = tasks;
+          _unlockedAtMap = unlockedAtMap;
           _isLoading = false;
         });
       }
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<Map<String, String>> _loadUnlockedAchievements() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return {};
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('achievements')
+          .get();
+      return {
+        for (final d in snap.docs)
+          d.id: (d.data()['unlockedAt'] as String?) ?? '',
+      };
+    } catch (_) {
+      return {};
     }
   }
 
@@ -314,6 +344,16 @@ class _StatsPageState extends State<StatsPage> {
                               : Colors.black38)),
                 ),
               ),
+
+            const SizedBox(height: NeoTheme.spaceLg),
+            AchievementGrid(
+              unlockedAtMap: _unlockedAtMap,
+              totalCompletedTasks: completedCount,
+              onTapCard: (ach) {
+                final unlockedAt = _unlockedAtMap[ach.id];
+                showAchievementDetailSheet(context, ach, unlockedAt);
+              },
+            ),
 
             // Category breakdown
             if (categoryCounts.isNotEmpty || uncategorizedCount > 0) ...[
