@@ -263,6 +263,20 @@ abstract final class Achievements {
     ),
   );
 
+  static final Achievement _stovkar = Achievement(
+    id: 'stovkar',
+    title: 'Stovkar',
+    teaser: 'Trochu klasika.',
+    description: 'Splnil jsi 100 tasku.',
+    type: AchType.milestone,
+    icon: Icons.military_tech_rounded,
+    color: AppColors.neonYellow,
+    isTitleEligible: false,
+    xpReward: 500,
+    coinReward: 200,
+    evaluate: (ctx) => ctx.totalCompletedTasks >= 100,
+  );
+
   static final List<Achievement> all = [
     _prvniKrok,
     _patecniHrdina,
@@ -279,6 +293,7 @@ abstract final class Achievements {
     _fantom,
     _nocniSova,
     _spartanek,
+    _stovkar,
   ];
 
   static Achievement? byId(String id) {

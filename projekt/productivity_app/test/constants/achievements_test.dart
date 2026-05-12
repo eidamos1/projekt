@@ -357,6 +357,27 @@ void main() {
     });
   });
 
+  group('stovkar', () {
+    final ach = Achievements.byId('stovkar');
+
+    test('unlocks at totalCompletedTasks=100', () {
+      final ctx = buildContext(totalCompletedTasks: 100);
+      expect(ach!.evaluate(ctx), isTrue);
+    });
+
+    test('does NOT unlock at 99 tasks', () {
+      final ctx = buildContext(totalCompletedTasks: 99);
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+
+    test('has milestone rewards (500 XP / 200 coins) and not title-eligible', () {
+      expect(ach!.xpReward, 500);
+      expect(ach.coinReward, 200);
+      expect(ach.isTitleEligible, isFalse);
+      expect(ach.type.toString(), contains('milestone'));
+    });
+  });
+
   group('patecni_hrdina', () {
     final ach = Achievements.byId('patecni_hrdina');
 
