@@ -250,6 +250,19 @@ abstract final class Achievements {
     },
   );
 
+  static final Achievement _spartanek = Achievement(
+    id: 'spartanek',
+    title: 'Spartanek',
+    teaser: 'Telo je chram.',
+    description: '14denni streak na sport-kategorii habitu.',
+    type: AchType.loreTitle,
+    icon: Icons.fitness_center_rounded,
+    color: AppColors.neonCyan,
+    evaluate: (ctx) => ctx.habits.any(
+      (h) => h.categories.contains('sport') && h.streak >= 14,
+    ),
+  );
+
   static final List<Achievement> all = [
     _prvniKrok,
     _patecniHrdina,
@@ -265,6 +278,7 @@ abstract final class Achievements {
     _krasovePanstvi,
     _fantom,
     _nocniSova,
+    _spartanek,
   ];
 
   static Achievement? byId(String id) {

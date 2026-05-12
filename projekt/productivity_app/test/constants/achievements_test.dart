@@ -332,6 +332,31 @@ void main() {
     });
   });
 
+  group('spartanek', () {
+    final ach = Achievements.byId('spartanek');
+
+    test('unlocks with sport habit at streak 14', () {
+      final ctx = buildContext(
+        habits: [buildHabit(categories: ['sport'], streak: 14)],
+      );
+      expect(ach!.evaluate(ctx), isTrue);
+    });
+
+    test('does NOT unlock when sport habit streak is 13', () {
+      final ctx = buildContext(
+        habits: [buildHabit(categories: ['sport'], streak: 13)],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+
+    test('does NOT unlock for non-sport habit even at high streak', () {
+      final ctx = buildContext(
+        habits: [buildHabit(categories: ['work'], streak: 30)],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+  });
+
   group('patecni_hrdina', () {
     final ach = Achievements.byId('patecni_hrdina');
 
