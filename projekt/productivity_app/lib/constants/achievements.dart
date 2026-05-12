@@ -56,10 +56,25 @@ abstract final class Achievements {
         ctx.recentTasks.any((t) => t.completed && t.wasRejected),
   );
 
+  static final Achievement _pulnocniZachrana = Achievement(
+    id: 'pulnocni_zachrana',
+    title: 'Pulnocni zachrana',
+    teaser: 'Nekdo to nevzda ani v posledni minute.',
+    description: 'Splnil jsi task po 23:00.',
+    type: AchType.situational,
+    icon: Icons.access_time_rounded,
+    color: AppColors.neonPink,
+    evaluate: (ctx) => ctx.recentTasks.any((t) {
+      final h = hourOf(t.completedAt);
+      return h != null && h >= 23;
+    }),
+  );
+
   static final List<Achievement> all = [
     _prvniKrok,
     _patecniHrdina,
     _comebackKid,
+    _pulnocniZachrana,
   ];
 
   static Achievement? byId(String id) {

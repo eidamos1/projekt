@@ -59,6 +59,31 @@ void main() {
     });
   });
 
+  group('pulnocni_zachrana', () {
+    final ach = Achievements.byId('pulnocni_zachrana');
+
+    test('unlocks at hour 23', () {
+      final ctx = buildContext(
+        recentTasks: [buildTask(completedAt: '2026-05-12 23:45')],
+      );
+      expect(ach!.evaluate(ctx), isTrue);
+    });
+
+    test('does NOT unlock at hour 22', () {
+      final ctx = buildContext(
+        recentTasks: [buildTask(completedAt: '2026-05-12 22:59')],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+
+    test('skips legacy date-only completedAt', () {
+      final ctx = buildContext(
+        recentTasks: [buildTask(completedAt: '2026-05-12')],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+  });
+
   group('patecni_hrdina', () {
     final ach = Achievements.byId('patecni_hrdina');
 
