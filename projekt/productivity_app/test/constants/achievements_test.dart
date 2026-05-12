@@ -310,6 +310,28 @@ void main() {
     });
   });
 
+  group('nocni_sova', () {
+    final ach = Achievements.byId('nocni_sova');
+
+    test('unlocks with 10 tasks completed at or after 22:00', () {
+      final tasks = List.generate(
+        10,
+        (i) => buildTask(id: 't$i', completedAt: '2026-05-${(i + 1).toString().padLeft(2, '0')} 22:30'),
+      );
+      final ctx = buildContext(recentTasks: tasks);
+      expect(ach!.evaluate(ctx), isTrue);
+    });
+
+    test('does NOT unlock with only 9 late tasks', () {
+      final tasks = List.generate(
+        9,
+        (i) => buildTask(id: 't$i', completedAt: '2026-05-${(i + 1).toString().padLeft(2, '0')} 22:30'),
+      );
+      final ctx = buildContext(recentTasks: tasks);
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+  });
+
   group('patecni_hrdina', () {
     final ach = Achievements.byId('patecni_hrdina');
 

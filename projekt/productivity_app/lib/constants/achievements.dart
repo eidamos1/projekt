@@ -232,6 +232,24 @@ abstract final class Achievements {
     evaluate: (ctx) => ctx.expiredUncompletedCount >= 5,
   );
 
+  static final Achievement _nocniSova = Achievement(
+    id: 'nocni_sova',
+    title: 'Nocni sova',
+    teaser: 'Den ma 24 hodin, pouziva se jen ta druha polovina.',
+    description: 'Splnil jsi 10 tasku po 22:00.',
+    type: AchType.loreTitle,
+    icon: Icons.nightlight_round,
+    color: AppColors.neonCyan,
+    evaluate: (ctx) {
+      int count = 0;
+      for (final t in ctx.recentTasks) {
+        final h = hourOf(t.completedAt);
+        if (h != null && h >= 22) count++;
+      }
+      return count >= 10;
+    },
+  );
+
   static final List<Achievement> all = [
     _prvniKrok,
     _patecniHrdina,
@@ -246,6 +264,7 @@ abstract final class Achievements {
     _zlomenySlib,
     _krasovePanstvi,
     _fantom,
+    _nocniSova,
   ];
 
   static Achievement? byId(String id) {
