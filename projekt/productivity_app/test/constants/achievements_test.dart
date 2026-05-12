@@ -196,6 +196,32 @@ void main() {
     });
   });
 
+  group('univerzal', () {
+    final ach = Achievements.byId('univerzal');
+
+    test('unlocks with 3 distinct categories on same date', () {
+      final ctx = buildContext(
+        recentTasks: [
+          buildTask(id: 'a', date: '2026-05-12', categories: ['work']),
+          buildTask(id: 'b', date: '2026-05-12', categories: ['sport']),
+          buildTask(id: 'c', date: '2026-05-12', categories: ['study']),
+        ],
+      );
+      expect(ach!.evaluate(ctx), isTrue);
+    });
+
+    test('does NOT unlock with only 2 distinct categories same date', () {
+      final ctx = buildContext(
+        recentTasks: [
+          buildTask(id: 'a', date: '2026-05-12', categories: ['work']),
+          buildTask(id: 'b', date: '2026-05-12', categories: ['sport']),
+          buildTask(id: 'c', date: '2026-05-11', categories: ['study']),
+        ],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+  });
+
   group('patecni_hrdina', () {
     final ach = Achievements.byId('patecni_hrdina');
 

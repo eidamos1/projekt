@@ -152,6 +152,24 @@ abstract final class Achievements {
     },
   );
 
+  static final Achievement _univerzal = Achievement(
+    id: 'univerzal',
+    title: 'Univerzal',
+    teaser: 'Jeden mozek, sto sluzeb.',
+    description: 'Splnil jsi tasky ze 3 ruznych kategorii v jeden den.',
+    type: AchType.situational,
+    icon: Icons.dynamic_feed_rounded,
+    color: AppColors.neonPink,
+    evaluate: (ctx) {
+      final byDate = <String, Set<String>>{};
+      for (final t in ctx.recentTasks) {
+        if (!t.completed) continue;
+        byDate.putIfAbsent(t.date, () => {}).addAll(t.categories);
+      }
+      return byDate.values.any((cats) => cats.length >= 3);
+    },
+  );
+
   static final List<Achievement> all = [
     _prvniKrok,
     _patecniHrdina,
@@ -161,6 +179,7 @@ abstract final class Achievements {
     _bourak,
     _hatTrick,
     _nedelniKlid,
+    _univerzal,
   ];
 
   static Achievement? byId(String id) {
