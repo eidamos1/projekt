@@ -101,12 +101,8 @@ class _TitleButton extends StatelessWidget {
         final isCurrent = snapshot.data == achievement.id;
         return NeoPressable(
           onTap: () async {
-            try {
-              await AchievementService()
-                  .setActiveTitle(isCurrent ? null : achievement.id);
-            } catch (_) {
-              // Phase 6 will wire up the real impl. Fail silently for now.
-            }
+            await AchievementService()
+                .setActiveTitle(isCurrent ? null : achievement.id);
           },
           child: Container(
             width: double.infinity,
