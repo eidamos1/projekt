@@ -199,12 +199,14 @@ abstract final class Achievements {
     icon: Icons.do_not_disturb_rounded,
     color: AppColors.neonOrange,
     evaluate: (ctx) {
-      final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
+      final cutoff = formatDate(
+        parseDate(todayString()).subtract(const Duration(days: 7)),
+      );
       int count = 0;
       for (final t in ctx.recentTasks) {
         if (!t.wasRejected) continue;
-        final d = parseDate(t.date);
-        if (d.isAfter(sevenDaysAgo)) count++;
+        if (t.date.compareTo(cutoff) < 0) continue; // strictly within window
+        count++;
       }
       return count >= 3;
     },
