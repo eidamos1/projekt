@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import '../constants/achievements.dart';
 import '../models/achievement.dart';
 import '../models/eval_context.dart';
@@ -22,6 +23,12 @@ class AchievementService {
   /// createHabit) is redundant by design: a missed eval will be picked
   /// up by the next trigger or by lazy eval on /stats open.
   bool _running = false;
+
+  /// Emits the latest newly-unlocked list after each evaluate() call.
+  /// UI layer subscribes via ValueListenableBuilder or addListener to show
+  /// the in-app unlock toast. Only emits on non-empty results so resets
+  /// from the listener side don't loop.
+  final ValueNotifier<List<Achievement>> newlyUnlocked = ValueNotifier([]);
 
   String get _uid {
     final u = _auth.currentUser;
@@ -107,6 +114,7 @@ class AchievementService {
       }
 
       await _createUnlockNotifications(newly, now);
+      if (newly.isNotEmpty) newlyUnlocked.value = newly;
       return newly;
     } finally {
       _running = false;

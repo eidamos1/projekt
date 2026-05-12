@@ -18,6 +18,7 @@ import 'pages/settings.dart';
 import 'pages/stats_page.dart';
 import 'pages/notifications_page.dart';
 import 'pages/habits_page.dart';
+import 'widgets/achievement_unlock_toast.dart';
 import 'constants/app_colors.dart';
 import 'constants/neo_theme.dart';
 import 'constants/layout.dart';
@@ -109,14 +110,29 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _initDeepLinks();
     _hookAchievementTrigger();
+    AchievementService().newlyUnlocked.addListener(_handleUnlock);
   }
 
   @override
   void dispose() {
+    AchievementService().newlyUnlocked.removeListener(_handleUnlock);
     _linkSubscription?.cancel();
     _notifSub?.cancel();
     _authSub?.cancel();
     super.dispose();
+  }
+
+  /// Shows the unlock toast for the most recent achievement in the batch and
+  /// resets the ValueNotifier so a hot rebuild doesn't replay it. Earlier
+  /// items in the same batch are still surfaced in the notifications feed —
+  /// showing N back-to-back SnackBars would be noisy.
+  void _handleUnlock() {
+    final list = AchievementService().newlyUnlocked.value;
+    if (list.isEmpty) return;
+    final ctx = navigatorKey.currentContext;
+    if (ctx == null) return;
+    showAchievementUnlockToast(ctx, list.last);
+    AchievementService().newlyUnlocked.value = [];
   }
 
   /// Listen to the notif stream and fire AchievementService.evaluate() when
