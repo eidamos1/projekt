@@ -272,7 +272,7 @@ Vse `isTitleEligible: true`, `xp/coin = 0`.
 
 | # | id | Title | Teaser | Description | Trigger |
 |---|---|---|---|---|---|
-| 9 | `prokrastinator` | **Prokrastinator** | Cas leti nejak rychle, ze? | Splnil jsi 5 tasku v posledni hodine pred pulnoci. | count(hour == 23) >= 5 |
+| 9 | `prokrastinator` | **Prokrastinator** | Cas leti nejak rychle, ze? | Splnil jsi 5 tasku v posledni hodine pred pulnoci. | 5 distinct days with hour >= 23 completion |
 | 10 | `zlomeny_slib` | **Zlomeny slib** | Tak blizko. | Rozbil jsi habit streak 7+ dni. | any habit `longestStreak >= 7 && longestStreak > streak` |
 | 11 | `krasove_panstvi` | **Krasove panstvi** | Vsechno chce trening. | Mas 3 zamitnuti za jeden tyden. | count(wasRejected in last 7d) >= 3 |
 | 12 | `fantom` | **Fantom kalendare** | Planovat je snadnejsi nez plnit. | 5+ tvych tasku vyprshelo bez splneni. | count(date < today && !completed) >= 5 |

@@ -167,12 +167,13 @@ abstract final class Achievements {
     icon: Icons.hourglass_bottom_rounded,
     color: AppColors.neonOrange,
     evaluate: (ctx) {
-      int count = 0;
+      final lateDays = <String>{};
       for (final t in ctx.recentTasks) {
         final h = hourOf(t.completedAt);
-        if (h != null && h >= 23) count++;
+        if (h == null || h < 23) continue;
+        lateDays.add(t.date);
       }
-      return count >= 5;
+      return lateDays.length >= 5;
     },
   );
 

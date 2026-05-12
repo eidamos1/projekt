@@ -210,27 +210,39 @@ void main() {
   group('prokrastinator', () {
     final ach = Achievements.byId('prokrastinator');
 
-    test('unlocks with 5 tasks completed at or after 23:00', () {
+    test('unlocks with 5 distinct late-night dates', () {
       final ctx = buildContext(
         recentTasks: [
-          buildTask(id: 'a', completedAt: '2026-05-12 23:01'),
-          buildTask(id: 'b', completedAt: '2026-05-11 23:15'),
-          buildTask(id: 'c', completedAt: '2026-05-10 23:30'),
-          buildTask(id: 'd', completedAt: '2026-05-09 23:45'),
-          buildTask(id: 'e', completedAt: '2026-05-08 23:59'),
+          buildTask(id: 'a', date: '2026-05-12', completedAt: '2026-05-12 23:01'),
+          buildTask(id: 'b', date: '2026-05-11', completedAt: '2026-05-11 23:15'),
+          buildTask(id: 'c', date: '2026-05-10', completedAt: '2026-05-10 23:30'),
+          buildTask(id: 'd', date: '2026-05-09', completedAt: '2026-05-09 23:45'),
+          buildTask(id: 'e', date: '2026-05-08', completedAt: '2026-05-08 23:59'),
         ],
       );
       expect(ach!.evaluate(ctx), isTrue);
     });
 
-    test('does NOT unlock with only 4 late-night tasks', () {
+    test('does NOT unlock with 5 late-night tasks on the same date', () {
       final ctx = buildContext(
         recentTasks: [
-          buildTask(id: 'a', completedAt: '2026-05-12 23:01'),
-          buildTask(id: 'b', completedAt: '2026-05-11 23:15'),
-          buildTask(id: 'c', completedAt: '2026-05-10 23:30'),
-          buildTask(id: 'd', completedAt: '2026-05-09 23:45'),
-          buildTask(id: 'e', completedAt: '2026-05-08 22:59'),
+          buildTask(id: 'a', date: '2026-05-12', completedAt: '2026-05-12 23:01'),
+          buildTask(id: 'b', date: '2026-05-12', completedAt: '2026-05-12 23:15'),
+          buildTask(id: 'c', date: '2026-05-12', completedAt: '2026-05-12 23:30'),
+          buildTask(id: 'd', date: '2026-05-12', completedAt: '2026-05-12 23:45'),
+          buildTask(id: 'e', date: '2026-05-12', completedAt: '2026-05-12 23:59'),
+        ],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+
+    test('does NOT unlock with only 4 distinct late-night dates', () {
+      final ctx = buildContext(
+        recentTasks: [
+          buildTask(id: 'a', date: '2026-05-12', completedAt: '2026-05-12 23:01'),
+          buildTask(id: 'b', date: '2026-05-11', completedAt: '2026-05-11 23:15'),
+          buildTask(id: 'c', date: '2026-05-10', completedAt: '2026-05-10 23:30'),
+          buildTask(id: 'd', date: '2026-05-09', completedAt: '2026-05-09 23:45'),
         ],
       );
       expect(ach!.evaluate(ctx), isFalse);
