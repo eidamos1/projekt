@@ -188,6 +188,19 @@ abstract final class Achievements {
     },
   );
 
+  static final Achievement _zlomenySlib = Achievement(
+    id: 'zlomeny_slib',
+    title: 'Zlomeny slib',
+    teaser: 'Tak blizko.',
+    description: 'Rozbil jsi habit streak 7+ dni.',
+    type: AchType.antiAchievement,
+    icon: Icons.heart_broken_rounded,
+    color: AppColors.neonPink,
+    evaluate: (ctx) => ctx.habits.any(
+      (h) => h.longestStreak >= 7 && h.longestStreak > h.streak,
+    ),
+  );
+
   static final List<Achievement> all = [
     _prvniKrok,
     _patecniHrdina,
@@ -199,6 +212,7 @@ abstract final class Achievements {
     _nedelniKlid,
     _univerzal,
     _prokrastinator,
+    _zlomenySlib,
   ];
 
   static Achievement? byId(String id) {

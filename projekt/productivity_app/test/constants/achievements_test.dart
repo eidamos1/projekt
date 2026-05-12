@@ -252,6 +252,24 @@ void main() {
     });
   });
 
+  group('zlomeny_slib', () {
+    final ach = Achievements.byId('zlomeny_slib');
+
+    test('unlocks when habit had longestStreak >= 7 and current < longest', () {
+      final ctx = buildContext(
+        habits: [buildHabit(longestStreak: 10, streak: 3)],
+      );
+      expect(ach!.evaluate(ctx), isTrue);
+    });
+
+    test('does NOT unlock when current streak equals longestStreak', () {
+      final ctx = buildContext(
+        habits: [buildHabit(longestStreak: 10, streak: 10)],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+  });
+
   group('patecni_hrdina', () {
     final ach = Achievements.byId('patecni_hrdina');
 
