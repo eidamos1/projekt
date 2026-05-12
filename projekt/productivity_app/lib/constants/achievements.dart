@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/achievement.dart';
+import '../models/task.dart';
 import '../utils/date_helpers.dart';
 import 'app_colors.dart';
 
@@ -102,6 +103,27 @@ abstract final class Achievements {
     },
   );
 
+  static final Achievement _hatTrick = Achievement(
+    id: 'hat_trick',
+    title: 'Hat-trick',
+    teaser: 'Trojita kombinace.',
+    description: 'Splnil jsi daily, weekly i monthly task v jeden den.',
+    type: AchType.situational,
+    icon: Icons.emoji_events_rounded,
+    color: AppColors.neonYellow,
+    evaluate: (ctx) {
+      final byDate = <String, Set<TaskType>>{};
+      for (final t in ctx.recentTasks) {
+        if (!t.completed) continue;
+        byDate.putIfAbsent(t.date, () => {}).add(t.type);
+      }
+      return byDate.values.any((types) =>
+          types.contains(TaskType.daily) &&
+          types.contains(TaskType.weekly) &&
+          types.contains(TaskType.monthly));
+    },
+  );
+
   static final List<Achievement> all = [
     _prvniKrok,
     _patecniHrdina,
@@ -109,6 +131,7 @@ abstract final class Achievements {
     _pulnocniZachrana,
     _ranoJeMoudrejsi,
     _bourak,
+    _hatTrick,
   ];
 
   static Achievement? byId(String id) {

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:productivity_app/constants/achievements.dart';
 import 'package:productivity_app/models/eval_context.dart';
+import 'package:productivity_app/models/task.dart';
 
 import '../_achievement_fixtures.dart';
 
@@ -132,6 +133,32 @@ void main() {
           buildTask(id: 'd', date: '2026-05-10'),
           buildTask(id: 'e', date: '2026-05-09'),
           buildTask(id: 'f', date: '2026-05-08'),
+        ],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+  });
+
+  group('hat_trick', () {
+    final ach = Achievements.byId('hat_trick');
+
+    test('unlocks with daily+weekly+monthly on same date', () {
+      final ctx = buildContext(
+        recentTasks: [
+          buildTask(id: 'd', date: '2026-05-12', type: TaskType.daily),
+          buildTask(id: 'w', date: '2026-05-12', type: TaskType.weekly),
+          buildTask(id: 'm', date: '2026-05-12', type: TaskType.monthly),
+        ],
+      );
+      expect(ach!.evaluate(ctx), isTrue);
+    });
+
+    test('does NOT unlock with only daily+weekly on same date', () {
+      final ctx = buildContext(
+        recentTasks: [
+          buildTask(id: 'd', date: '2026-05-12', type: TaskType.daily),
+          buildTask(id: 'w', date: '2026-05-12', type: TaskType.weekly),
+          buildTask(id: 'm', date: '2026-05-11', type: TaskType.monthly),
         ],
       );
       expect(ach!.evaluate(ctx), isFalse);
