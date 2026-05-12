@@ -214,7 +214,9 @@ class AchievementService {
   }
 
   Future<void> setActiveTitle(String? id) async {
-    throw UnimplementedError('Implement in Phase 6');
+    await _firestore.collection('users').doc(_uid).update({
+      'activeTitle': id,
+    });
   }
 
   Stream<String?> activeTitleStream() {
