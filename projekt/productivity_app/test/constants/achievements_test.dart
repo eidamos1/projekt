@@ -41,6 +41,24 @@ void main() {
     });
   });
 
+  group('comeback_kid', () {
+    final ach = Achievements.byId('comeback_kid');
+
+    test('unlocks when a completed task has wasRejected=true', () {
+      final ctx = buildContext(
+        recentTasks: [buildTask(wasRejected: true, completed: true)],
+      );
+      expect(ach!.evaluate(ctx), isTrue);
+    });
+
+    test('does NOT unlock with completed but never rejected task', () {
+      final ctx = buildContext(
+        recentTasks: [buildTask(wasRejected: false, completed: true)],
+      );
+      expect(ach!.evaluate(ctx), isFalse);
+    });
+  });
+
   group('patecni_hrdina', () {
     final ach = Achievements.byId('patecni_hrdina');
 

@@ -44,9 +44,22 @@ abstract final class Achievements {
     },
   );
 
+  static final Achievement _comebackKid = Achievement(
+    id: 'comeback_kid',
+    title: 'Comeback',
+    teaser: 'Nevzdal jsi to po prvni rane.',
+    description: 'Potvrdil jsi task, ktery byl drive zamitnut.',
+    type: AchType.situational,
+    icon: Icons.refresh_rounded,
+    color: AppColors.neonGreen,
+    evaluate: (ctx) =>
+        ctx.recentTasks.any((t) => t.completed && t.wasRejected),
+  );
+
   static final List<Achievement> all = [
     _prvniKrok,
     _patecniHrdina,
+    _comebackKid,
   ];
 
   static Achievement? byId(String id) {
