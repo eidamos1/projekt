@@ -32,6 +32,8 @@ class _StatsPageState extends State<StatsPage> {
   List<Task> _allTasks = [];
   Map<String, String> _unlockedAtMap = {};
   bool _isLoading = true;
+  int _userStreak = 0;
+  int _userLongestStreak = 0;
 
   /// When set, the matching AchievementCard pulses a colored ring for ~3s.
   /// Populated from route arguments on first frame (notif tap / toast tap).
@@ -61,11 +63,29 @@ class _StatsPageState extends State<StatsPage> {
   Future<void> _loadStats() async {
     try {
       final tasks = await _taskService.allTasks();
-      final unlockedAtMap = await _loadUnlockedAchievements();
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final unlockedAtMap = await _loadUnlockedAchievements(uid);
+      int streak = 0;
+      int longestStreak = 0;
+      if (uid != null) {
+        try {
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .get();
+          if (userDoc.exists) {
+            final data = userDoc.data() ?? {};
+            streak = (data['streak'] ?? 0) as int;
+            longestStreak = (data['longestStreak'] ?? streak) as int;
+          }
+        } catch (_) {}
+      }
       if (mounted) {
         setState(() {
           _allTasks = tasks;
           _unlockedAtMap = unlockedAtMap;
+          _userStreak = streak;
+          _userLongestStreak = longestStreak;
           _isLoading = false;
         });
       }
@@ -74,8 +94,7 @@ class _StatsPageState extends State<StatsPage> {
     }
   }
 
-  Future<Map<String, String>> _loadUnlockedAchievements() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+  Future<Map<String, String>> _loadUnlockedAchievements(String? uid) async {
     if (uid == null) return {};
     try {
       final snap = await FirebaseFirestore.instance
@@ -144,6 +163,36 @@ class _StatsPageState extends State<StatsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (_userStreak > 0) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: NeoTheme.spaceMd,
+                      vertical: NeoTheme.spaceSm),
+                  decoration: BoxDecoration(
+                    color: AppColors.neonPink.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
+                    border: Border.all(
+                      color: AppColors.neonPink,
+                      width: NeoTheme.borderWidthThin,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.local_fire_department,
+                          color: AppColors.neonPink, size: 20),
+                      const SizedBox(width: 6),
+                      Text(
+                        Strings.streakLine(_userStreak, _userLongestStreak),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.neonPink,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: NeoTheme.spaceMd),
+              ],
               // Heatmap section
               const Text(Strings.lastYearHeader, style: NeoTheme.subhead),
               const SizedBox(height: NeoTheme.spaceSm),
