@@ -101,9 +101,9 @@ class _DayTaskRow extends StatelessWidget {
           ),
           Text(
             '${task.xp} XP',
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: AppColors.neonCyan,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
         ],
