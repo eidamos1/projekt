@@ -2,10 +2,17 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/task.dart';
+import '../models/habit.dart';
+import '../models/achievement.dart';
 import '../constants/game_config.dart';
 import '../utils/date_helpers.dart';
+import 'achievement_service.dart';
 
 class TaskService {
+  static TaskService? _instance;
+  factory TaskService() => _instance ??= TaskService._();
+  TaskService._();
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -60,17 +67,18 @@ class TaskService {
     return _firestore.collection('users').doc(_uid).snapshots();
   }
 
-  Future<void> createTask({
+  Future<String> _createTaskInstance({
     required String title,
     required TaskType type,
     required String date,
+    String? habitId,
+    List<String> categories = const [],
   }) async {
     final rewards = GameConfig.rewardsFor(type);
-
     final random = Random();
-    String code = (100000 + random.nextInt(900000)).toString();
+    final code = (100000 + random.nextInt(900000)).toString();
 
-    Task newTask = Task(
+    final taskMap = Task(
       id: '',
       title: title,
       type: type,
@@ -78,18 +86,51 @@ class TaskService {
       xp: rewards.xp,
       coins: rewards.coins,
       code: code,
-    );
+      habitId: habitId,
+      categories: categories,
+    ).toMap();
 
-    final docRef = await _tasksCollection.add(newTask.toMap());
-
+    final docRef = await _tasksCollection.add(taskMap);
     await _firestore.collection('taskCodes').doc(code).set({
       'userId': _uid,
       'taskId': docRef.id,
     });
+    return docRef.id;
+  }
+
+  Future<void> createTask({
+    required String title,
+    required TaskType type,
+    required String date,
+    List<String> categories = const [],
+  }) async {
+    await _createTaskInstance(
+      title: title,
+      type: type,
+      date: date,
+      categories: categories,
+    );
+    AchievementService().evaluate().catchError((_) => <Achievement>[]);
+  }
+
+  Future<String> createHabitInstance({
+    required String title,
+    required TaskType type,
+    required String date,
+    required String habitId,
+    List<String> categories = const [],
+  }) {
+    return _createTaskInstance(
+      title: title,
+      type: type,
+      date: date,
+      habitId: habitId,
+      categories: categories,
+    );
   }
 
   Future<void> updateTask(String taskId,
-      {String? title, TaskType? type}) async {
+      {String? title, TaskType? type, List<String>? categories}) async {
     final updates = <String, dynamic>{};
     if (title != null) updates['title'] = title;
     if (type != null) {
@@ -98,6 +139,7 @@ class TaskService {
       updates['xp'] = rewards.xp;
       updates['coins'] = rewards.coins;
     }
+    if (categories != null) updates['categories'] = categories;
     if (updates.isNotEmpty) {
       await _tasksCollection.doc(taskId).update(updates);
     }
@@ -200,6 +242,15 @@ class TaskService {
         throw Exception('Tento ukol uz byl potvrzen!');
       }
 
+      // All reads must happen before any writes in a Firestore transaction.
+      final habitId = taskData?['habitId'] as String?;
+      DocumentReference? habitRef;
+      DocumentSnapshot? habitSnap;
+      if (habitId != null) {
+        habitRef = lookup.userRef.collection('habits').doc(habitId);
+        habitSnap = await tx.get(habitRef);
+      }
+
       final userData = userSnap.data() as Map<String, dynamic>;
       int currentXp = userData['xp'] ?? 0;
       int currentCoins = userData['coins'] ?? 0;
@@ -240,8 +291,39 @@ class TaskService {
 
       tx.update(lookup.taskRef, {
         'completed': true,
-        'completedAt': today,
+        'completedAt': nowMinuteString(),
       });
+
+      // Habit streak update (only if the task was actually a habit instance
+      // and the habit doc still exists)
+      if (habitRef != null && habitSnap != null && habitSnap.exists) {
+        final habitData = habitSnap.data() as Map<String, dynamic>;
+        final currentStreak = (habitData['streak'] ?? 0) as int;
+        final longest = (habitData['longestStreak'] ?? 0) as int;
+        final lastCompleted = habitData['lastCompletedDate'] as String?;
+        final habit = Habit.fromMap(habitId!, habitData);
+        final taskDate = taskData!['date'] as String;
+
+        int newStreak;
+        if (lastCompleted == null) {
+          newStreak = 1;
+        } else if (lastCompleted == taskDate) {
+          newStreak = currentStreak; // idempotent same-day
+        } else {
+          final prev = habit.previousExpectedDay(parseDate(taskDate));
+          if (prev != null && formatDate(prev) == lastCompleted) {
+            newStreak = currentStreak + 1;
+          } else {
+            newStreak = 1;
+          }
+        }
+
+        tx.update(habitRef, {
+          'streak': newStreak,
+          'longestStreak': newStreak > longest ? newStreak : longest,
+          'lastCompletedDate': taskDate,
+        });
+      }
     });
 
     final taskTitle = lookup.taskData['title'] ?? 'Ukol';
@@ -258,6 +340,7 @@ class TaskService {
 
     await lookup.taskRef.update({
       'rejected': true,
+      'wasRejected': true,    // persistent flag, nikdy se nemaze
       'rejectionReason': reason,
     });
 
@@ -272,6 +355,7 @@ class TaskService {
   }
 
   Future<void> resetRejected(String taskId) async {
+    // wasRejected NEZASAHUJEME — chceme aby comeback_kid se mohl odemknout
     await _tasksCollection.doc(taskId).update({
       'rejected': false,
       'rejectionReason': null,

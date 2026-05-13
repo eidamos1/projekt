@@ -2,16 +2,23 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:app_links/app_links.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart';
+import 'models/achievement.dart';
+import 'services/task_service.dart';
+import 'services/achievement_service.dart';
 import 'pages/login.dart';
 import 'pages/calendar_page.dart';
 import 'pages/confirm_task.dart';
 import 'pages/settings.dart';
 import 'pages/stats_page.dart';
 import 'pages/notifications_page.dart';
+import 'pages/habits_page.dart';
+import 'widgets/achievement_unlock_toast.dart';
 import 'constants/app_colors.dart';
 import 'constants/neo_theme.dart';
 import 'constants/layout.dart';
@@ -21,6 +28,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await initializeDateFormatting('cs');
 
   final themeProvider = ThemeProvider();
   await themeProvider.loadPreference();
@@ -93,17 +101,69 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   late AppLinks _appLinks;
   StreamSubscription<Uri>? _linkSubscription;
+  StreamSubscription<User?>? _authSub;
+  StreamSubscription<List<Map<String, dynamic>>>? _notifSub;
+  int _lastNotifSeen = -1;
 
   @override
   void initState() {
     super.initState();
     _initDeepLinks();
+    _hookAchievementTrigger();
+    AchievementService().newlyUnlocked.addListener(_handleUnlock);
   }
 
   @override
   void dispose() {
+    AchievementService().newlyUnlocked.removeListener(_handleUnlock);
     _linkSubscription?.cancel();
+    _notifSub?.cancel();
+    _authSub?.cancel();
     super.dispose();
+  }
+
+  /// Shows the unlock toast for the most recent achievement in the batch and
+  /// resets the ValueNotifier so a hot rebuild doesn't replay it. Earlier
+  /// items in the same batch are still surfaced in the notifications feed —
+  /// showing N back-to-back SnackBars would be noisy.
+  void _handleUnlock() {
+    final list = AchievementService().newlyUnlocked.value;
+    if (list.isEmpty) return;
+    final ctx = navigatorKey.currentContext;
+    if (ctx == null) return;
+    showAchievementUnlockToast(ctx, list.last);
+    AchievementService().newlyUnlocked.value = [];
+  }
+
+  /// Listen to the notif stream and fire AchievementService.evaluate() when
+  /// the list grows (new notification arrived). Resubscribes on auth changes
+  /// because notificationsStream() requires a logged-in user.
+  void _hookAchievementTrigger() {
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
+      _notifSub?.cancel();
+      _notifSub = null;
+      _lastNotifSeen = -1;
+      if (user == null) return;
+      try {
+        _notifSub = TaskService().notificationsStream().listen((notifs) {
+          if (_lastNotifSeen < 0) {
+            _lastNotifSeen = notifs.length;
+            return;
+          }
+          if (notifs.length > _lastNotifSeen) {
+            _lastNotifSeen = notifs.length;
+            AchievementService()
+                .evaluate()
+                .catchError((_) => <Achievement>[]);
+          } else {
+            _lastNotifSeen = notifs.length;
+          }
+        }, onError: (_) {});
+      } catch (_) {
+        // Stream construction failed (e.g. transient auth state) — silently
+        // skip; we'll get another authStateChanges tick.
+      }
+    });
   }
 
   Future<void> _initDeepLinks() async {
@@ -159,9 +219,19 @@ class _MyAppState extends State<MyApp> {
       themeMode: themeProvider.themeMode,
       theme: ThemeData(
         brightness: Brightness.light,
-        colorSchemeSeed: themeProvider.primaryColor,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: themeProvider.primaryColor,
+          brightness: Brightness.light,
+        ).copyWith(primary: themeProvider.primaryColor),
         scaffoldBackgroundColor: AppColors.scaffoldLight,
         cardColor: AppColors.cardLight,
+        pageTransitionsTheme: const PageTransitionsTheme(builders: {
+          TargetPlatform.android: _NeoPageTransitionsBuilder(),
+          TargetPlatform.iOS: _NeoPageTransitionsBuilder(),
+          TargetPlatform.linux: _NeoPageTransitionsBuilder(),
+          TargetPlatform.macOS: _NeoPageTransitionsBuilder(),
+          TargetPlatform.windows: _NeoPageTransitionsBuilder(),
+        }),
         appBarTheme: AppBarTheme(
           backgroundColor: themeProvider.primaryColor,
           foregroundColor: Colors.white,
@@ -207,21 +277,34 @@ class _MyAppState extends State<MyApp> {
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
-        colorSchemeSeed: themeProvider.primaryColor,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: themeProvider.primaryColor,
+          brightness: Brightness.dark,
+        ).copyWith(primary: themeProvider.primaryColor),
         scaffoldBackgroundColor: AppColors.scaffoldDark,
         cardColor: AppColors.cardDark,
+        pageTransitionsTheme: const PageTransitionsTheme(builders: {
+          TargetPlatform.android: _NeoPageTransitionsBuilder(),
+          TargetPlatform.iOS: _NeoPageTransitionsBuilder(),
+          TargetPlatform.linux: _NeoPageTransitionsBuilder(),
+          TargetPlatform.macOS: _NeoPageTransitionsBuilder(),
+          TargetPlatform.windows: _NeoPageTransitionsBuilder(),
+        }),
         appBarTheme: AppBarTheme(
           backgroundColor: AppColors.cardDark,
           foregroundColor: Colors.white,
           elevation: 0,
           scrolledUnderElevation: 0,
-          shape: const Border(
-            bottom: BorderSide(color: AppColors.borderSubtle, width: NeoTheme.borderWidth),
+          shape: Border(
+            bottom: BorderSide(
+              color: themeProvider.primaryColor,
+              width: NeoTheme.borderWidth,
+            ),
           ),
         ),
         floatingActionButtonTheme: FloatingActionButtonThemeData(
           elevation: 0,
-          backgroundColor: AppColors.neonGreen,
+          backgroundColor: themeProvider.primaryColor,
           foregroundColor: Colors.black,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
@@ -278,7 +361,37 @@ class _MyAppState extends State<MyApp> {
         '/settings': (context) => const SettingsPage(),
         '/stats': (context) => const StatsPage(),
         '/notifications': (context) => const NotificationsPage(),
+        '/habits': (context) => const HabitsPage(),
       },
+    );
+  }
+}
+
+/// Snappy slide-from-right transition (180ms, easeOutCubic) used on every
+/// platform — Material's default fade-and-slide felt too soft for the neo
+/// aesthetic, and Flutter web has no transition by default.
+class _NeoPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _NeoPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0.05, 0),
+        end: Offset.zero,
+      ).animate(curved),
+      child: FadeTransition(opacity: curved, child: child),
     );
   }
 }

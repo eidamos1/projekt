@@ -3,9 +3,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/task_service.dart';
 import '../models/task.dart';
 import '../constants/app_colors.dart';
+import '../constants/achievements.dart';
 import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
 import '../utils/context_extensions.dart';
+import 'title_chip.dart';
 import 'xp_bar.dart';
 
 class StatsSidebar extends StatefulWidget {
@@ -49,6 +51,7 @@ class _StatsSidebarState extends State<StatsSidebar> {
         stream: _taskService.userProfileStream(),
         builder: (context, snapshot) {
           int xp = 0, coins = 0, level = 1, streak = 0;
+          String? activeTitle;
 
           if (snapshot.hasData && snapshot.data!.exists) {
             final data = snapshot.data!.data() as Map<String, dynamic>;
@@ -56,6 +59,7 @@ class _StatsSidebarState extends State<StatsSidebar> {
             coins = data['coins'] ?? 0;
             level = data['level'] ?? 1;
             streak = data['streak'] ?? 0;
+            activeTitle = data['activeTitle'] as String?;
           }
 
           final totalTasks = _allTasks?.length ?? 0;
@@ -82,6 +86,17 @@ class _StatsSidebarState extends State<StatsSidebar> {
                   decoration: NeoTheme.cardDecoration(isDark: isDark),
                   child: XPBar(xp: xp % 100, level: level),
                 ),
+                if (activeTitle != null) ...[
+                  const SizedBox(height: NeoTheme.spaceSm),
+                  Builder(builder: (context) {
+                    final ach = Achievements.byId(activeTitle!);
+                    if (ach == null) return const SizedBox.shrink();
+                    return TitleChip(
+                      achievement: ach,
+                      onTap: () => Navigator.pushNamed(context, '/stats'),
+                    );
+                  }),
+                ],
                 const SizedBox(height: 12),
                 // Coins
                 Container(

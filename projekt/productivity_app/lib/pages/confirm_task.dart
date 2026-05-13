@@ -7,6 +7,7 @@ import '../constants/strings.dart';
 import '../utils/context_extensions.dart';
 import '../utils/ui_helpers.dart';
 import '../widgets/responsive_layout.dart';
+import '../widgets/neo_pressable.dart';
 
 class ConfirmTaskPage extends StatefulWidget {
   const ConfirmTaskPage({super.key});
@@ -20,6 +21,7 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
   final _taskService = TaskService();
   bool _isInit = true;
   bool _isLoading = false;
+  bool _justConfirmed = false;
 
   TaskLookupResult? _lookup;
 
@@ -48,6 +50,7 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
     setState(() {
       _isLoading = true;
       _lookup = null;
+      _justConfirmed = false;
     });
 
     try {
@@ -71,8 +74,12 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
     try {
       await _taskService.confirmTask(_lookup!);
       if (mounted) {
-        showSuccessSnack(context, Strings.taskConfirmed);
-        Navigator.pop(context);
+        _codeController.clear();
+        setState(() {
+          _isLoading = false;
+          _lookup = null;
+          _justConfirmed = true;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -80,6 +87,104 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void _confirmAnother() {
+    setState(() => _justConfirmed = false);
+  }
+
+  Widget _buildSuccessCard(bool isDark) {
+    return Container(
+      decoration: NeoTheme.cardDecoration(isDark: isDark),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.neonGreen,
+                shape: BoxShape.circle,
+                border: Border.all(
+                    color: Colors.white, width: NeoTheme.borderWidth),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.neonGreen.withValues(alpha: 0.4),
+                    offset: NeoTheme.shadowOffset,
+                    blurRadius: 0,
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.check_rounded,
+                  color: Colors.black, size: 42),
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              Strings.confirmedHeadline,
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              Strings.taskConfirmed,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: isDark ? AppColors.textSecondary : Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _confirmAnother,
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: isDark
+                            ? AppColors.borderSubtle
+                            : AppColors.borderBold,
+                        width: NeoTheme.borderWidth,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(NeoTheme.radiusButton),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text(Strings.confirmAnother),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: NeoPressable(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      decoration: NeoTheme.buttonDecoration(
+                        backgroundColor: context.primaryColor,
+                        borderColor: Colors.white,
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                        child: Center(
+                          child: Text(
+                            Strings.goBack,
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _showRejectDialog() async {
@@ -169,20 +274,23 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            TextField(
-              controller: _codeController,
-              decoration: InputDecoration(
-                labelText: Strings.taskCodeLabel,
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: _findTask,
+            if (!_justConfirmed) ...[
+              TextField(
+                controller: _codeController,
+                decoration: InputDecoration(
+                  labelText: Strings.taskCodeLabel,
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: _findTask,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
+            ],
             if (_isLoading)
               const CircularProgressIndicator(color: AppColors.neonCyan),
-            if (taskData != null && !_isLoading) ...[
+            if (_justConfirmed && !_isLoading) _buildSuccessCard(isDark),
+            if (taskData != null && !_isLoading && !_justConfirmed) ...[
               Container(
                 decoration: NeoTheme.cardDecoration(isDark: isDark),
                 child: Padding(
@@ -199,12 +307,11 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
                         ClipRRect(
                           borderRadius:
                               BorderRadius.circular(NeoTheme.radiusCard),
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxHeight: 400),
+                          child: AspectRatio(
+                            aspectRatio: NeoTheme.photoAspectRatio,
                             child: Image.memory(
                               base64Decode(taskData['imageBase64']),
-                              width: double.infinity,
-                              fit: BoxFit.contain,
+                              fit: BoxFit.cover,
                             ),
                           ),
                         )
@@ -239,54 +346,44 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
                         children: [
                           // Reject button — neon pink
                           Expanded(
-                            child: Container(
-                              decoration: NeoTheme.buttonDecoration(
-                                backgroundColor: AppColors.neonPink,
-                                borderColor: Colors.white,
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(
-                                      NeoTheme.radiusButton),
-                                  onTap: _showRejectDialog,
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(14),
-                                    child: Center(
-                                      child: Text(Strings.reject,
-                                          style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w700)),
-                                    ),
+                            child: NeoPressable(
+                              onTap: _showRejectDialog,
+                              child: Container(
+                                decoration: NeoTheme.buttonDecoration(
+                                  backgroundColor: AppColors.neonPink,
+                                  borderColor: Colors.white,
+                                ),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(14),
+                                  child: Center(
+                                    child: Text(Strings.reject,
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700)),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          // Confirm button — neon green
+                          const SizedBox(width: NeoTheme.spaceSm),
+                          // Confirm button — primary theme color
                           Expanded(
-                            child: Container(
-                              decoration: NeoTheme.buttonDecoration(
-                                backgroundColor: AppColors.neonGreen,
-                                borderColor: Colors.white,
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(
-                                      NeoTheme.radiusButton),
-                                  onTap: _confirm,
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(14),
-                                    child: Center(
-                                      child: Text(Strings.confirmUpper,
-                                          style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.black,
-                                              fontWeight: FontWeight.w700)),
-                                    ),
+                            child: NeoPressable(
+                              onTap: _confirm,
+                              child: Container(
+                                decoration: NeoTheme.buttonDecoration(
+                                  backgroundColor: context.primaryColor,
+                                  borderColor: Colors.white,
+                                ),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(14),
+                                  child: Center(
+                                    child: Text(Strings.confirmUpper,
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.w700)),
                                   ),
                                 ),
                               ),

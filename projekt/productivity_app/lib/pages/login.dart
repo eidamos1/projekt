@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
+import '../services/achievement_service.dart';
+import '../models/achievement.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
@@ -36,6 +38,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await _authService.signInWithGoogle();
       if (mounted) Navigator.pushReplacementNamed(context, '/calendar');
+      AchievementService().evaluate().catchError((_) => <Achievement>[]);
     } catch (e) {
       debugPrint('Google Sign-In error: $e');
       if (mounted) {
@@ -61,6 +64,7 @@ class _LoginPageState extends State<LoginPage> {
         await _authService.registerWithEmail(email, password, nickname);
       }
       if (mounted) Navigator.pushReplacementNamed(context, '/calendar');
+      AchievementService().evaluate().catchError((_) => <Achievement>[]);
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         showErrorSnack(context, e.message ?? Strings.loginError);
@@ -80,6 +84,47 @@ class _LoginPageState extends State<LoginPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            const SizedBox(height: NeoTheme.spaceXl),
+            // Brand block
+            Container(
+              decoration: NeoTheme.cardDecoration(
+                isDark: isDark,
+                borderColor: context.primaryColor,
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: NeoTheme.spaceLg,
+                vertical: NeoTheme.spaceMd,
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.bolt_rounded,
+                          color: context.primaryColor, size: 38),
+                      const SizedBox(width: NeoTheme.spaceSm),
+                      Text(
+                        Strings.appName,
+                        style: NeoTheme.display.copyWith(
+                          color: context.primaryColor,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: NeoTheme.spaceXs),
+                  Text(
+                    Strings.tagline,
+                    style: NeoTheme.caption.copyWith(
+                      color: isDark
+                          ? AppColors.textSecondary
+                          : Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: NeoTheme.spaceLg),
             if (!isLogin) ...[
               TextField(
                 controller: nicknameController,
@@ -105,7 +150,7 @@ class _LoginPageState extends State<LoginPage> {
               width: double.infinity,
               child: Container(
                 decoration: NeoTheme.buttonDecoration(
-                  backgroundColor: AppColors.neonGreen,
+                  backgroundColor: context.primaryColor,
                   borderColor: Colors.white,
                 ),
                 child: Material(

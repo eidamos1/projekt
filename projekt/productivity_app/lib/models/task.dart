@@ -14,6 +14,15 @@ class Task {
   final String? imageBase64;
   final bool rejected;
   final String? rejectionReason;
+  final String? habitId;
+  /// Category keys (see Categories.byKey). Empty list = uncategorized.
+  final List<String> categories;
+  /// Persistent flag — true if this task was ever rejected, even after reset.
+  /// Drives achievements like comeback_kid.
+  final bool wasRejected;
+  /// Completion timestamp. Either 'yyyy-MM-dd' (legacy) or 'yyyy-MM-dd HH:mm'.
+  /// Null until task is confirmed.
+  final String? completedAt;
 
   Task({
     required this.id,
@@ -27,6 +36,10 @@ class Task {
     this.imageBase64,
     this.rejected = false,
     this.rejectionReason,
+    this.habitId,
+    this.categories = const [],
+    this.wasRejected = false,
+    this.completedAt,
   });
 
   factory Task.fromMap(String id, Map<String, dynamic> data) {
@@ -44,6 +57,10 @@ class Task {
       imageBase64: data['imageBase64'],
       rejected: data['rejected'] ?? false,
       rejectionReason: data['rejectionReason'],
+      habitId: data['habitId'],
+      categories: (data['categories'] as List?)?.cast<String>() ?? const [],
+      wasRejected: data['wasRejected'] ?? false,
+      completedAt: data['completedAt'] is String ? data['completedAt'] as String : null,
     );
   }
 
@@ -59,6 +76,10 @@ class Task {
       'imageBase64': imageBase64,
       'rejected': rejected,
       'rejectionReason': rejectionReason,
+      'habitId': habitId,
+      'categories': categories,
+      'wasRejected': wasRejected,
+      'completedAt': completedAt,
     };
   }
 

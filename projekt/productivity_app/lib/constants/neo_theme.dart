@@ -18,6 +18,45 @@ abstract final class NeoTheme {
   // Accent bar
   static const accentBarHeight = 6.0;
 
+  // Spacing scale
+  static const double spaceXs = 4;
+  static const double spaceSm = 8;
+  static const double spaceMd = 16;
+  static const double spaceLg = 24;
+  static const double spaceXl = 32;
+
+  // Typography scale — font is inherited from textTheme (Space Grotesk).
+  static const TextStyle display = TextStyle(
+    fontSize: 32,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -0.5,
+    height: 1.1,
+  );
+  static const TextStyle headline = TextStyle(
+    fontSize: 22,
+    fontWeight: FontWeight.w800,
+    height: 1.2,
+  );
+  static const TextStyle subhead = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    height: 1.3,
+  );
+  static const TextStyle body = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    height: 1.4,
+  );
+  static const TextStyle caption = TextStyle(
+    fontSize: 11,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 1.5,
+  );
+
+  // Aspect ratio for photo proof (uniform task-card layout regardless of
+  // the user's actual photo orientation; cover-fit crops to fill).
+  static const double photoAspectRatio = 4 / 3;
+
   static BoxDecoration cardDecoration({
     required bool isDark,
     Color? borderColor,

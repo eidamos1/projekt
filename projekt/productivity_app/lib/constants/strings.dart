@@ -42,12 +42,12 @@ abstract final class Strings {
   static const taskTypeLabel = 'Typ ukolu';
   static const taskCodeLabel = 'Kod ukolu';
 
-  // Empty states
-  static const noTasksTitle = 'Zadne ukoly pro tento den';
-  static const noTasksSubtitle = 'Klikni na + a pridej novy ukol!';
-  static const noNotifications = 'Zadne notifikace';
+  // Empty states — short, confident voice (no exclamation marks, no "klikni na").
+  static const noTasksTitle = 'Cisty stol.';
+  static const noTasksSubtitle = 'Pridej ukol, vydelej XP.';
+  static const noNotifications = 'Klid. Nikdo se neozyva.';
   static const expiringNotification = 'Ukol vyprsí zitra!';
-  static const noStatsData = 'Zadna data k zobrazeni';
+  static const noStatsData = 'Zatim nuly. Splnis ukol, prijdou cisla.';
 
   // Snackbar messages
   static const photoSaved = 'Dukaz ulozen!';
@@ -87,6 +87,21 @@ abstract final class Strings {
   static const today = 'Dnes';
   static const confirmTask = 'Potvrzeni ukolu';
   static const confirmingTask = 'Potvrzujes ukol:';
+  static const confirmAnother = 'Potvrdit dalsi';
+  static const goBack = 'Zpet';
+  static const confirmedHeadline = 'Hotovo!';
+  static const confirmedSubtitle = 'Odmena byla pripsana kamaradovi.';
+
+  // Brand
+  static const appName = 'MOTIVATOR';
+  static const tagline = 'Potvrzeno = odmeneno.';
+
+  // Categories
+  static const categoriesLabel = 'KATEGORIE';
+  static const filterAll = 'Vse';
+  static const filterByType = 'Typ';
+  static const filterByCategory = 'Kategorie';
+  static const noCategoryLabel = 'Bez kategorie';
 
   // Login
   static const login = 'Prihlaseni';
@@ -135,4 +150,53 @@ abstract final class Strings {
     6: 'Sobota',
     7: 'Nedele',
   };
+
+  // Habits
+  static const habit = 'Navyk';
+  static const habitAccented = 'N\u00e1vyk';
+  static const habits = 'Navyky';
+  static const habitsAccented = 'N\u00e1vyky';
+  static const habitsMine = 'Moje navyky';
+  static const repeatTask = 'Opakovat pravidelne';
+  static const recurrenceEveryday = 'Kazdy den';
+  static const recurrenceWeekdays = 'Vsedni dny';
+  static const recurrenceCustom = 'Vlastni';
+  static const recurrenceLabel = 'Opakovani';
+  static const chooseDays = 'Vyber dny';
+  static const habitStreak = 'Serie navyku';
+  static const habitRecord = 'rekord';
+  static const editHabitOrInstance = 'Upravit jen tento ukol, nebo cely navyk?';
+  static const thisOnly = 'Jen tento';
+  static const wholeHabit = 'Cely navyk';
+  static const pauseHabit = 'Pozastavit';
+  static const resumeHabit = 'Aktivovat';
+  static const deleteHabit = 'Smazat navyk';
+  static const editHabit = 'Upravit navyk';
+  static const deleteHabitConfirm = 'Smaze vsechny budouci instance. Minule zustanou.';
+  static const noHabitsTitle = 'Zadne navyky.';
+  static const noHabitsSubtitle = 'Pridej jeden v dialogu noveho ukolu.';
+  static const rewardTierWarning = 'Pozor: casta frekvence + mesicni tier = hodne XP.';
+
+  static const weekdayShort = {
+    1: 'Po', 2: 'Ut', 3: 'St', 4: 'Ct', 5: 'Pa', 6: 'So', 7: 'Ne',
+  };
+
+  // Uspechy (achievements)
+  static const achievementsHeader = 'USPECHY';
+  static const achievementEmptyHint = 'Splni neco neobvykleho a uvidi se.';
+  static const achievementFilterAll = 'vse';
+  static const achievementFilterSituational = 'situacni';
+  static const achievementFilterLore = 'tituly';
+  static const achievementFilterAnti = 'anti';
+  static const achievementFilterMilestone = 'mety';
+  static const achievementUnlockedAt = 'Odemknuto';
+  static const achievementSetAsTitle = 'NASADIT JAKO TITUL';
+  static const achievementRemoveTitle = 'SUNDAT TITUL';
+  static const achievementNotifTitle = 'ODEMKL JSI USPECH';
+  static const achievementYourTitle = 'TVUJ TITUL';
+  static const achievementOpenStats = 'OTEVRIT STATISTIKY';
+  static String achievementCounter(int unlocked, int total) =>
+      '$unlocked / $total odhaleno';
+  static String achievementUnlockToast(String title) =>
+      'Odemknul jsi: $title';
 }

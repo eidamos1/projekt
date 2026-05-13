@@ -7,11 +7,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../models/task.dart';
+import '../constants/task_categories.dart';
 import '../widgets/task_card.dart';
 import '../widgets/xp_bar.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/dialogs/task_form_dialog.dart';
 import '../services/task_service.dart';
+import '../services/habit_service.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
@@ -19,6 +21,10 @@ import '../utils/context_extensions.dart';
 import '../utils/date_helpers.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/stats_sidebar.dart';
+import '../widgets/neo_bottom_sheet.dart';
+import '../widgets/neo_bottom_nav.dart';
+import '../widgets/neo_pressable.dart';
+import '../widgets/neo_skeleton.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -30,6 +36,7 @@ class CalendarPage extends StatefulWidget {
 class _CalendarPageState extends State<CalendarPage> {
   final _auth = FirebaseAuth.instance;
   final _taskService = TaskService();
+  final _habitService = HabitService();
 
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
@@ -38,11 +45,19 @@ class _CalendarPageState extends State<CalendarPage> {
   Map<String, List<TaskType>> _tasksByDate = {};
   StreamSubscription<List<Task>>? _tasksSubscription;
 
+  // Filter state — null type means "all types"; empty categories set means "all".
+  TaskType? _filterType;
+  final Set<String> _filterCategories = {};
+
+  int get _activeFilterCount =>
+      (_filterType != null ? 1 : 0) + _filterCategories.length;
+
   @override
   void initState() {
     super.initState();
     _taskService.checkAndResetStreak();
     _taskService.checkExpiringTasks();
+    _habitService.extendWindows();
     _tasksSubscription = _taskService.allTasksStream().listen((tasks) {
       final map = <String, List<TaskType>>{};
       for (final t in tasks) {
@@ -59,9 +74,6 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   List<Widget> _buildActions(BuildContext context, int streak) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isNarrow = screenWidth < 500;
-
     final streakWidget = streak > 0
         ? Container(
             margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -97,96 +109,12 @@ class _CalendarPageState extends State<CalendarPage> {
           )
         : null;
 
-    final notifButton = StreamBuilder<int>(
-      stream: _taskService.unreadNotificationCount(),
-      builder: (context, notifSnapshot) {
-        final count = notifSnapshot.data ?? 0;
-        return IconButton(
-          icon: Badge(
-            isLabelVisible: count > 0,
-            backgroundColor: AppColors.neonPink,
-            label: Text('$count',
-                style:
-                    const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-            child: const Icon(Icons.notifications_outlined),
-          ),
-          tooltip: Strings.notifications,
-          onPressed: () => Navigator.pushNamed(context, '/notifications'),
-        );
-      },
-    );
-
-    if (isNarrow) {
-      return [
-        if (streakWidget != null) streakWidget,
-        notifButton,
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
-          onSelected: (value) async {
-            switch (value) {
-              case 'stats':
-                Navigator.pushNamed(context, '/stats');
-              case 'confirm':
-                Navigator.pushNamed(context, '/confirm');
-              case 'settings':
-                Navigator.pushNamed(context, '/settings');
-              case 'logout':
-                await _auth.signOut();
-                if (!mounted) return;
-                Navigator.pushReplacementNamed(context, '/');
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-                value: 'stats',
-                child: ListTile(
-                  leading: const Icon(Icons.bar_chart),
-                  title: const Text(Strings.stats),
-                  contentPadding: EdgeInsets.zero,
-                )),
-            PopupMenuItem(
-                value: 'confirm',
-                child: ListTile(
-                  leading: const Icon(Icons.task_alt),
-                  title: const Text(Strings.confirmCode),
-                  contentPadding: EdgeInsets.zero,
-                )),
-            PopupMenuItem(
-                value: 'settings',
-                child: ListTile(
-                  leading: const Icon(Icons.settings),
-                  title: const Text(Strings.settings),
-                  contentPadding: EdgeInsets.zero,
-                )),
-            PopupMenuItem(
-                value: 'logout',
-                child: ListTile(
-                  leading: const Icon(Icons.logout),
-                  title: const Text(Strings.logout),
-                  contentPadding: EdgeInsets.zero,
-                )),
-          ],
-        ),
-      ];
-    }
-
     return [
       if (streakWidget != null) streakWidget,
-      notifButton,
-      IconButton(
-        icon: const Icon(Icons.bar_chart_rounded),
-        tooltip: Strings.stats,
-        onPressed: () => Navigator.pushNamed(context, '/stats'),
-      ),
       IconButton(
         icon: const Icon(Icons.task_alt_rounded),
         tooltip: Strings.confirmCode,
         onPressed: () => Navigator.pushNamed(context, '/confirm'),
-      ),
-      IconButton(
-        icon: const Icon(Icons.settings_outlined),
-        tooltip: Strings.settings,
-        onPressed: () => Navigator.pushNamed(context, '/settings'),
       ),
       IconButton(
         icon: const Icon(Icons.logout_rounded),
@@ -218,13 +146,24 @@ class _CalendarPageState extends State<CalendarPage> {
     showDialog(
       context: context,
       builder: (context) => TaskFormDialog(
-        onSubmit: (title, type) {
-          _taskService.createTask(
-            title: title,
-            type: type,
-            date: formatDate(
-                DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day)),
-          );
+        onSubmit: (title, type, cfg, categories) async {
+          if (cfg != null) {
+            await _habitService.createHabit(
+              title: title,
+              type: type,
+              recurrence: cfg.recurrence,
+              customDays: cfg.customDays,
+              categories: categories,
+            );
+          } else {
+            _taskService.createTask(
+              title: title,
+              type: type,
+              date: formatDate(DateTime(
+                  _selectedDay.year, _selectedDay.month, _selectedDay.day)),
+              categories: categories,
+            );
+          }
         },
       ),
     );
@@ -235,10 +174,194 @@ class _CalendarPageState extends State<CalendarPage> {
       context: context,
       builder: (context) => TaskFormDialog(
         existingTask: task,
-        onSubmit: (title, type) {
-          _taskService.updateTask(task.id, title: title, type: type);
+        onSubmit: (title, type, cfg, categories) async {
+          if (task.habitId != null) {
+            final choice = await _askHabitEditChoice();
+            if (choice == null) return;
+            if (choice == 'whole') {
+              await _habitService.updateHabitAndRegenerate(
+                habitId: task.habitId!,
+                title: title,
+                type: type,
+                categories: categories,
+              );
+            } else {
+              _taskService.updateTask(task.id,
+                  title: title, type: type, categories: categories);
+            }
+          } else {
+            _taskService.updateTask(task.id,
+                title: title, type: type, categories: categories);
+          }
         },
       ),
+    );
+  }
+
+  Future<void> _showFilterSheet() async {
+    await showNeoBottomSheet<void>(
+      context: context,
+      children: [
+        StatefulBuilder(builder: (context, setSheetState) {
+          final isDark = context.isDark;
+          void setBoth(VoidCallback fn) {
+            setSheetState(fn);
+            setState(fn);
+          }
+
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(
+              NeoTheme.spaceMd,
+              NeoTheme.spaceSm,
+              NeoTheme.spaceMd,
+              NeoTheme.spaceLg,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(Strings.filterByType, style: NeoTheme.caption),
+                const SizedBox(height: NeoTheme.spaceSm),
+                Wrap(
+                  spacing: 6,
+                  children: [
+                    _typeFilterChip(null, Strings.filterAll, setBoth, isDark),
+                    _typeFilterChip(
+                        TaskType.daily, Strings.typeDaily, setBoth, isDark),
+                    _typeFilterChip(
+                        TaskType.weekly, Strings.typeWeekly, setBoth, isDark),
+                    _typeFilterChip(
+                        TaskType.monthly, Strings.typeMonthly, setBoth, isDark),
+                  ],
+                ),
+                const SizedBox(height: NeoTheme.spaceMd),
+                Text(Strings.filterByCategory, style: NeoTheme.caption),
+                const SizedBox(height: NeoTheme.spaceSm),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: Categories.all.map((cat) {
+                    final selected = _filterCategories.contains(cat.key);
+                    return FilterChip(
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(cat.icon, size: 14, color: cat.color),
+                          const SizedBox(width: 5),
+                          Text(cat.label),
+                        ],
+                      ),
+                      selected: selected,
+                      showCheckmark: false,
+                      visualDensity: VisualDensity.compact,
+                      selectedColor: cat.color.withValues(alpha: 0.18),
+                      side: BorderSide(
+                        color: selected
+                            ? cat.color
+                            : (isDark
+                                ? AppColors.borderSubtle
+                                : AppColors.borderBold),
+                        width: NeoTheme.borderWidthThin,
+                      ),
+                      onSelected: (sel) => setBoth(() {
+                        if (sel) {
+                          _filterCategories.add(cat.key);
+                        } else {
+                          _filterCategories.remove(cat.key);
+                        }
+                      }),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: NeoTheme.spaceMd),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _activeFilterCount == 0
+                            ? null
+                            : () => setBoth(() {
+                                  _filterType = null;
+                                  _filterCategories.clear();
+                                }),
+                        child: const Text('Vymazat'),
+                      ),
+                    ),
+                    const SizedBox(width: NeoTheme.spaceSm),
+                    Expanded(
+                      child: NeoPressable(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          decoration: NeoTheme.buttonDecoration(
+                            backgroundColor: context.primaryColor,
+                            borderColor: Colors.white,
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 10),
+                            child: Center(
+                              child: Text('Hotovo',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w700,
+                                  )),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _typeFilterChip(
+    TaskType? value,
+    String label,
+    void Function(VoidCallback) setBoth,
+    bool isDark,
+  ) {
+    final selected = _filterType == value;
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      showCheckmark: false,
+      visualDensity: VisualDensity.compact,
+      selectedColor: context.primaryColor.withValues(alpha: 0.2),
+      side: BorderSide(
+        color: selected
+            ? context.primaryColor
+            : (isDark ? AppColors.borderSubtle : AppColors.borderBold),
+        width: NeoTheme.borderWidthThin,
+      ),
+      onSelected: (_) => setBoth(() => _filterType = value),
+    );
+  }
+
+  Future<String?> _askHabitEditChoice() async {
+    return showNeoBottomSheet<String>(
+      context: context,
+      children: [
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text(Strings.editHabitOrInstance,
+              style: TextStyle(fontWeight: FontWeight.w600)),
+        ),
+        ListTile(
+          leading: const Icon(Icons.assignment_rounded),
+          title: const Text(Strings.thisOnly),
+          onTap: () => Navigator.pop(context, 'instance'),
+        ),
+        ListTile(
+          leading: const Icon(Icons.autorenew_rounded),
+          title: const Text(Strings.wholeHabit),
+          onTap: () => Navigator.pop(context, 'whole'),
+        ),
+      ],
     );
   }
 
@@ -272,7 +395,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.neonGreen,
+                        color: context.primaryColor,
                         width: NeoTheme.borderWidth,
                       ),
                     ),
@@ -284,7 +407,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   )
                 else
                   CircleAvatar(
-                    backgroundColor: AppColors.neonGreen,
+                    backgroundColor: context.primaryColor,
                     radius: 18,
                     child: Text(
                       nickname.isNotEmpty ? nickname[0].toUpperCase() : '?',
@@ -360,6 +483,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
                   child: TableCalendar(
+                    locale: 'cs',
                     firstDay: DateTime(2000),
                     lastDay: DateTime(2100),
                     focusedDay: _focusedDay,
@@ -427,18 +551,18 @@ class _CalendarPageState extends State<CalendarPage> {
                       todayDecoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: AppColors.neonGreen,
+                          color: context.primaryColor,
                           width: NeoTheme.borderWidth,
                         ),
                       ),
                       todayTextStyle: TextStyle(
-                        color: isDark ? AppColors.textPrimary : AppColors.neonGreen,
+                        color: isDark ? AppColors.textPrimary : context.primaryColor,
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
                       ),
                       selectedDecoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.neonGreen,
+                        color: context.primaryColor,
                         border: Border.all(
                           color: Colors.white,
                           width: NeoTheme.borderWidthThin,
@@ -487,9 +611,9 @@ class _CalendarPageState extends State<CalendarPage> {
                   ),
                 ),
               ),
-              // Date label
+              // Date label + filter button
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                padding: const EdgeInsets.fromLTRB(20, 12, 12, 4),
                 child: Row(
                   children: [
                     Container(
@@ -497,7 +621,7 @@ class _CalendarPageState extends State<CalendarPage> {
                       height: 18,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(2),
-                        color: AppColors.neonGreen,
+                        color: context.primaryColor,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -511,6 +635,78 @@ class _CalendarPageState extends State<CalendarPage> {
                         color: isDark ? AppColors.textSecondary : Colors.black54,
                       ),
                     ),
+                    const Spacer(),
+                    NeoPressable(
+                      onTap: _showFilterSheet,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          borderRadius:
+                              BorderRadius.circular(NeoTheme.radiusButton),
+                          color: _activeFilterCount > 0
+                              ? context.primaryColor.withValues(alpha: 0.15)
+                              : Colors.transparent,
+                          border: Border.all(
+                            color: _activeFilterCount > 0
+                                ? context.primaryColor
+                                : (isDark
+                                    ? AppColors.borderSubtle
+                                    : AppColors.borderBold),
+                            width: NeoTheme.borderWidthThin,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.filter_list_rounded,
+                              size: 16,
+                              color: _activeFilterCount > 0
+                                  ? context.primaryColor
+                                  : (isDark
+                                      ? AppColors.textPrimary
+                                      : Colors.black87),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Filtr',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                                color: _activeFilterCount > 0
+                                    ? context.primaryColor
+                                    : (isDark
+                                        ? AppColors.textPrimary
+                                        : Colors.black87),
+                              ),
+                            ),
+                            if (_activeFilterCount > 0) ...[
+                              const SizedBox(width: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: context.primaryColor,
+                                  borderRadius: BorderRadius.circular(
+                                      NeoTheme.radiusSmall),
+                                ),
+                                child: Text(
+                                  '$_activeFilterCount',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                   ],
                 ),
               ),
@@ -521,19 +717,33 @@ class _CalendarPageState extends State<CalendarPage> {
                       _taskService.tasksForDate(formatDate(_selectedDay)),
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
-                      return const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.neonCyan,
-                          strokeWidth: 3,
-                        ),
-                      );
+                      return const NeoSkeletonList(count: 3, itemHeight: 110);
                     }
-                    final tasks = snapshot.data!;
-                    if (tasks.isEmpty) {
+                    final allTasks = snapshot.data!;
+                    final tasks = allTasks.where((t) {
+                      if (_filterType != null && t.type != _filterType) {
+                        return false;
+                      }
+                      if (_filterCategories.isNotEmpty &&
+                          !t.categories
+                              .any(_filterCategories.contains)) {
+                        return false;
+                      }
+                      return true;
+                    }).toList();
+
+                    if (allTasks.isEmpty) {
                       return const EmptyState(
                         icon: Icons.assignment_outlined,
                         title: Strings.noTasksTitle,
                         subtitle: Strings.noTasksSubtitle,
+                      );
+                    }
+                    if (tasks.isEmpty) {
+                      return const EmptyState(
+                        icon: Icons.filter_list_off_rounded,
+                        title: 'Filtr nic neprusti.',
+                        subtitle: 'Zkus jine kategorie nebo typ.',
                       );
                     }
 
@@ -557,18 +767,33 @@ class _CalendarPageState extends State<CalendarPage> {
           ),
           floatingActionButton: _isDayInPast(_selectedDay)
               ? null
-              : FloatingActionButton(
-                  backgroundColor: AppColors.neonGreen,
-                  elevation: 0,
-                  onPressed: _showAddTaskDialog,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
-                    side: const BorderSide(
-                        color: Colors.white, width: NeoTheme.borderWidth),
+              : NeoPressable(
+                  onTap: _showAddTaskDialog,
+                  pressOffset: NeoTheme.shadowOffset,
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: context.primaryColor,
+                      borderRadius:
+                          BorderRadius.circular(NeoTheme.radiusButton),
+                      border: Border.all(
+                        color: Colors.white,
+                        width: NeoTheme.borderWidth,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          offset: NeoTheme.shadowOffset,
+                          blurRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.add_rounded,
+                        color: Colors.black, size: 30),
                   ),
-                  child: const Icon(Icons.add_rounded,
-                      color: Colors.black, size: 30),
                 ),
+          bottomNavigationBar: const NeoBottomNav(currentIndex: 0),
         );
       },
     );

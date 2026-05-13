@@ -88,18 +88,24 @@ class XPBar extends StatelessWidget {
                     width: NeoTheme.borderWidthThin,
                   ),
                 ),
-                child: Stack(
-                  children: [
-                    FractionallySizedBox(
-                      widthFactor: progress.clamp(0.02, 1.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(NeoTheme.radiusSmall),
-                          color: AppColors.neonCyan,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: progress.clamp(0.02, 1.0)),
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, _) => Stack(
+                    children: [
+                      FractionallySizedBox(
+                        widthFactor: value,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius:
+                                BorderRadius.circular(NeoTheme.radiusSmall),
+                            color: AppColors.neonCyan,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
