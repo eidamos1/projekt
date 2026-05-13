@@ -82,6 +82,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 icon = Icons.emoji_events_rounded;
                 accentColor = achievement?.color ?? AppColors.neonYellow;
                 titleText = Strings.achievementNotifTitle;
+              } else if (type == 'friend_pending') {
+                icon = Icons.hourglass_top_rounded;
+                accentColor = AppColors.neonGreen;
+                titleText =
+                    '${notif['fromNickname'] ?? '—'}${Strings.friendPendingTitlePrefix}';
+              } else if (type == 'friend_added') {
+                icon = Icons.person_add_rounded;
+                accentColor = AppColors.neonCyan;
+                titleText =
+                    '${notif['fromNickname'] ?? '—'}${Strings.friendAddedTitleSuffix}';
               } else {
                 icon = Icons.cancel_rounded;
                 accentColor = AppColors.neonPink;
@@ -91,9 +101,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
               // For achievement notifs, show achievement title in the subtitle
               // instead of taskTitle (taskTitle is a fallback set by the
               // service, but achievement.title is the canonical name).
-              final subText = type == 'achievement'
-                  ? (achievement?.title ?? notif['taskTitle'] ?? '')
-                  : (notif['taskTitle'] ?? '');
+              // friend_added has no task context — leave subText empty.
+              final String subText;
+              if (type == 'achievement') {
+                subText = achievement?.title ?? notif['taskTitle'] ?? '';
+              } else if (type == 'friend_added') {
+                subText = '';
+              } else {
+                subText = notif['taskTitle'] ?? '';
+              }
 
               return GestureDetector(
                 onTap: () {
@@ -106,6 +122,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       '/stats',
                       arguments: {'highlightId': achievementId},
                     );
+                  } else if (type == 'friend_pending') {
+                    final code = notif['code'] as String?;
+                    if (code != null && code.isNotEmpty) {
+                      Navigator.pushNamed(
+                        context,
+                        '/confirm',
+                        arguments: code,
+                      );
+                    }
+                  } else if (type == 'friend_added') {
+                    Navigator.pushNamed(context, '/profile');
                   }
                 },
                 child: Container(
@@ -154,11 +181,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                           : FontWeight.w800,
                                     ),
                                   ),
-                                  const SizedBox(height: NeoTheme.spaceXs),
-                                  Text(
-                                    '"$subText"',
-                                    style: NeoTheme.body,
-                                  ),
+                                  if (subText.isNotEmpty) ...[
+                                    const SizedBox(height: NeoTheme.spaceXs),
+                                    Text(
+                                      '"$subText"',
+                                      style: NeoTheme.body,
+                                    ),
+                                  ],
                                   if (type == 'rejected' &&
                                       notif['message'] != null) ...[
                                     const SizedBox(height: NeoTheme.spaceXs),
