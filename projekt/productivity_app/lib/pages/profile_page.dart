@@ -3,6 +3,7 @@ import 'package:share_plus/share_plus.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
+import '../models/friend_rank.dart';
 import '../services/friend_service.dart';
 import '../utils/context_extensions.dart';
 import '../utils/ui_helpers.dart';
@@ -137,8 +138,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: NeoTheme.spaceSm),
-            StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _friendService.friendsStream(),
+            StreamBuilder<List<FriendRank>>(
+              stream: _friendService.leaderboardStream(),
               builder: (context, snap) {
                 if (!snap.hasData) {
                   return const Padding(
@@ -152,8 +153,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   );
                 }
-                final friends = snap.data!;
-                if (friends.isEmpty) {
+                final others = snap.data!.where((r) => !r.isMe).toList();
+                if (others.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: NeoTheme.spaceMd),
                     child: Text(
@@ -167,42 +168,17 @@ class _ProfilePageState extends State<ProfilePage> {
                   );
                 }
                 return Column(
-                  children: friends.map((f) {
-                    final uid = f['uid'] as String;
-                    final nick = (f['nickname'] as String?) ?? '—';
-                    return GestureDetector(
-                      onLongPress: () => _confirmRemove(uid, nick),
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: NeoTheme.spaceMd,
-                            vertical: NeoTheme.spaceSm + 2),
-                        decoration: NeoTheme.cardDecoration(isDark: isDark),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 16,
-                              backgroundColor: context.primaryColor,
-                              child: Text(
-                                nick.isEmpty ? '?' : nick[0].toUpperCase(),
-                                style: const TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.w800),
-                              ),
-                            ),
-                            const SizedBox(width: NeoTheme.spaceMd),
-                            Expanded(
-                              child: Text(
-                                nick,
-                                style: const TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                            // Phase 5 will add: weekly XP + streak chip
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                  children: others
+                      .map((e) => _FriendCard(
+                            rank: e.rank,
+                            uid: e.uid,
+                            nickname: e.nickname,
+                            weeklyXp: e.weeklyXp,
+                            streak: e.streak,
+                            isDark: isDark,
+                            onRemove: () => _confirmRemove(e.uid, e.nickname),
+                          ))
+                      .toList(),
                 );
               },
             ),
@@ -248,5 +224,91 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (_) {
       if (mounted) showErrorSnack(context, 'Chyba pri odstranovani.');
     }
+  }
+}
+
+class _FriendCard extends StatelessWidget {
+  final int rank;
+  final String uid;
+  final String nickname;
+  final int weeklyXp;
+  final int streak;
+  final bool isDark;
+  final VoidCallback onRemove;
+
+  const _FriendCard({
+    required this.rank,
+    required this.uid,
+    required this.nickname,
+    required this.weeklyXp,
+    required this.streak,
+    required this.isDark,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onLongPress: onRemove,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(
+            horizontal: NeoTheme.spaceMd, vertical: NeoTheme.spaceSm + 2),
+        decoration: NeoTheme.cardDecoration(isDark: isDark),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: context.primaryColor,
+              child: Text(
+                nickname.isEmpty ? '?' : nickname[0].toUpperCase(),
+                style: const TextStyle(
+                    color: Colors.black, fontWeight: FontWeight.w800),
+              ),
+            ),
+            const SizedBox(width: NeoTheme.spaceMd),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    nickname,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.local_fire_department,
+                          size: 12, color: AppColors.neonPink),
+                      const SizedBox(width: 3),
+                      Text('$streak',
+                          style: const TextStyle(fontSize: 11)),
+                      const SizedBox(width: 8),
+                      Text(
+                        '· $weeklyXp ${Strings.xpThisWeekShort}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              '$rank.',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: isDark ? AppColors.textSecondary : Colors.black54,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
