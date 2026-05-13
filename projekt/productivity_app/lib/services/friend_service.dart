@@ -188,6 +188,64 @@ class FriendService {
     }
   }
 
+  /// Writes a `friend_pending` notif to every friend's inbox so they see
+  /// the task in their feed and can confirm without copying the code.
+  /// Deterministic doc id: `friend_pending_{taskId}` — idempotent on re-upload.
+  ///
+  /// Best-effort: a batch-commit failure does not throw, so a notif glitch
+  /// can't block the user's photo save flow.
+  Future<void> notifyFriendsOfPendingTask({
+    required String taskId,
+    required String taskTitle,
+    required String code,
+  }) async {
+    final uid = _uid;
+    if (uid == null) return;
+    final mySnap = await _userDoc(uid).get();
+    final myNick = (mySnap.data()?['nickname'] as String?) ?? 'Hrac';
+    final friendsSnap = await _friendsCol(uid).get();
+    if (friendsSnap.docs.isEmpty) return;
+    final now = nowMinuteString();
+    final batch = _firestore.batch();
+    for (final f in friendsSnap.docs) {
+      final ref = _notifsCol(f.id).doc('friend_pending_$taskId');
+      batch.set(ref, {
+        'type': 'friend_pending',
+        'fromUid': uid,
+        'fromNickname': myNick,
+        'taskId': taskId,
+        'taskTitle': taskTitle,
+        'code': code,
+        'createdAt': now,
+        'read': false,
+      }, SetOptions(merge: true));
+    }
+    try {
+      await batch.commit();
+    } catch (_) {
+      // best-effort — notif failure shouldn't block photo save
+    }
+  }
+
+  /// Removes the `friend_pending` notif for [taskId] from every friend's inbox.
+  /// Called by the OWNER when the task is confirmed/rejected/expired so the
+  /// friend-feed stays in sync. Best-effort.
+  Future<void> cleanupFriendPendingNotifs(String taskId) async {
+    final uid = _uid;
+    if (uid == null) return;
+    final friendsSnap = await _friendsCol(uid).get();
+    if (friendsSnap.docs.isEmpty) return;
+    final batch = _firestore.batch();
+    for (final f in friendsSnap.docs) {
+      batch.delete(_notifsCol(f.id).doc('friend_pending_$taskId'));
+    }
+    try {
+      await batch.commit();
+    } catch (_) {
+      // best-effort
+    }
+  }
+
   /// Removes the mutual friendship with [otherUid]. Silent (no notif).
   Future<void> removeFriend(String otherUid) async {
     final uid = _uid;
