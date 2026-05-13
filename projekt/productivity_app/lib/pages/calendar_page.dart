@@ -388,45 +388,49 @@ class _CalendarPageState extends State<CalendarPage> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Row(
-              children: [
-                if (photoUrl != null && photoUrl.isNotEmpty)
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: context.primaryColor,
-                        width: NeoTheme.borderWidth,
+            title: InkWell(
+              onTap: () => Navigator.pushNamed(context, '/profile'),
+              borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
+              child: Row(
+                children: [
+                  if (photoUrl != null && photoUrl.isNotEmpty)
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: context.primaryColor,
+                          width: NeoTheme.borderWidth,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        backgroundImage: NetworkImage(photoUrl),
+                        radius: 18,
+                        backgroundColor: Colors.transparent,
+                      ),
+                    )
+                  else
+                    CircleAvatar(
+                      backgroundColor: context.primaryColor,
+                      radius: 18,
+                      child: Text(
+                        nickname.isNotEmpty ? nickname[0].toUpperCase() : '?',
+                        style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16),
                       ),
                     ),
-                    child: CircleAvatar(
-                      backgroundImage: NetworkImage(photoUrl),
-                      radius: 18,
-                      backgroundColor: Colors.transparent,
-                    ),
-                  )
-                else
-                  CircleAvatar(
-                    backgroundColor: context.primaryColor,
-                    radius: 18,
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: Text(
-                      nickname.isNotEmpty ? nickname[0].toUpperCase() : '?',
+                      nickname,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16),
+                          fontSize: 18, fontWeight: FontWeight.w700),
                     ),
                   ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    nickname,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
             actions: _buildActions(context, streak),
           ),
