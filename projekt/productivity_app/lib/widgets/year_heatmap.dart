@@ -19,15 +19,24 @@ class YearHeatmap extends StatelessWidget {
     return count;
   }
 
-  /// Vrati 53 * 7 = 371 DateTime hodnot. Posledni napravo = today, predchozi
-  /// rolling-back po dnech. Nejlevejsi sloupec = pred ~52 tydny.
+  /// Vrati 53 * 7 = 371 DateTime hodnot. Cells[0] je Monday at or before
+  /// (today's Sunday - 53 weeks). Cells.last je Sunday of today's week (muze
+  /// byt v budoucnosti). Render musi treat post-today cells jako prazdne.
   static List<DateTime> cellsFor(DateTime today) {
     final lastCell = DateTime(today.year, today.month, today.day);
-    final cells = <DateTime>[];
-    for (int i = 53 * 7 - 1; i >= 0; i--) {
-      cells.add(lastCell.subtract(Duration(days: i)));
-    }
-    return cells;
+    // weekday: 1=Mon..7=Sun. Find Sunday at or after today.
+    final daysToSunday = 7 - lastCell.weekday;
+    // Last cell of grid = end of today's week (Sunday).
+    // First cell of grid = Monday 53*7 - 1 days before that.
+    // Use DateTime constructor with negative day (Dart normalizes).
+    return [
+      for (int i = 0; i < 53 * 7; i++)
+        DateTime(
+          lastCell.year,
+          lastCell.month,
+          lastCell.day + daysToSunday - (53 * 7 - 1) + i,
+        ),
+    ];
   }
 
   @override
@@ -39,7 +48,9 @@ class YearHeatmap extends StatelessWidget {
     final cellSize = isWide ? 18.0 : 12.0;
     const spacing = 2.0;
 
-    final cells = cellsFor(DateTime.now());
+    final now = DateTime.now();
+    final todayMidnight = DateTime(now.year, now.month, now.day);
+    final cells = cellsFor(now);
     final firstCellDate = firstTaskDate != null
         ? DateTime.parse(firstTaskDate!)
         : null;
@@ -59,9 +70,10 @@ class YearHeatmap extends StatelessWidget {
         final count = tasksPerDay[dateStr] ?? 0;
         final bucket = intensityBucket(count);
         final preSignup = firstCellDate != null && date.isBefore(firstCellDate);
+        final isFuture = date.isAfter(todayMidnight);
 
         Color color;
-        if (preSignup) {
+        if (preSignup || isFuture) {
           color = Colors.transparent;
         } else if (bucket == 0) {
           color = isDark ? const Color(0xFF1A1A24) : const Color(0xFFE8E8E8);

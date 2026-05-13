@@ -26,21 +26,49 @@ void main() {
       expect(cells.length, 53 * 7);
     });
 
-    test('most recent cell is today', () {
+    test('cells include today', () {
       final today = DateTime(2026, 5, 13);
       final cells = YearHeatmap.cellsFor(today);
-      expect(cells.last.year, today.year);
-      expect(cells.last.month, today.month);
-      expect(cells.last.day, today.day);
+      expect(
+        cells.any((c) =>
+            c.year == today.year &&
+            c.month == today.month &&
+            c.day == today.day),
+        isTrue,
+      );
     });
 
-    test('first cell is approximately 52 weeks ago', () {
+    test('cells[0] is always a Monday', () {
+      for (final d in [
+        DateTime(2026, 5, 13),  // Wed
+        DateTime(2026, 1, 1),   // Thu
+        DateTime(2025, 12, 31), // Wed
+        DateTime(2026, 6, 1),   // Mon
+        DateTime(2026, 6, 7),   // Sun
+      ]) {
+        final cells = YearHeatmap.cellsFor(d);
+        expect(cells.first.weekday, DateTime.monday,
+            reason: 'cells[0] should be Monday for today=$d');
+      }
+    });
+
+    test('cells.last is a Sunday (end of today\'s week)', () {
+      for (final d in [
+        DateTime(2026, 5, 13),
+        DateTime(2026, 6, 7),  // Sun — already end
+        DateTime(2026, 6, 1),  // Mon
+      ]) {
+        final cells = YearHeatmap.cellsFor(d);
+        expect(cells.last.weekday, DateTime.sunday,
+            reason: 'cells.last should be Sunday for today=$d');
+      }
+    });
+
+    test('first cell is approximately 53 weeks before end-of-week', () {
       final today = DateTime(2026, 5, 13);
       final cells = YearHeatmap.cellsFor(today);
-      final first = cells.first;
-      final diff = today.difference(first).inDays;
-      expect(diff, greaterThanOrEqualTo(52 * 7));
-      expect(diff, lessThan(53 * 7));
+      final diff = cells.last.difference(cells.first).inDays;
+      expect(diff, 53 * 7 - 1);  // exactly 370 days span
     });
   });
 }
