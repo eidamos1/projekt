@@ -210,11 +210,14 @@ class _StatsPageState extends State<StatsPage> {
               const SizedBox(height: NeoTheme.spaceSm),
               YearHeatmap(
                 tasksPerDay: tasksPerDay(_allTasks),
-                firstTaskDate: _allTasks.isEmpty
-                    ? null
-                    : _allTasks
-                        .map((t) => t.date)
-                        .reduce((a, b) => a.compareTo(b) < 0 ? a : b),
+                firstTaskDate: () {
+                  final dates = _allTasks
+                      .map((t) => t.date)
+                      .where((d) => d.isNotEmpty);
+                  return dates.isEmpty
+                      ? null
+                      : dates.reduce((a, b) => a.compareTo(b) < 0 ? a : b);
+                }(),
                 onCellTap: (date) {
                   final dateStr =
                       '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
