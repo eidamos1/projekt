@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 
-class YearHeatmap extends StatelessWidget {
+class YearHeatmap extends StatefulWidget {
   final Map<String, int> tasksPerDay;
   final String? firstTaskDate;
   final void Function(DateTime date) onCellTap;
@@ -41,6 +41,31 @@ class YearHeatmap extends StatelessWidget {
   }
 
   @override
+  State<YearHeatmap> createState() => _YearHeatmapState();
+}
+
+class _YearHeatmapState extends State<YearHeatmap> {
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-scroll to the most recent week (right edge) after first frame
+    // so users see today's activity first, not 12-month-old empty cells.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) => _build(context, constraints));
   }
@@ -61,9 +86,9 @@ class YearHeatmap extends StatelessWidget {
 
     final now = DateTime.now();
     final todayMidnight = DateTime(now.year, now.month, now.day);
-    final cells = cellsFor(now);
-    final firstCellDate = firstTaskDate != null
-        ? DateTime.parse(firstTaskDate!)
+    final cells = YearHeatmap.cellsFor(now);
+    final firstCellDate = widget.firstTaskDate != null
+        ? DateTime.parse(widget.firstTaskDate!)
         : null;
 
     final columns = <Widget>[];
@@ -78,8 +103,8 @@ class YearHeatmap extends StatelessWidget {
         final date = cells[idx];
         final dateStr =
             '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-        final count = tasksPerDay[dateStr] ?? 0;
-        final bucket = intensityBucket(count);
+        final count = widget.tasksPerDay[dateStr] ?? 0;
+        final bucket = YearHeatmap.intensityBucket(count);
         final preSignup = firstCellDate != null && date.isBefore(firstCellDate);
         final isFuture = date.isAfter(todayMidnight);
 
@@ -96,7 +121,7 @@ class YearHeatmap extends StatelessWidget {
         }
 
         rows.add(GestureDetector(
-          onTap: count > 0 ? () => onCellTap(date) : null,
+          onTap: count > 0 ? () => widget.onCellTap(date) : null,
           child: Container(
             width: cellSize,
             height: cellSize,
@@ -155,6 +180,7 @@ class YearHeatmap extends StatelessWidget {
     }
 
     final grid = SingleChildScrollView(
+      controller: _scrollController,
       scrollDirection: Axis.horizontal,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
