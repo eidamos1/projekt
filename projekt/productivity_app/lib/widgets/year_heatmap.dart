@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 
 class YearHeatmap extends StatelessWidget {
@@ -141,28 +142,63 @@ class YearHeatmap extends StatelessWidget {
       ));
     }
 
+    final grid = SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 20),
+            child: Row(children: monthLabels),
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Column(children: weekLabels),
+              const SizedBox(width: 4),
+              Row(children: columns),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (isWide) {
+      return Container(
+        padding: const EdgeInsets.all(NeoTheme.spaceSm),
+        decoration: NeoTheme.cardDecoration(isDark: isDark),
+        child: grid,
+      );
+    }
+
+    // Compact: pridat fade indicator napravo aby bylo videt, ze lze scrollovat.
     return Container(
       padding: const EdgeInsets.all(NeoTheme.spaceSm),
       decoration: NeoTheme.cardDecoration(isDark: isDark),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 20),
-              child: Row(children: monthLabels),
+      child: Stack(
+        children: [
+          grid,
+          Positioned(
+            right: 0,
+            top: 0,
+            bottom: 0,
+            child: IgnorePointer(
+              child: Container(
+                width: 24,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Colors.transparent,
+                      isDark ? AppColors.cardDark : AppColors.cardLight,
+                    ],
+                  ),
+                ),
+              ),
             ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(children: weekLabels),
-                const SizedBox(width: 4),
-                Row(children: columns),
-              ],
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
