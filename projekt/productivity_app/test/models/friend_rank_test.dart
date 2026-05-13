@@ -98,5 +98,25 @@ void main() {
       );
       expect(lb, isEmpty);
     });
+
+    test('single entry (just me, no friends) returns rank 1 with isMe=true', () {
+      final result = FriendRank.buildLeaderboard(
+        entries: [
+          const FriendRankRaw(
+            uid: 'me',
+            nickname: 'tralala',
+            weeklyXp: 0,
+            weeklyXpWeekStart: '2026-05-11',
+            streak: 0,
+          ),
+        ],
+        myUid: 'me',
+        currentMondayStr: '2026-05-11',
+      );
+      expect(result.length, 1);
+      expect(result.first.rank, 1);
+      expect(result.first.isMe, true);
+      expect(result.first.uid, 'me');
+    });
   });
 }
