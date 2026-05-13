@@ -171,6 +171,23 @@ class FriendService {
     await batch.commit();
   }
 
+  /// Updates the denormalized nickname snapshot in every friend's
+  /// friends/{me} edge so leaderboards display the latest name.
+  /// Best-effort: silently skips friends where the write fails
+  /// (e.g. they unfriended me).
+  Future<void> propagateNicknameUpdate(String newNickname) async {
+    final uid = _uid;
+    if (uid == null) return;
+    final friendsSnap = await _friendsCol(uid).get();
+    for (final f in friendsSnap.docs) {
+      try {
+        await _friendsCol(f.id).doc(uid).update({'nickname': newNickname});
+      } catch (_) {
+        // friend may have unfriended — fine
+      }
+    }
+  }
+
   /// Removes the mutual friendship with [otherUid]. Silent (no notif).
   Future<void> removeFriend(String otherUid) async {
     final uid = _uid;
