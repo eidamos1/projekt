@@ -77,7 +77,10 @@ class YearHeatmap extends StatelessWidget {
         if (preSignup || isFuture) {
           color = Colors.transparent;
         } else if (bucket == 0) {
-          color = isDark ? const Color(0xFF1A1A24) : const Color(0xFFE8E8E8);
+          // Slight contrast vs card background — cardDark is 0xFF1A1A24 so
+          // bucket-0 must be lighter to be visible. cardLight is white,
+          // so light-mode 0xFFE8E8E8 is fine.
+          color = isDark ? const Color(0xFF2A2A35) : const Color(0xFFE8E8E8);
         } else {
           final alpha = 0.20 + 0.20 * bucket;  // 0.40, 0.60, 0.80, 1.00
           color = primary.withValues(alpha: alpha);
