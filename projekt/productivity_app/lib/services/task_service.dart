@@ -6,7 +6,9 @@ import '../models/habit.dart';
 import '../models/achievement.dart';
 import '../constants/game_config.dart';
 import '../utils/date_helpers.dart';
+import '../utils/week_helpers.dart';
 import 'achievement_service.dart';
+import 'friend_service.dart';
 
 class TaskService {
   static TaskService? _instance;
@@ -155,6 +157,9 @@ class TaskService {
       }
     }
     await _tasksCollection.doc(taskId).delete();
+    // Owner-side cleanup — clear any lingering friend_pending notifs from
+    // friends' inboxes. Best-effort.
+    FriendService().cleanupFriendPendingNotifs(taskId).ignore();
   }
 
   Future<void> savePhoto(String taskId, String base64Image) async {
@@ -281,12 +286,23 @@ class TaskService {
       newXp += bonus;
       newLevel = GameConfig.levelFromXp(newXp);
 
+      // Weekly XP with lazy week reset. If the stored weekStart doesn't match
+      // the current Monday, the previous week's total is stale -> reset to 0
+      // before adding this confirm's reward (incl. streak bonus).
+      final mondayStr = mondayStringOf(DateTime.now());
+      final storedWeekStart = userData['weeklyXpWeekStart'] as String?;
+      final stale = storedWeekStart != mondayStr;
+      final newWeeklyXp =
+          (stale ? 0 : (userData['weeklyXp'] as int? ?? 0)) + rewardXp + bonus;
+
       tx.update(lookup.userRef, {
         'xp': newXp,
         'coins': newCoins,
         'level': newLevel,
         'streak': streak,
         'lastActiveDate': today,
+        'weeklyXp': newWeeklyXp,
+        'weeklyXpWeekStart': mondayStr,
       });
 
       tx.update(lookup.taskRef, {

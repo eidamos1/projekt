@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'friend_service.dart';
 
 class UserService {
   static UserService? _instance;
@@ -30,6 +31,8 @@ class UserService {
     await _firestore.collection('users').doc(_uid).update({
       'nickname': nickname,
     });
+    // Propagate to all friends' denormalized snapshots (best-effort).
+    await FriendService().propagateNicknameUpdate(nickname);
   }
 
   Future<void> toggleNotifications(bool value) async {

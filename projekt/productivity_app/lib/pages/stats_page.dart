@@ -3,8 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/achievement.dart';
+import '../models/friend_rank.dart';
 import '../models/task.dart';
 import '../services/achievement_service.dart';
+import '../services/friend_service.dart';
 import '../services/task_service.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
@@ -178,6 +180,8 @@ class _StatsPageState extends State<StatsPage> {
                 streak: _userStreak,
                 isDark: isDark,
               ),
+              const SizedBox(height: NeoTheme.spaceLg),
+              _LeaderboardWidget(isDark: isDark),
               const SizedBox(height: NeoTheme.spaceLg),
               // Heatmap section
               const Text(Strings.lastYearHeader, style: NeoTheme.subhead),
@@ -562,6 +566,94 @@ class _ChartEmpty extends StatelessWidget {
           color: isDark ? AppColors.textSecondary : Colors.black54,
         ),
       ),
+    );
+  }
+}
+
+class _LeaderboardWidget extends StatelessWidget {
+  final bool isDark;
+  const _LeaderboardWidget({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<FriendRank>>(
+      stream: FriendService().leaderboardStream(),
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox.shrink();
+        final ranks = snap.data!;
+        // Hide if user has no friends (own entry only)
+        if (ranks.length <= 1) return const SizedBox.shrink();
+
+        final top = ranks.take(3).toList();
+        final more = ranks.length - top.length;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(Strings.leaderboardHeader, style: NeoTheme.subhead),
+            const SizedBox(height: NeoTheme.spaceSm),
+            GestureDetector(
+              onTap: () => Navigator.pushNamed(context, '/profile'),
+              child: Container(
+                decoration: NeoTheme.cardDecoration(isDark: isDark),
+                padding: const EdgeInsets.all(NeoTheme.spaceMd),
+                child: Column(
+                  children: [
+                    for (final r in top)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 24,
+                              child: Text(
+                                '${r.rank}.',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w800),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                r.nickname,
+                                style: TextStyle(
+                                  fontWeight: r.isMe
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                  color: r.isMe
+                                      ? context.primaryColor
+                                      : null,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '${r.weeklyXp} XP',
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (more > 0) ...[
+                      const SizedBox(height: 4),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          '+ $more dalsi',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark
+                                ? AppColors.textSecondary
+                                : Colors.black54,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

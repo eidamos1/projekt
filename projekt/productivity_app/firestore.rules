@@ -46,5 +46,27 @@ service cloud.firestore {
       allow delete: if request.auth != null
                     && resource.data.userId == request.auth.uid;
     }
+
+    // Globalni invite-code index pro friend invite linky
+    match /userInvites/{code} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.auth.uid == request.resource.data.userId
+                    && request.resource.data.keys().hasOnly(['userId']);
+      allow delete: if request.auth != null
+                    && request.auth.uid == resource.data.userId;
+    }
+
+    // Friend edges — kazdy uzivatel vidi vlastni list. Mutual write
+    // (oba edge): bud vlastnik subkolekce nebo druhy uzivatel z paru.
+    match /users/{userId}/friends/{friendId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+                            && (request.auth.uid == userId
+                                || request.auth.uid == friendId);
+      allow delete: if request.auth != null
+                    && (request.auth.uid == userId
+                        || request.auth.uid == friendId);
+    }
   }
 }
