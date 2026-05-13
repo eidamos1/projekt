@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/neo_theme.dart';
+import '../constants/strings.dart';
 import '../models/achievement.dart';
 
 /// Floating SnackBar in neo style shown right after an achievement is unlocked.
@@ -46,7 +47,7 @@ void showAchievementUnlockToast(BuildContext context, Achievement ach) {
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  'Odemknul jsi: ${ach.title}',
+                  Strings.achievementUnlockToast(ach.title),
                   style: const TextStyle(
                     color: Colors.black,
                     fontWeight: FontWeight.w700,

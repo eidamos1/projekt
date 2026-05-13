@@ -87,7 +87,7 @@ class _SettingsPageState extends State<SettingsPage> {
           child: ListTile(
             leading: const Icon(Icons.emoji_events_outlined),
             title: const Text(
-              'OTEVRIT STATS',
+              Strings.achievementOpenStats,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
@@ -123,9 +123,22 @@ class _SettingsPageState extends State<SettingsPage> {
                 final ach = Achievements.byId(id);
                 if (ach == null) return const SizedBox.shrink();
                 return Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                  child: Row(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(
+                        Strings.achievementYourTitle,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.5,
+                          color: context.isDark
+                              ? AppColors.textSecondary
+                              : Colors.black54,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
                       TitleChip(
                         achievement: ach,
                         onTap: () => _openTitleSheet(context),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/neo_theme.dart';
+import '../../constants/strings.dart';
 import '../../models/achievement.dart';
 import '../../services/achievement_service.dart';
 import '../../utils/context_extensions.dart';
@@ -70,7 +71,7 @@ class AchievementDetailSheet extends StatelessWidget {
           if (unlockedAt != null && unlockedAt!.isNotEmpty) ...[
             const SizedBox(height: NeoTheme.spaceMd),
             Text(
-              'Odemknuto $unlockedAt',
+              '${Strings.achievementUnlockedAt} $unlockedAt',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -124,7 +125,9 @@ class _TitleButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Center(
               child: Text(
-                isCurrent ? 'SUNDAT TITUL' : 'NASADIT JAKO TITUL',
+                isCurrent
+                    ? Strings.achievementRemoveTitle
+                    : Strings.achievementSetAsTitle,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,

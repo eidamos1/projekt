@@ -81,7 +81,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     : null;
                 icon = Icons.emoji_events_rounded;
                 accentColor = achievement?.color ?? AppColors.neonYellow;
-                titleText = 'ODEMKL JSI ACHIEVEMENT';
+                titleText = Strings.achievementNotifTitle;
               } else {
                 icon = Icons.cancel_rounded;
                 accentColor = AppColors.neonPink;

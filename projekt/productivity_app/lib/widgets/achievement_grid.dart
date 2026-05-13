@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/achievements.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
+import '../constants/strings.dart';
 import '../models/achievement.dart';
 import '../utils/context_extensions.dart';
 import 'achievement_card.dart';
@@ -84,7 +85,7 @@ class _AchievementGridState extends State<AchievementGrid> {
           children: [
             const Expanded(
               child: Text(
-                'ACHIEVEMENTY',
+                Strings.achievementsHeader,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -93,7 +94,7 @@ class _AchievementGridState extends State<AchievementGrid> {
               ),
             ),
             Text(
-              '$unlockedCount / $totalCount odhaleno',
+              Strings.achievementCounter(unlockedCount, totalCount),
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -107,11 +108,11 @@ class _AchievementGridState extends State<AchievementGrid> {
           spacing: 6,
           runSpacing: 6,
           children: [
-            _filterChip('vse', _Filter.all, isDark),
-            _filterChip('situacni', _Filter.situational, isDark),
-            _filterChip('tituly', _Filter.loreTitle, isDark),
-            _filterChip('anti', _Filter.antiAchievement, isDark),
-            _filterChip('milestones', _Filter.milestone, isDark),
+            _filterChip(Strings.achievementFilterAll, _Filter.all, isDark),
+            _filterChip(Strings.achievementFilterSituational, _Filter.situational, isDark),
+            _filterChip(Strings.achievementFilterLore, _Filter.loreTitle, isDark),
+            _filterChip(Strings.achievementFilterAnti, _Filter.antiAchievement, isDark),
+            _filterChip(Strings.achievementFilterMilestone, _Filter.milestone, isDark),
           ],
         ),
         const SizedBox(height: NeoTheme.spaceMd),
@@ -174,7 +175,7 @@ class _EmptyState extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: NeoTheme.spaceSm),
           child: Text(
-            'Splni neco neobvykleho a uvidi se.',
+            Strings.achievementEmptyHint,
             style: TextStyle(
               fontSize: 13,
               fontStyle: FontStyle.italic,

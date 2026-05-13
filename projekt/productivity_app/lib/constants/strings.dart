@@ -180,4 +180,23 @@ abstract final class Strings {
   static const weekdayShort = {
     1: 'Po', 2: 'Ut', 3: 'St', 4: 'Ct', 5: 'Pa', 6: 'So', 7: 'Ne',
   };
+
+  // Uspechy (achievements)
+  static const achievementsHeader = 'USPECHY';
+  static const achievementEmptyHint = 'Splni neco neobvykleho a uvidi se.';
+  static const achievementFilterAll = 'vse';
+  static const achievementFilterSituational = 'situacni';
+  static const achievementFilterLore = 'tituly';
+  static const achievementFilterAnti = 'anti';
+  static const achievementFilterMilestone = 'mety';
+  static const achievementUnlockedAt = 'Odemknuto';
+  static const achievementSetAsTitle = 'NASADIT JAKO TITUL';
+  static const achievementRemoveTitle = 'SUNDAT TITUL';
+  static const achievementNotifTitle = 'ODEMKL JSI USPECH';
+  static const achievementYourTitle = 'TVUJ TITUL';
+  static const achievementOpenStats = 'OTEVRIT STATISTIKY';
+  static String achievementCounter(int unlocked, int total) =>
+      '$unlocked / $total odhaleno';
+  static String achievementUnlockToast(String title) =>
+      'Odemknul jsi: $title';
 }
