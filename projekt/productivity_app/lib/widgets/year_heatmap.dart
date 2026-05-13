@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 
 class YearHeatmap extends StatelessWidget {
@@ -42,12 +41,18 @@ class YearHeatmap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) => _build(context, constraints));
+  }
+
+  Widget _build(BuildContext context, BoxConstraints constraints) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = Theme.of(context).colorScheme.primary;
-    final mediaWidth = MediaQuery.of(context).size.width;
-    final isWide = mediaWidth >= 1080;
-    final cellSize = isWide ? 18.0 : 12.0;
     const spacing = 2.0;
+    // Available width = parent constraint minus container padding (2*spaceSm=16)
+    // minus left weekday label column (~20) minus its spacing (4).
+    final availableWidth = constraints.maxWidth - 16 - 24;
+    // Cell size scales so all 53 columns fit horizontally without scroll.
+    final cellSize = (availableWidth / 53 - spacing).clamp(6.0, 22.0);
 
     final now = DateTime.now();
     final todayMidnight = DateTime(now.year, now.month, now.day);
@@ -165,45 +170,13 @@ class YearHeatmap extends StatelessWidget {
       ),
     );
 
-    if (isWide) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(NeoTheme.spaceSm),
-        decoration: NeoTheme.cardDecoration(isDark: isDark),
-        child: grid,
-      );
-    }
-
-    // Compact: pridat fade indicator napravo aby bylo videt, ze lze scrollovat.
+    // Cells always fit the available width (dynamic cellSize), so no
+    // horizontal scroll, no fade indicator needed — single path.
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(NeoTheme.spaceSm),
       decoration: NeoTheme.cardDecoration(isDark: isDark),
-      child: Stack(
-        children: [
-          grid,
-          Positioned(
-            right: 0,
-            top: 0,
-            bottom: 0,
-            child: IgnorePointer(
-              child: Container(
-                width: 24,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [
-                      Colors.transparent,
-                      isDark ? AppColors.cardDark : AppColors.cardLight,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+      child: grid,
     );
   }
 
