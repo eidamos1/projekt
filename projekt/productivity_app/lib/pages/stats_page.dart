@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
 import '../models/achievement.dart';
 import '../models/task.dart';
 import '../services/achievement_service.dart';
@@ -13,10 +12,13 @@ import '../constants/strings.dart';
 import '../constants/task_categories.dart';
 import '../utils/context_extensions.dart';
 import '../utils/date_helpers.dart';
+import '../utils/stats_helpers.dart';
 import '../widgets/achievement_grid.dart';
 import '../widgets/dialogs/achievement_detail_sheet.dart';
+import '../widgets/dialogs/day_detail_sheet.dart';
 import '../widgets/neo_bottom_nav.dart';
 import '../widgets/responsive_layout.dart';
+import '../widgets/year_heatmap.dart';
 
 class StatsPage extends StatefulWidget {
   const StatsPage({super.key});
@@ -104,33 +106,6 @@ class _StatsPageState extends State<StatsPage> {
     final total = _allTasks.length;
     final completedCount = completed.length;
 
-    final now = DateTime.now();
-    final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    final thisWeekCompleted = completed.where((t) {
-      try {
-        final d = parseDate(t.date);
-        return d.isAfter(weekStart.subtract(const Duration(days: 1)));
-      } catch (_) {
-        return false;
-      }
-    }).length;
-
-    final thisMonthCompleted = completed.where((t) {
-      try {
-        final d = parseDate(t.date);
-        return d.month == now.month && d.year == now.year;
-      } catch (_) {
-        return false;
-      }
-    }).length;
-
-    final dailyCount =
-        _allTasks.where((t) => t.type == TaskType.daily).length;
-    final weeklyCount =
-        _allTasks.where((t) => t.type == TaskType.weekly).length;
-    final monthlyCount =
-        _allTasks.where((t) => t.type == TaskType.monthly).length;
-
     // Category counts — a task with multiple categories contributes to each.
     // Tasks with no category fall into the "Bez kategorie" bucket.
     final categoryCounts = <String, int>{};
@@ -152,23 +127,11 @@ class _StatsPageState extends State<StatsPage> {
         dayCount[d.weekday] = (dayCount[d.weekday] ?? 0) + 1;
       } catch (_) {}
     }
-    String bestDay = '-';
+    String? bestDay;
     if (dayCount.isNotEmpty) {
       final best =
           dayCount.entries.reduce((a, b) => a.value > b.value ? a : b);
-      bestDay = Strings.dayNames[best.key] ?? '-';
-    }
-
-    final xpPerDay = <String, int>{};
-    for (int i = 6; i >= 0; i--) {
-      final day = now.subtract(Duration(days: i));
-      final key = formatDate(day);
-      xpPerDay[key] = 0;
-    }
-    for (final t in completed) {
-      if (xpPerDay.containsKey(t.date)) {
-        xpPerDay[t.date] = xpPerDay[t.date]! + t.xp;
-      }
+      bestDay = Strings.dayNames[best.key];
     }
 
     final isDark = context.isDark;
@@ -177,289 +140,104 @@ class _StatsPageState extends State<StatsPage> {
       appBar: AppBar(title: const Text(Strings.stats)),
       body: ResponsiveLayout(
         child: SingleChildScrollView(
-        padding: const EdgeInsets.all(NeoTheme.spaceMd),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                _StatCard(
-                    label: Strings.totalTasks,
-                    value: '$total',
-                    color: context.primaryColor),
-                const SizedBox(width: NeoTheme.spaceSm),
-                _StatCard(
-                    label: Strings.completedTasks,
-                    value: '$completedCount',
-                    color: AppColors.neonGreen),
-              ],
-            ),
-            const SizedBox(height: NeoTheme.spaceSm),
-            Row(
-              children: [
-                _StatCard(
-                    label: Strings.thisWeek,
-                    value: '$thisWeekCompleted',
-                    color: AppColors.taskDaily),
-                const SizedBox(width: NeoTheme.spaceSm),
-                _StatCard(
-                    label: Strings.thisMonth,
-                    value: '$thisMonthCompleted',
-                    color: AppColors.taskWeekly),
-              ],
-            ),
-            const SizedBox(height: NeoTheme.spaceMd),
-
-            Container(
-              decoration: NeoTheme.cardDecoration(isDark: isDark),
-              child: ListTile(
-                leading: const Icon(Icons.star_rounded,
-                    color: AppColors.neonYellow, size: 28),
-                title: const Text(Strings.bestDay,
-                    style: NeoTheme.subhead),
-                trailing: Text(bestDay,
-                    style: NeoTheme.headline.copyWith(
-                      color: AppColors.neonYellow,
-                      fontSize: 18,
-                    )),
+          padding: const EdgeInsets.all(NeoTheme.spaceMd),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Heatmap section
+              const Text(Strings.lastYearHeader, style: NeoTheme.subhead),
+              const SizedBox(height: NeoTheme.spaceSm),
+              YearHeatmap(
+                tasksPerDay: tasksPerDay(_allTasks),
+                firstTaskDate: _allTasks.isEmpty
+                    ? null
+                    : _allTasks
+                        .map((t) => t.date)
+                        .reduce((a, b) => a.compareTo(b) < 0 ? a : b),
+                onCellTap: (date) {
+                  final dateStr =
+                      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                  final dayTasks = _allTasks
+                      .where((t) => t.completed && t.date == dateStr)
+                      .toList();
+                  showDayDetailSheet(context, date, dayTasks);
+                },
               ),
-            ),
-            const SizedBox(height: NeoTheme.spaceLg),
+              const SizedBox(height: NeoTheme.spaceSm),
+              Text(
+                Strings.summaryLine(completedCount, total, bestDay),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.textSecondary : Colors.black54,
+                ),
+              ),
+              const SizedBox(height: NeoTheme.spaceLg),
 
-            Text(Strings.xpLast7Days, style: NeoTheme.subhead),
-            const SizedBox(height: NeoTheme.spaceSm),
-            Container(
-              decoration: NeoTheme.cardDecoration(isDark: isDark),
-              padding: const EdgeInsets.fromLTRB(
-                  NeoTheme.spaceSm, NeoTheme.spaceMd, NeoTheme.spaceSm, NeoTheme.spaceSm),
-              child: SizedBox(
-              height: 200,
-              child: BarChart(
-                BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  maxY: (xpPerDay.values.isEmpty
-                              ? 10
-                              : xpPerDay.values
-                                  .reduce((a, b) => a > b ? a : b))
-                          .toDouble() *
-                      1.2 +
-                      10,
-                  barTouchData: BarTouchData(enabled: true),
-                  titlesData: FlTitlesData(
-                    show: true,
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          final keys = xpPerDay.keys.toList();
-                          if (value.toInt() < keys.length) {
-                            final date = parseDate(keys[value.toInt()]);
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                DateFormat('E', 'cs').format(date),
-                                style: const TextStyle(fontSize: 10),
+              // Achievement grid (existing, unchanged)
+              AchievementGrid(
+                unlockedAtMap: _unlockedAtMap,
+                totalCompletedTasks: completedCount,
+                highlightId: _highlightId,
+                onTapCard: (ach) {
+                  final unlockedAt = _unlockedAtMap[ach.id];
+                  showAchievementDetailSheet(context, ach, unlockedAt);
+                },
+              ),
+
+              // Pomer kategorii pie (existing pie chart logic, unchanged styling)
+              if (categoryCounts.isNotEmpty || uncategorizedCount > 0) ...[
+                const SizedBox(height: NeoTheme.spaceLg),
+                const Text(Strings.categoryRatio, style: NeoTheme.subhead),
+                const SizedBox(height: NeoTheme.spaceSm),
+                Container(
+                  decoration: NeoTheme.cardDecoration(isDark: isDark),
+                  padding: const EdgeInsets.all(NeoTheme.spaceMd),
+                  child: SizedBox(
+                    height: 220,
+                    child: PieChart(
+                      PieChartData(
+                        sections: [
+                          ...categoryCounts.entries.map((e) {
+                            final cat = Categories.byKey(e.key);
+                            if (cat == null) return null;
+                            return PieChartSectionData(
+                              value: e.value.toDouble(),
+                              title: '${cat.label}\n${e.value}',
+                              color: cat.color,
+                              radius: 60,
+                              titleStyle: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             );
-                          }
-                          return const Text('');
-                        },
+                          }).whereType<PieChartSectionData>(),
+                          if (uncategorizedCount > 0)
+                            PieChartSectionData(
+                              value: uncategorizedCount.toDouble(),
+                              title: 'Bez kat.\n$uncategorizedCount',
+                              color: const Color(0xFF8888AA),
+                              radius: 60,
+                              titleStyle: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                        ],
+                        sectionsSpace: 2,
+                        centerSpaceRadius: 30,
                       ),
                     ),
-                    leftTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  barGroups:
-                      xpPerDay.entries.toList().asMap().entries.map((entry) {
-                    return BarChartGroupData(
-                      x: entry.key,
-                      barRods: [
-                        BarChartRodData(
-                          toY: entry.value.value.toDouble(),
-                          color: context.primaryColor,
-                          width: 20,
-                          borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(4)),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                ),
-              ),
-              ),
-            ),
-            const SizedBox(height: NeoTheme.spaceLg),
-
-            Text(Strings.taskTypeRatio, style: NeoTheme.subhead),
-            const SizedBox(height: NeoTheme.spaceSm),
-            if (total > 0)
-              Container(
-                decoration: NeoTheme.cardDecoration(isDark: isDark),
-                padding: const EdgeInsets.all(NeoTheme.spaceMd),
-                child: SizedBox(
-                height: 200,
-                child: PieChart(
-                  PieChartData(
-                    sections: [
-                      if (dailyCount > 0)
-                        PieChartSectionData(
-                          value: dailyCount.toDouble(),
-                          title: '${Strings.typeDaily}\n$dailyCount',
-                          color: AppColors.taskDaily,
-                          radius: 60,
-                          titleStyle: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white),
-                        ),
-                      if (weeklyCount > 0)
-                        PieChartSectionData(
-                          value: weeklyCount.toDouble(),
-                          title: '${Strings.typeWeekly}\n$weeklyCount',
-                          color: AppColors.taskWeekly,
-                          radius: 60,
-                          titleStyle: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white),
-                        ),
-                      if (monthlyCount > 0)
-                        PieChartSectionData(
-                          value: monthlyCount.toDouble(),
-                          title: '${Strings.typeMonthly}\n$monthlyCount',
-                          color: AppColors.taskMonthly,
-                          radius: 60,
-                          titleStyle: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white),
-                        ),
-                    ],
-                    sectionsSpace: 2,
-                    centerSpaceRadius: 30,
                   ),
                 ),
-                ),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.all(NeoTheme.spaceLg),
-                child: Center(
-                  child: Text(Strings.noStatsData,
-                      style: TextStyle(
-                          color: isDark
-                              ? AppColors.textSecondary
-                              : Colors.black38)),
-                ),
-              ),
-
-            const SizedBox(height: NeoTheme.spaceLg),
-            AchievementGrid(
-              unlockedAtMap: _unlockedAtMap,
-              totalCompletedTasks: completedCount,
-              highlightId: _highlightId,
-              onTapCard: (ach) {
-                final unlockedAt = _unlockedAtMap[ach.id];
-                showAchievementDetailSheet(context, ach, unlockedAt);
-              },
-            ),
-
-            // Category breakdown
-            if (categoryCounts.isNotEmpty || uncategorizedCount > 0) ...[
-              const SizedBox(height: NeoTheme.spaceLg),
-              const Text('Pomer kategorii', style: NeoTheme.subhead),
-              const SizedBox(height: NeoTheme.spaceSm),
-              Container(
-                decoration: NeoTheme.cardDecoration(isDark: isDark),
-                padding: const EdgeInsets.all(NeoTheme.spaceMd),
-                child: SizedBox(
-                  height: 220,
-                  child: PieChart(
-                    PieChartData(
-                      sections: [
-                        ...categoryCounts.entries.map((e) {
-                          final cat = Categories.byKey(e.key);
-                          if (cat == null) return null;
-                          return PieChartSectionData(
-                            value: e.value.toDouble(),
-                            title: '${cat.label}\n${e.value}',
-                            color: cat.color,
-                            radius: 60,
-                            titleStyle: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          );
-                        }).whereType<PieChartSectionData>(),
-                        if (uncategorizedCount > 0)
-                          PieChartSectionData(
-                            value: uncategorizedCount.toDouble(),
-                            title: 'Bez kat.\n$uncategorizedCount',
-                            color: const Color(0xFF8888AA),
-                            radius: 60,
-                            titleStyle: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                      ],
-                      sectionsSpace: 2,
-                      centerSpaceRadius: 30,
-                    ),
-                  ),
-                ),
-              ),
+              ],
             ],
-          ],
-        ),
           ),
         ),
-      bottomNavigationBar: const NeoBottomNav(currentIndex: 2),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _StatCard(
-      {required this.label, required this.value, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = context.isDark;
-    return Expanded(
-      child: Container(
-        decoration: NeoTheme.cardDecoration(isDark: isDark),
-        padding: const EdgeInsets.all(NeoTheme.spaceMd),
-        child: Column(
-          children: [
-            Text(value,
-                style: NeoTheme.display.copyWith(
-                  fontSize: 28,
-                  color: color,
-                )),
-            const SizedBox(height: NeoTheme.spaceXs),
-            Text(label,
-                style: NeoTheme.body.copyWith(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                )),
-          ],
-        ),
       ),
+      bottomNavigationBar: const NeoBottomNav(currentIndex: 2),
     );
   }
 }
