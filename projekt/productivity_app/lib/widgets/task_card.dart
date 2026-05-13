@@ -73,6 +73,16 @@ class _TaskCardState extends State<TaskCard>
     if (!oldWidget.task.completed && widget.task.completed) {
       _pulseController.forward(from: 0);
     }
+    // Owner-side cleanup of the friend-feed. The confirm/reject paths run as
+    // the *confirmer*, who can't iterate the owner's /friends collection, so
+    // the cleanup must run here — on the owner's device — once the realtime
+    // stream surfaces the resolved state.
+    final wasUnresolved =
+        !oldWidget.task.completed && !oldWidget.task.rejected;
+    final nowResolved = widget.task.completed || widget.task.rejected;
+    if (wasUnresolved && nowResolved) {
+      FriendService().cleanupFriendPendingNotifs(widget.task.id).ignore();
+    }
   }
 
   @override

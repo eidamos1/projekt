@@ -8,6 +8,7 @@ import '../constants/game_config.dart';
 import '../utils/date_helpers.dart';
 import '../utils/week_helpers.dart';
 import 'achievement_service.dart';
+import 'friend_service.dart';
 
 class TaskService {
   static TaskService? _instance;
@@ -156,6 +157,9 @@ class TaskService {
       }
     }
     await _tasksCollection.doc(taskId).delete();
+    // Owner-side cleanup — clear any lingering friend_pending notifs from
+    // friends' inboxes. Best-effort.
+    FriendService().cleanupFriendPendingNotifs(taskId).ignore();
   }
 
   Future<void> savePhoto(String taskId, String base64Image) async {
