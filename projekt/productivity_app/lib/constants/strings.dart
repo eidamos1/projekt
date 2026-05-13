@@ -203,8 +203,8 @@ abstract final class Strings {
   // Stats refactor
   static const lastYearHeader = 'POSLEDNICH 365 DNI';
   static const categoryRatio = 'POMER KATEGORII';
-  static String streakLine(int current, int record) =>
-      'Serie: $current dni \u00b7 rekord $record';
+  static String streakLine(int current) =>
+      'Serie: $current dni';
   static String summaryLine(int splneno, int celkem, String? bestDay) =>
       bestDay == null
           ? 'Splneno $splneno \u00b7 Celkem $celkem'

@@ -34,7 +34,6 @@ class _StatsPageState extends State<StatsPage> {
   Map<String, String> _unlockedAtMap = {};
   bool _isLoading = true;
   int _userStreak = 0;
-  int _userLongestStreak = 0;
 
   /// When set, the matching AchievementCard pulses a colored ring for ~3s.
   /// Populated from route arguments on first frame (notif tap / toast tap).
@@ -67,7 +66,6 @@ class _StatsPageState extends State<StatsPage> {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       final unlockedAtMap = await _loadUnlockedAchievements(uid);
       int streak = 0;
-      int longestStreak = 0;
       if (uid != null) {
         try {
           final userDoc = await FirebaseFirestore.instance
@@ -77,7 +75,6 @@ class _StatsPageState extends State<StatsPage> {
           if (userDoc.exists) {
             final data = userDoc.data() ?? {};
             streak = (data['streak'] ?? 0) as int;
-            longestStreak = (data['longestStreak'] ?? streak) as int;
           }
         } catch (_) {}
       }
@@ -86,7 +83,6 @@ class _StatsPageState extends State<StatsPage> {
           _allTasks = tasks;
           _unlockedAtMap = unlockedAtMap;
           _userStreak = streak;
-          _userLongestStreak = longestStreak;
           _isLoading = false;
         });
       }
@@ -194,7 +190,7 @@ class _StatsPageState extends State<StatsPage> {
                           color: AppColors.neonPink, size: 20),
                       const SizedBox(width: 6),
                       Text(
-                        Strings.streakLine(_userStreak, _userLongestStreak),
+                        Strings.streakLine(_userStreak),
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           color: AppColors.neonPink,
