@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../models/task.dart';
 import '../services/task_service.dart';
 import '../services/image_service.dart';
+import '../services/friend_service.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
@@ -109,6 +110,15 @@ class _TaskCardState extends State<TaskCard>
     try {
       final base64Image = await ImageService.pickAndCompressPhoto();
       await _taskService.savePhoto(widget.task.id, base64Image);
+
+      // Fire-and-forget: tell every friend the task is awaiting confirmation
+      // so they can confirm directly from their notifications inbox without
+      // copying the share code. A notif failure must not block the photo save.
+      FriendService().notifyFriendsOfPendingTask(
+        taskId: widget.task.id,
+        taskTitle: widget.task.title,
+        code: widget.task.code,
+      ).ignore();
 
       if (mounted) showSuccessSnack(context, Strings.photoSaved);
     } catch (e) {
