@@ -62,27 +62,27 @@ class _StatsPageState extends State<StatsPage> {
 
   Future<void> _loadStats() async {
     try {
-      final tasks = await _taskService.allTasks();
       final uid = FirebaseAuth.instance.currentUser?.uid;
-      final unlockedAtMap = await _loadUnlockedAchievements(uid);
-      int streak = 0;
-      if (uid != null) {
-        try {
-          final userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(uid)
-              .get();
-          if (userDoc.exists) {
-            final data = userDoc.data() ?? {};
-            streak = (data['streak'] ?? 0) as int;
-          }
-        } catch (_) {}
-      }
+      final results = await Future.wait([
+        _taskService.allTasks(),
+        _loadUnlockedAchievements(uid),
+        uid == null
+            ? Future.value(<String, dynamic>{})
+            : FirebaseFirestore.instance
+                .collection('users')
+                .doc(uid)
+                .get()
+                .then((d) => d.data() ?? <String, dynamic>{}),
+      ]);
+      final tasks = results[0] as List<Task>;
+      final unlockedAtMap = results[1] as Map<String, String>;
+      final userData = results[2] as Map<String, dynamic>;
+
       if (mounted) {
         setState(() {
           _allTasks = tasks;
           _unlockedAtMap = unlockedAtMap;
-          _userStreak = streak;
+          _userStreak = (userData['streak'] ?? 0) as int;
           _isLoading = false;
         });
       }
