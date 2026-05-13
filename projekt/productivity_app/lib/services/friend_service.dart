@@ -263,39 +263,47 @@ class FriendService {
 
   /// Combines a list of single-doc snapshot streams into one stream that
   /// emits whenever ANY input emits, once all inputs have produced at least
-  /// one value. Order in the emitted list matches the input list.
+  /// one value. Order in the emitted list matches the input list. Subscriptions
+  /// and the internal controller are cleaned up when the consumer cancels.
   Stream<List<DocumentSnapshot<Map<String, dynamic>>>> _combineLatest(
-      List<Stream<DocumentSnapshot<Map<String, dynamic>>>> streams) async* {
+      List<Stream<DocumentSnapshot<Map<String, dynamic>>>> streams) {
     if (streams.isEmpty) {
-      yield [];
-      return;
+      return Stream.value(<DocumentSnapshot<Map<String, dynamic>>>[]);
     }
+    late StreamController<List<DocumentSnapshot<Map<String, dynamic>>>> controller;
     final latest = List<DocumentSnapshot<Map<String, dynamic>>?>.filled(
         streams.length, null);
-    final controller = StreamController<
-        ({int idx, DocumentSnapshot<Map<String, dynamic>> snap})>();
     final subs = <StreamSubscription>[];
-    for (int i = 0; i < streams.length; i++) {
-      final idx = i;
-      subs.add(streams[i].listen(
-        (s) => controller.add((idx: idx, snap: s)),
-        onError: controller.addError,
-      ));
-    }
-    try {
-      await for (final e in controller.stream) {
-        latest[e.idx] = e.snap;
-        if (latest.every((x) => x != null)) {
-          // Yield a copy — the consumer must not see future in-place mutations
-          // of `latest` (which we keep mutating as new inner events arrive).
-          yield [...latest.cast<DocumentSnapshot<Map<String, dynamic>>>()];
+
+    controller = StreamController<List<DocumentSnapshot<Map<String, dynamic>>>>(
+      onListen: () {
+        for (int i = 0; i < streams.length; i++) {
+          final idx = i;
+          subs.add(streams[i].listen(
+            (snap) {
+              latest[idx] = snap;
+              if (latest.every((x) => x != null) && !controller.isClosed) {
+                // Emit a defensive copy — consumer must not see future
+                // in-place mutations as new inner events arrive.
+                controller.add(
+                  [...latest.cast<DocumentSnapshot<Map<String, dynamic>>>()],
+                );
+              }
+            },
+            onError: (err, st) {
+              if (!controller.isClosed) controller.addError(err, st);
+            },
+          ));
         }
-      }
-    } finally {
-      for (final s in subs) {
-        await s.cancel();
-      }
-      await controller.close();
-    }
+      },
+      onCancel: () async {
+        for (final s in subs) {
+          await s.cancel();
+        }
+        subs.clear();
+        // Don't close the controller in onCancel — Dart will dispose it.
+      },
+    );
+    return controller.stream;
   }
 }
