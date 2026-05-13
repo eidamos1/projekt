@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -216,6 +217,16 @@ class _MyAppState extends State<MyApp> {
       navigatorKey: navigatorKey,
       title: 'Motivator',
       debugShowCheckedModeBanner: false,
+      // Force Czech for all Material widget strings (OK/Cancel/picker/etc).
+      // Without this, the framework falls back to system locale which may
+      // render Slovak / English on user's OS.
+      locale: const Locale('cs'),
+      supportedLocales: const [Locale('cs')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       themeMode: themeProvider.themeMode,
       theme: ThemeData(
         brightness: Brightness.light,
