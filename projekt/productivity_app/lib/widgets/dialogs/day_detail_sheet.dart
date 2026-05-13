@@ -7,6 +7,12 @@ import '../../models/task.dart';
 import '../../utils/context_extensions.dart';
 import '../neo_bottom_sheet.dart';
 
+String _pluralUkol(int n) {
+  if (n == 1) return 'ukol';
+  if (n >= 2 && n <= 4) return 'ukoly';
+  return 'ukolu';
+}
+
 void showDayDetailSheet(BuildContext context, DateTime date, List<Task> dayTasks) {
   showNeoBottomSheet<void>(
     context: context,
@@ -43,7 +49,7 @@ class DayDetailSheet extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '${tasks.length} ukolu \u00b7 $totalXp XP',
+            '${tasks.length} ${_pluralUkol(tasks.length)} \u00b7 $totalXp XP',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,

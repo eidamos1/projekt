@@ -742,7 +742,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     if (tasks.isEmpty) {
                       return const EmptyState(
                         icon: Icons.filter_list_off_rounded,
-                        title: 'Filtr nic neprusti.',
+                        title: 'Filtr nic nepusti.',
                         subtitle: 'Zkus jine kategorie nebo typ.',
                       );
                     }
