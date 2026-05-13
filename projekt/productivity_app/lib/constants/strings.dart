@@ -199,4 +199,14 @@ abstract final class Strings {
       '$unlocked / $total odhaleno';
   static String achievementUnlockToast(String title) =>
       'Odemknul jsi: $title';
+
+  // Stats refactor
+  static const lastYearHeader = 'POSLEDNICH 365 DNI';
+  static const categoryRatio = 'POMER KATEGORII';
+  static String streakLine(int current, int record) =>
+      'Serie: $current dni \u00b7 rekord $record';
+  static String summaryLine(int splneno, int celkem, String? bestDay) =>
+      bestDay == null
+          ? 'Splneno $splneno \u00b7 Celkem $celkem'
+          : 'Splneno $splneno \u00b7 Celkem $celkem \u00b7 Nejlepsi den: $bestDay';
 }
