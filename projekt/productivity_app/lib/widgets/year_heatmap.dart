@@ -167,6 +167,7 @@ class YearHeatmap extends StatelessWidget {
 
     if (isWide) {
       return Container(
+        width: double.infinity,
         padding: const EdgeInsets.all(NeoTheme.spaceSm),
         decoration: NeoTheme.cardDecoration(isDark: isDark),
         child: grid,
@@ -175,6 +176,7 @@ class YearHeatmap extends StatelessWidget {
 
     // Compact: pridat fade indicator napravo aby bylo videt, ze lze scrollovat.
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(NeoTheme.spaceSm),
       decoration: NeoTheme.cardDecoration(isDark: isDark),
       child: Stack(
