@@ -224,6 +224,32 @@ abstract final class Strings {
   static String achievementUnlockToast(String title) =>
       'Odemknul jsi: $title';
 
+  // Friends
+  static const profileTitle = 'Profil';
+  static const friendsHeader = 'KAMARADI';
+  static const inviteHeader = 'TVUJ INVITE';
+  static const shareInvite = 'Sdilet pozvanku';
+  static const regenerateInvite = 'Regenerovat';
+  static const addFriendAction = 'Pridat kamarada';
+  static const inviteShareText = 'Cau! Pridej me na Motivatoru. Otevri tenhle odkaz:\n';
+  static const inviteScreenTitle = 'Pozvanka';
+  static const inviteAddPrompt = 'Pridat jako kamarada?';
+  static const inviteAddButton = 'Pridat';
+  static const inviteOwnCode = 'Tohle je tvuj vlastni invite. Sdilej ho s kamarady.';
+  static const inviteAlreadyFriendSuffix = 'uz je tvuj kamarad.';
+  static const inviteNotFound = 'Pozvanka nenalezena. Mozna byla zrusena.';
+  static const friendAddedToast = 'Pridano do kamaradu.';
+  static const friendAddError = 'Chyba pri pridavani kamarada.';
+  static const removeFriendAction = 'Odstranit z kamaradu';
+  static const removeFriendConfirm = 'Odstranit z kamaradu?';
+  static const noFriendsYet = 'Zatim zadne. Sdilej svou pozvanku.';
+  static const leaderboardHeader = 'KAMARADI TENTO TYDEN';
+  static const leaderboardEmpty = 'Pridej kamarade abys videl zebricek.';
+  static const xpThisWeekShort = 'XP tento tyden';
+  // Notification copy
+  static const friendPendingTitlePrefix = ' caka na potvrzeni';
+  static const friendAddedTitleSuffix = ' te pridal jako kamarada';
+
   // Stats refactor
   static const lastYearHeader = 'POSLEDNICH 365 DNI';
   static const categoryRatio = 'POMER KATEGORII';
