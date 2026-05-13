@@ -78,7 +78,7 @@ class YearHeatmap extends StatelessWidget {
         } else if (bucket == 0) {
           color = isDark ? const Color(0xFF1A1A24) : const Color(0xFFE8E8E8);
         } else {
-          final alpha = 0.25 * bucket;
+          final alpha = 0.20 + 0.20 * bucket;  // 0.40, 0.60, 0.80, 1.00
           color = primary.withValues(alpha: alpha);
         }
 
