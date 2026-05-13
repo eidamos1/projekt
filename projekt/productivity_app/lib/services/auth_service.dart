@@ -72,6 +72,39 @@ class AuthService {
     final user = _auth.currentUser;
     if (user == null) return;
 
+    // 1. Clean up friend reverse edges so leaderboards don't show ghost rows.
+    try {
+      final friendsSnap = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('friends')
+          .get();
+      for (final f in friendsSnap.docs) {
+        try {
+          await _firestore
+              .collection('users')
+              .doc(f.id)
+              .collection('friends')
+              .doc(user.uid)
+              .delete();
+        } catch (_) {
+          // best-effort; rule may forbid if friend already unfriended
+        }
+      }
+    } catch (_) {
+      // also best-effort
+    }
+
+    // 2. Free up the invite code so it can be reused.
+    try {
+      final userSnap =
+          await _firestore.collection('users').doc(user.uid).get();
+      final myInviteCode = userSnap.data()?['inviteCode'] as String?;
+      if (myInviteCode != null && myInviteCode.isNotEmpty) {
+        await _firestore.collection('userInvites').doc(myInviteCode).delete();
+      }
+    } catch (_) {}
+
     // Smazat úkoly
     final tasks = await _firestore
         .collection('users')
