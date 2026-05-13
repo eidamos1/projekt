@@ -201,20 +201,31 @@ class FriendService {
   /// Re-subscribes to per-user doc streams whenever the friends list itself
   /// changes (add/remove). Within a stable friends list, updates flow from
   /// any user doc changing (XP confirm, nickname rename, etc.).
-  Stream<List<FriendRank>> leaderboardStream() async* {
+  ///
+  /// Subscription lifecycle is managed explicitly via a [StreamController] so
+  /// that the inner `_combineLatest` subscription is cancelled deterministically
+  /// when the friends list changes (avoids leaking Firestore listeners).
+  Stream<List<FriendRank>> leaderboardStream() {
     final uid = _uid;
-    if (uid == null) {
-      yield const [];
-      return;
-    }
+    if (uid == null) return const Stream.empty();
 
-    await for (final friendsSnap in _friendsCol(uid).snapshots()) {
-      final friendUids = friendsSnap.docs.map((d) => d.id).toList();
-      final allUids = <String>{uid, ...friendUids}.toList();
-      final docStreams = allUids.map((u) => _userDoc(u).snapshots()).toList();
+    late StreamController<List<FriendRank>> controller;
+    StreamSubscription<List<Map<String, dynamic>>>? friendsSub;
+    StreamSubscription<List<FriendRank>>? combinedSub;
 
-      await for (final snaps in _combineLatest(docStreams)) {
-        final mondayStr = mondayStringOf(DateTime.now());
+    Future<void> rebuildFor(List<Map<String, dynamic>> friends) async {
+      await combinedSub?.cancel();
+      combinedSub = null;
+      final allUids = <String>{uid, ...friends.map((f) => f['uid'] as String)}
+          .toList();
+      final docStreams =
+          allUids.map((u) => _userDoc(u).snapshots()).toList();
+      // mondayStr is computed once per friends-list change. Acceptable: weekly
+      // boundary only matters at midnight Sunday→Monday, when the user-doc
+      // stream will re-emit anyway (weeklyXpWeekStart gets re-stamped on next
+      // XP write), so any staleness is self-correcting.
+      final mondayStr = mondayStringOf(DateTime.now());
+      combinedSub = _combineLatest(docStreams).map((snaps) {
         final raw = <FriendRankRaw>[];
         for (final s in snaps) {
           final data = s.data();
@@ -227,13 +238,27 @@ class FriendService {
             streak: (data['streak'] as int?) ?? 0,
           ));
         }
-        yield FriendRank.buildLeaderboard(
+        return FriendRank.buildLeaderboard(
           entries: raw,
           myUid: uid,
           currentMondayStr: mondayStr,
         );
-      }
+      }).listen(controller.add, onError: controller.addError);
     }
+
+    controller = StreamController<List<FriendRank>>(
+      onListen: () {
+        friendsSub = friendsStream().listen(
+          rebuildFor,
+          onError: controller.addError,
+        );
+      },
+      onCancel: () async {
+        await friendsSub?.cancel();
+        await combinedSub?.cancel();
+      },
+    );
+    return controller.stream;
   }
 
   /// Combines a list of single-doc snapshot streams into one stream that
@@ -261,7 +286,9 @@ class FriendService {
       await for (final e in controller.stream) {
         latest[e.idx] = e.snap;
         if (latest.every((x) => x != null)) {
-          yield latest.cast<DocumentSnapshot<Map<String, dynamic>>>();
+          // Yield a copy — the consumer must not see future in-place mutations
+          // of `latest` (which we keep mutating as new inner events arrive).
+          yield [...latest.cast<DocumentSnapshot<Map<String, dynamic>>>()];
         }
       }
     } finally {
