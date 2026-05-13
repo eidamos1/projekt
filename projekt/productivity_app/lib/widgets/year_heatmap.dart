@@ -88,9 +88,71 @@ class YearHeatmap extends StatelessWidget {
       ));
     }
 
+    // Mesicni labely nad sloupcem kde dany mesic zacina.
+    final monthLabels = <Widget>[];
+    String? prevMonth;
+    for (int week = 0; week < 53; week++) {
+      final firstDayIdx = week * 7;
+      if (firstDayIdx >= cells.length) {
+        monthLabels.add(SizedBox(width: cellSize + spacing));
+        continue;
+      }
+      final firstDate = cells[firstDayIdx];
+      final month = _monthLabel(firstDate.month);
+      final showLabel = prevMonth != month && firstDate.day <= 7;
+      monthLabels.add(SizedBox(
+        width: cellSize + spacing,
+        child: Text(
+          showLabel ? month : '',
+          style: TextStyle(
+            fontSize: 9,
+            color: isDark ? Colors.white54 : Colors.black54,
+          ),
+        ),
+      ));
+      if (showLabel) prevMonth = month;
+    }
+
+    const weekDayNames = ['Po', '', 'St', '', 'Pa', '', ''];
+    final weekLabels = <Widget>[];
+    for (int day = 0; day < 7; day++) {
+      weekLabels.add(SizedBox(
+        height: cellSize + spacing,
+        child: Text(
+          weekDayNames[day],
+          style: TextStyle(
+            fontSize: 9,
+            color: isDark ? Colors.white54 : Colors.black54,
+          ),
+        ),
+      ));
+    }
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: Row(children: columns),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 20),
+            child: Row(children: monthLabels),
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Column(children: weekLabels),
+              const SizedBox(width: 4),
+              Row(children: columns),
+            ],
+          ),
+        ],
+      ),
     );
+  }
+
+  static String _monthLabel(int m) {
+    const labels = ['', 'led', 'uno', 'bre', 'dub', 'kve', 'cer',
+        'cvc', 'srp', 'zar', 'rij', 'lis', 'pro'];
+    return labels[m];
   }
 }
