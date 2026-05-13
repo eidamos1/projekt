@@ -161,7 +161,10 @@ class _FriendInviteScreenState extends State<FriendInviteScreen> {
             textAlign: TextAlign.center,
           )
         else
-          const Text(Strings.inviteAddPrompt, textAlign: TextAlign.center),
+          Text(
+            '${Strings.inviteAddPromptPrefix}$nick${Strings.inviteAddPromptSuffix}',
+            textAlign: TextAlign.center,
+          ),
         const SizedBox(height: NeoTheme.spaceLg),
         Row(
           children: [

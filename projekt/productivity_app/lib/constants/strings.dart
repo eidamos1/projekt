@@ -233,7 +233,8 @@ abstract final class Strings {
   static const addFriendAction = 'Pridat kamarada';
   static const inviteShareText = 'Cau! Pridej me na Motivatoru. Otevri tenhle odkaz:\n';
   static const inviteScreenTitle = 'Pozvanka';
-  static const inviteAddPrompt = 'Pridat jako kamarada?';
+  static const inviteAddPromptPrefix = 'Pridat ';
+  static const inviteAddPromptSuffix = ' jako kamarada?';
   static const inviteAddButton = 'Pridat';
   static const inviteOwnCode = 'Tohle je tvuj vlastni invite. Sdilej ho s kamarady.';
   static const inviteAlreadyFriendSuffix = 'uz je tvuj kamarad.';
