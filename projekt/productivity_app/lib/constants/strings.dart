@@ -46,7 +46,7 @@ abstract final class Strings {
   static const noTasksTitle = 'Cisty stol.';
   static const noTasksSubtitle = 'Pridej ukol, vydelej XP.';
   static const noNotifications = 'Klid. Nikdo se neozyva.';
-  static const expiringNotification = 'Ukol vyprsí zitra!';
+  static const expiringNotification = 'Ukol vyprsi zitra.';
   static const noStatsData = 'Zatim nuly. Splnis ukol, prijdou cisla.';
 
   // Snackbar messages
@@ -117,10 +117,10 @@ abstract final class Strings {
 
   // Settings
   static const darkMode = 'Tmavy rezim';
-  static const layoutMode = 'Rozložení';
-  static const layoutCompact = 'Kompaktní';
-  static const layoutSpread = 'Rozložený';
-  static const colorTheme = 'Barevný motiv';
+  static const layoutMode = 'Rozlozeni';
+  static const layoutCompact = 'Kompaktni';
+  static const layoutSpread = 'Rozlozeny';
+  static const colorTheme = 'Barevny motiv';
   static const notificationsTitle = 'Notifikace';
   static const notificationsSubtitle =
       'Prijmat notifikace pri potvrzeni/odmiteni ukolu';

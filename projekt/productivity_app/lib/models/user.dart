@@ -16,7 +16,7 @@ class UserData {
   factory UserData.fromMap(String id, Map<String, dynamic> data) {
     return UserData(
       id: id,
-      nickname: data['nickname'] ?? 'Hráč', // Defaultní jméno
+      nickname: data['nickname'] ?? 'Hrac',
       xp: data['xp'] ?? 0,
       coins: data['coins'] ?? 0,
       level: data['level'] ?? 1,
