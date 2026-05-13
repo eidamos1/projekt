@@ -96,8 +96,11 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
             TextField(
               controller: _titleController,
               decoration: InputDecoration(
-                labelText:
-                    _isEdit ? Strings.taskTitleLabel : Strings.taskTitleHint,
+                labelText: widget.existingHabit != null
+                    ? Strings.habitTitleLabel
+                    : (_isEdit
+                        ? Strings.taskTitleLabel
+                        : Strings.taskTitleHint),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(NeoTheme.radiusButton)),
                 enabledBorder: OutlineInputBorder(
@@ -115,7 +118,9 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
             DropdownButtonFormField<TaskType>(
               initialValue: _selectedType,
               decoration: InputDecoration(
-                labelText: Strings.taskTypeLabel,
+                labelText: widget.existingHabit != null
+                    ? Strings.habitTypeLabel
+                    : Strings.taskTypeLabel,
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(NeoTheme.radiusButton)),
                 enabledBorder: OutlineInputBorder(

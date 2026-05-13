@@ -68,15 +68,18 @@ class _AchievementGridState extends State<AchievementGrid> {
     final unlockedCount = widget.unlockedAtMap.length;
     final totalCount = Achievements.all.length;
 
-    final all = Achievements.all.where(_matchesFilter).toList();
-    final unlocked = all.where((a) => widget.unlockedAtMap.containsKey(a.id)).toList()
+    final filtered = Achievements.all.where(_matchesFilter).toList();
+    final unlocked = filtered
+        .where((a) => widget.unlockedAtMap.containsKey(a.id))
+        .toList()
       ..sort((a, b) {
         final tsA = widget.unlockedAtMap[a.id] ?? '';
         final tsB = widget.unlockedAtMap[b.id] ?? '';
         return tsB.compareTo(tsA);
       });
-    final locked = all.where((a) => !widget.unlockedAtMap.containsKey(a.id)).toList();
-    final showEmptyState = unlockedCount == 0 && _filter == _Filter.all;
+    final locked =
+        filtered.where((a) => !widget.unlockedAtMap.containsKey(a.id)).toList();
+    final showHint = unlockedCount == 0 && _filter == _Filter.all;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,35 +112,50 @@ class _AchievementGridState extends State<AchievementGrid> {
           runSpacing: 6,
           children: [
             _filterChip(Strings.achievementFilterAll, _Filter.all, isDark),
-            _filterChip(Strings.achievementFilterSituational, _Filter.situational, isDark),
-            _filterChip(Strings.achievementFilterLore, _Filter.loreTitle, isDark),
-            _filterChip(Strings.achievementFilterAnti, _Filter.antiAchievement, isDark),
-            _filterChip(Strings.achievementFilterMilestone, _Filter.milestone, isDark),
+            _filterChip(Strings.achievementFilterSituational,
+                _Filter.situational, isDark),
+            _filterChip(Strings.achievementFilterLore, _Filter.loreTitle,
+                isDark),
+            _filterChip(Strings.achievementFilterAnti, _Filter.antiAchievement,
+                isDark),
+            _filterChip(Strings.achievementFilterMilestone, _Filter.milestone,
+                isDark),
           ],
         ),
-        const SizedBox(height: NeoTheme.spaceMd),
-        if (showEmptyState)
-          _EmptyState(isDark: isDark)
-        else
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              ...unlocked.map((a) => AchievementCard(
-                    achievement: a,
-                    isUnlocked: true,
-                    highlighted: widget.highlightId == a.id,
-                    onTap: () => widget.onTapCard(a),
-                  )),
-              ...locked.map((a) => AchievementCard(
-                    achievement: a,
-                    isUnlocked: false,
-                    highlighted: widget.highlightId == a.id,
-                    progressCurrent: _progressCurrentFor(a),
-                    progressTarget: _progressTargetFor(a),
-                  )),
-            ],
+        if (showHint) ...[
+          const SizedBox(height: NeoTheme.spaceSm),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: NeoTheme.spaceSm),
+            child: Text(
+              Strings.achievementEmptyHint,
+              style: TextStyle(
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+                color: isDark ? AppColors.textSecondary : Colors.black54,
+              ),
+            ),
           ),
+        ] else
+          const SizedBox(height: NeoTheme.spaceMd),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            ...unlocked.map((a) => AchievementCard(
+                  achievement: a,
+                  isUnlocked: true,
+                  highlighted: widget.highlightId == a.id,
+                  onTap: () => widget.onTapCard(a),
+                )),
+            ...locked.map((a) => AchievementCard(
+                  achievement: a,
+                  isUnlocked: false,
+                  highlighted: widget.highlightId == a.id,
+                  progressCurrent: _progressCurrentFor(a),
+                  progressTarget: _progressTargetFor(a),
+                )),
+          ],
+        ),
       ],
     );
   }
@@ -157,40 +175,6 @@ class _AchievementGridState extends State<AchievementGrid> {
         width: NeoTheme.borderWidthThin,
       ),
       onSelected: (_) => setState(() => _filter = value),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final bool isDark;
-
-  const _EmptyState({required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    final sample = Achievements.all.take(4).toList();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: NeoTheme.spaceSm),
-          child: Text(
-            Strings.achievementEmptyHint,
-            style: TextStyle(
-              fontSize: 13,
-              fontStyle: FontStyle.italic,
-              color: isDark ? AppColors.textSecondary : Colors.black54,
-            ),
-          ),
-        ),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: sample
-              .map((a) => AchievementCard(achievement: a, isUnlocked: false))
-              .toList(),
-        ),
-      ],
     );
   }
 }

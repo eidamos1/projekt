@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
+import '../constants/strings.dart';
 
 class YearHeatmap extends StatefulWidget {
   final Map<String, int> tasksPerDay;
@@ -20,23 +21,23 @@ class YearHeatmap extends StatefulWidget {
     return count;
   }
 
-  /// Vrati 53 * 7 = 371 DateTime hodnot. Cells[0] je Monday at or before
-  /// (today's Sunday - 53 weeks). Cells.last je Sunday of today's week (muze
-  /// byt v budoucnosti). Render musi treat post-today cells jako prazdne.
-  static List<DateTime> cellsFor(DateTime today) {
+  /// Cells from [startMonday] (inclusive) through Sunday of [today]'s week.
+  /// First cell is always a Monday; total length is a multiple of 7.
+  /// Post-today cells in the final column are filled and must be rendered
+  /// as empty/transparent by the caller.
+  static List<DateTime> cellsFromMondayThroughWeekOf(
+      DateTime startMonday, DateTime today) {
     final lastCell = DateTime(today.year, today.month, today.day);
-    // weekday: 1=Mon..7=Sun. Find Sunday at or after today.
     final daysToSunday = 7 - lastCell.weekday;
-    // Last cell of grid = end of today's week (Sunday).
-    // First cell of grid = Monday 53*7 - 1 days before that.
-    // Use DateTime constructor with negative day (Dart normalizes).
+    final lastSunday = DateTime(
+      lastCell.year,
+      lastCell.month,
+      lastCell.day + daysToSunday,
+    );
+    final totalDays = lastSunday.difference(startMonday).inDays + 1;
     return [
-      for (int i = 0; i < 53 * 7; i++)
-        DateTime(
-          lastCell.year,
-          lastCell.month,
-          lastCell.day + daysToSunday - (53 * 7 - 1) + i,
-        ),
+      for (int i = 0; i < totalDays; i++)
+        DateTime(startMonday.year, startMonday.month, startMonday.day + i),
     ];
   }
 
@@ -51,7 +52,7 @@ class _YearHeatmapState extends State<YearHeatmap> {
   void initState() {
     super.initState();
     // Auto-scroll to the most recent week (right edge) after first frame
-    // so users see today's activity first, not 12-month-old empty cells.
+    // so users see today's activity first.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
@@ -67,56 +68,66 @@ class _YearHeatmapState extends State<YearHeatmap> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, constraints) => _build(context, constraints));
+    return LayoutBuilder(
+        builder: (context, constraints) => _build(context, constraints));
   }
 
   Widget _build(BuildContext context, BoxConstraints constraints) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = Theme.of(context).colorScheme.primary;
     const spacing = 2.0;
-    // Available width = parent constraint minus container padding (2*spaceSm=16)
-    // minus left weekday label column (~20) minus its spacing (4).
-    final availableWidth = constraints.maxWidth - 16 - 24;
-    // Cell size scales so all 53 columns fit horizontally when possible.
-    // Min 12px so cells stay readable on mobile (horizontal scroll handles
-    // the overflow when viewport is narrow).
-    final cellSize = (availableWidth / 53 - spacing).clamp(12.0, 22.0);
-    final gridWidth = 24 + 53 * (cellSize + spacing);
-    final overflows = gridWidth > constraints.maxWidth - 16;
+    const labelColumnWidth = 22.0;
 
     final now = DateTime.now();
     final todayMidnight = DateTime(now.year, now.month, now.day);
-    final cells = YearHeatmap.cellsFor(now);
-    final firstCellDate = widget.firstTaskDate != null
-        ? DateTime.parse(widget.firstTaskDate!)
-        : null;
+
+    // Start at user's first task date OR 365 days ago, whichever is later.
+    // Round down to the Monday of that week so columns align.
+    final earliestRequested = todayMidnight.subtract(const Duration(days: 365));
+    DateTime startDate = earliestRequested;
+    if (widget.firstTaskDate != null && widget.firstTaskDate!.isNotEmpty) {
+      try {
+        final first = DateTime.parse(widget.firstTaskDate!);
+        if (first.isAfter(earliestRequested)) startDate = first;
+      } catch (_) {}
+    }
+    final startMonday = startDate.subtract(
+      Duration(days: (startDate.weekday - 1) % 7),
+    );
+
+    final cells =
+        YearHeatmap.cellsFromMondayThroughWeekOf(startMonday, todayMidnight);
+    final weeks = cells.length ~/ 7;
+
+    // Available width = parent minus card padding (2*spaceSm=16) minus left
+    // weekday label column. Cell scales so all weeks fit when possible; below
+    // 12px we let it overflow horizontally with a scroll fade.
+    final availableWidth =
+        constraints.maxWidth - (NeoTheme.spaceSm * 2) - labelColumnWidth;
+    final cellSize = (availableWidth / weeks - spacing).clamp(12.0, 22.0);
+    final gridWidth = labelColumnWidth + weeks * (cellSize + spacing);
+    final overflows = gridWidth > constraints.maxWidth - 16;
 
     final columns = <Widget>[];
-    for (int week = 0; week < 53; week++) {
+    for (int week = 0; week < weeks; week++) {
       final rows = <Widget>[];
       for (int day = 0; day < 7; day++) {
         final idx = week * 7 + day;
-        if (idx >= cells.length) {
-          rows.add(SizedBox(width: cellSize, height: cellSize));
-          continue;
-        }
         final date = cells[idx];
         final dateStr =
             '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
         final count = widget.tasksPerDay[dateStr] ?? 0;
         final bucket = YearHeatmap.intensityBucket(count);
-        final preSignup = firstCellDate != null && date.isBefore(firstCellDate);
+        final preStart = date.isBefore(startDate);
         final isFuture = date.isAfter(todayMidnight);
 
         Color color;
-        if (preSignup || isFuture) {
+        if (preStart || isFuture) {
           color = Colors.transparent;
         } else if (bucket == 0) {
-          // Bucket-0 must contrast with the card background (cardDark
-          // 0xFF1A1A24) so empty cells are visibly present, not invisible.
-          color = isDark ? const Color(0xFF3A3A48) : const Color(0xFFE0E0E0);
+          color = isDark ? const Color(0xFF2E2E3A) : const Color(0xFFE8E8E8);
         } else {
-          final alpha = 0.20 + 0.20 * bucket;  // 0.40, 0.60, 0.80, 1.00
+          final alpha = 0.30 + 0.175 * bucket; // 0.475, 0.65, 0.825, 1.00
           color = primary.withValues(alpha: alpha);
         }
 
@@ -128,7 +139,7 @@ class _YearHeatmapState extends State<YearHeatmap> {
             margin: const EdgeInsets.symmetric(vertical: spacing / 2),
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(3),
             ),
           ),
         ));
@@ -139,29 +150,29 @@ class _YearHeatmapState extends State<YearHeatmap> {
       ));
     }
 
-    // Mesicni labely nad sloupcem kde dany mesic zacina.
+    // Month labels placed where each month starts. Use a Stack so labels can
+    // overflow their column slot — no more wrapping "cv c" / "sr p".
     final monthLabels = <Widget>[];
     String? prevMonth;
-    for (int week = 0; week < 53; week++) {
-      final firstDayIdx = week * 7;
-      if (firstDayIdx >= cells.length) {
-        monthLabels.add(SizedBox(width: cellSize + spacing));
-        continue;
-      }
-      final firstDate = cells[firstDayIdx];
+    for (int week = 0; week < weeks; week++) {
+      final firstDate = cells[week * 7];
       final month = _monthLabel(firstDate.month);
-      final showLabel = prevMonth != month && firstDate.day <= 7;
-      monthLabels.add(SizedBox(
-        width: cellSize + spacing,
-        child: Text(
-          showLabel ? month : '',
-          style: TextStyle(
-            fontSize: 9,
-            color: isDark ? Colors.white54 : Colors.black54,
+      // Show on a column's first-day-of-month or first week with new month.
+      if (prevMonth != month && firstDate.day <= 7) {
+        monthLabels.add(Positioned(
+          left: week * (cellSize + spacing),
+          child: Text(
+            month,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.4,
+              color: isDark ? Colors.white60 : Colors.black54,
+            ),
           ),
-        ),
-      ));
-      if (showLabel) prevMonth = month;
+        ));
+        prevMonth = month;
+      }
     }
 
     const weekDayNames = ['Po', '', 'St', '', 'Pa', '', ''];
@@ -172,81 +183,146 @@ class _YearHeatmapState extends State<YearHeatmap> {
         child: Text(
           weekDayNames[day],
           style: TextStyle(
-            fontSize: 9,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
             color: isDark ? Colors.white54 : Colors.black54,
           ),
         ),
       ));
     }
 
-    final grid = SingleChildScrollView(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 20),
-            child: Row(children: monthLabels),
+    final gridWidthForLabels = weeks * (cellSize + spacing);
+
+    final innerGrid = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: labelColumnWidth, bottom: 4),
+          child: SizedBox(
+            width: gridWidthForLabels,
+            height: 14,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: monthLabels,
+            ),
           ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Column(children: weekLabels),
-              const SizedBox(width: 4),
-              Row(children: columns),
-            ],
-          ),
-        ],
-      ),
+        ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: labelColumnWidth,
+              child: Column(children: weekLabels),
+            ),
+            Row(children: columns),
+          ],
+        ),
+      ],
     );
 
-    // When the grid overflows the container (mobile width), show a fade
-    // indicator on the right edge so users see there's more to scroll.
-    if (!overflows) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(NeoTheme.spaceSm),
-        decoration: NeoTheme.cardDecoration(isDark: isDark),
-        child: grid,
-      );
-    }
+    // When the grid fits, right-align it so today's column hugs the right
+    // edge (latest = newest, like GitHub heatmap). When it overflows,
+    // horizontal scroll handles the layout and auto-scrolls to today.
+    final grid = overflows
+        ? SingleChildScrollView(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            child: innerGrid,
+          )
+        : Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [innerGrid],
+          );
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(NeoTheme.spaceSm),
-      decoration: NeoTheme.cardDecoration(isDark: isDark),
-      child: Stack(
+    final legend = Padding(
+      padding: const EdgeInsets.only(top: 8, left: labelColumnWidth),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          grid,
-          Positioned(
-            right: 0,
-            top: 0,
-            bottom: 0,
-            child: IgnorePointer(
-              child: Container(
-                width: 24,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [
-                      Colors.transparent,
-                      isDark ? AppColors.cardDark : AppColors.cardLight,
-                    ],
-                  ),
-                ),
+          Text(
+            Strings.heatmapLess,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white54 : Colors.black54,
+            ),
+          ),
+          const SizedBox(width: 6),
+          for (int b = 0; b <= 4; b++) ...[
+            Container(
+              width: 11,
+              height: 11,
+              margin: const EdgeInsets.only(right: 3),
+              decoration: BoxDecoration(
+                color: b == 0
+                    ? (isDark
+                        ? const Color(0xFF2E2E3A)
+                        : const Color(0xFFE8E8E8))
+                    : primary.withValues(alpha: 0.30 + 0.175 * b),
+                borderRadius: BorderRadius.circular(3),
               ),
+            ),
+          ],
+          const SizedBox(width: 3),
+          Text(
+            Strings.heatmapMore,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white54 : Colors.black54,
             ),
           ),
         ],
       ),
     );
+
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        overflows
+            ? Stack(
+                children: [
+                  grid,
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: IgnorePointer(
+                      child: Container(
+                        width: 24,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              Colors.transparent,
+                              isDark ? AppColors.cardDark : AppColors.cardLight,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : grid,
+        legend,
+      ],
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(NeoTheme.spaceSm),
+      decoration: NeoTheme.cardDecoration(isDark: isDark),
+      child: body,
+    );
   }
 
   static String _monthLabel(int m) {
-    const labels = ['', 'led', 'uno', 'bre', 'dub', 'kve', 'cer',
-        'cvc', 'srp', 'zar', 'rij', 'lis', 'pro'];
+    const labels = [
+      '', 'led', 'uno', 'bre', 'dub', 'kve', 'cer',
+      'cvc', 'srp', 'zar', 'rij', 'lis', 'pro',
+    ];
     return labels[m];
   }
 }

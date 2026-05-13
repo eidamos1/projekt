@@ -171,36 +171,14 @@ class _StatsPageState extends State<StatsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (_userStreak > 0) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: NeoTheme.spaceMd,
-                      vertical: NeoTheme.spaceSm),
-                  decoration: BoxDecoration(
-                    color: AppColors.neonPink.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
-                    border: Border.all(
-                      color: AppColors.neonPink,
-                      width: NeoTheme.borderWidthThin,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.local_fire_department,
-                          color: AppColors.neonPink, size: 20),
-                      const SizedBox(width: 6),
-                      Text(
-                        Strings.streakLine(_userStreak),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.neonPink,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: NeoTheme.spaceMd),
-              ],
+              _MetricRow(
+                completed: completedCount,
+                total: total,
+                bestDay: bestDay,
+                streak: _userStreak,
+                isDark: isDark,
+              ),
+              const SizedBox(height: NeoTheme.spaceLg),
               // Heatmap section
               const Text(Strings.lastYearHeader, style: NeoTheme.subhead),
               const SizedBox(height: NeoTheme.spaceSm),
@@ -226,15 +204,6 @@ class _StatsPageState extends State<StatsPage> {
                   },
                 ),
               ),
-              const SizedBox(height: NeoTheme.spaceSm),
-              Text(
-                Strings.summaryLine(completedCount, total, bestDay),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.textSecondary : Colors.black54,
-                ),
-              ),
               const SizedBox(height: NeoTheme.spaceLg),
 
               // Achievement grid (existing, unchanged)
@@ -248,52 +217,18 @@ class _StatsPageState extends State<StatsPage> {
                 },
               ),
 
-              // Pomer kategorii pie (existing pie chart logic, unchanged styling)
+              // Pomer kategorii — chart on left, legend on right (or stacked
+              // on narrow viewports). Excludes "Bez kategorie" from the chart
+              // itself; shown as a separate footer line so a single dominant
+              // gray slice doesn't crowd out the real categories.
               if (categoryCounts.isNotEmpty || uncategorizedCount > 0) ...[
                 const SizedBox(height: NeoTheme.spaceLg),
                 const Text(Strings.categoryRatio, style: NeoTheme.subhead),
                 const SizedBox(height: NeoTheme.spaceSm),
-                Container(
-                  decoration: NeoTheme.cardDecoration(isDark: isDark),
-                  padding: const EdgeInsets.all(NeoTheme.spaceMd),
-                  child: SizedBox(
-                    height: 220,
-                    child: PieChart(
-                      PieChartData(
-                        sections: [
-                          ...categoryCounts.entries.map((e) {
-                            final cat = Categories.byKey(e.key);
-                            if (cat == null) return null;
-                            return PieChartSectionData(
-                              value: e.value.toDouble(),
-                              title: '${cat.label}\n${e.value}',
-                              color: cat.color,
-                              radius: 60,
-                              titleStyle: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            );
-                          }).whereType<PieChartSectionData>(),
-                          if (uncategorizedCount > 0)
-                            PieChartSectionData(
-                              value: uncategorizedCount.toDouble(),
-                              title: 'Bez kat.\n$uncategorizedCount',
-                              color: const Color(0xFF8888AA),
-                              radius: 60,
-                              titleStyle: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                        ],
-                        sectionsSpace: 2,
-                        centerSpaceRadius: 30,
-                      ),
-                    ),
-                  ),
+                _CategoryBreakdown(
+                  categoryCounts: categoryCounts,
+                  uncategorizedCount: uncategorizedCount,
+                  isDark: isDark,
                 ),
               ],
             ],
@@ -301,6 +236,332 @@ class _StatsPageState extends State<StatsPage> {
         ),
       ),
       bottomNavigationBar: const NeoBottomNav(currentIndex: 2),
+    );
+  }
+}
+
+/// Compact metric strip shown above the heatmap. Streak first when active,
+/// then completed / total / best weekday. Wraps on narrow viewports.
+class _MetricRow extends StatelessWidget {
+  final int completed;
+  final int total;
+  final String? bestDay;
+  final int streak;
+  final bool isDark;
+
+  const _MetricRow({
+    required this.completed,
+    required this.total,
+    required this.bestDay,
+    required this.streak,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return Wrap(
+      spacing: NeoTheme.spaceSm,
+      runSpacing: NeoTheme.spaceSm,
+      children: [
+        if (streak > 0)
+          _MetricCard(
+            label: Strings.streakLabel,
+            value: '$streak',
+            unit: streak == 1
+                ? 'den'
+                : (streak >= 2 && streak <= 4 ? 'dny' : 'dni'),
+            icon: Icons.local_fire_department,
+            accent: AppColors.neonPink,
+            isDark: isDark,
+          ),
+        _MetricCard(
+          label: Strings.completedTasks,
+          value: '$completed',
+          unit: total > 0 ? 'z $total' : null,
+          icon: Icons.check_circle_outline_rounded,
+          accent: primary,
+          isDark: isDark,
+        ),
+        if (bestDay != null)
+          _MetricCard(
+            label: Strings.bestDay,
+            value: bestDay!,
+            icon: Icons.event_available_rounded,
+            accent: AppColors.neonCyan,
+            isDark: isDark,
+          ),
+      ],
+    );
+  }
+}
+
+class _MetricCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final String? unit;
+  final IconData icon;
+  final Color accent;
+  final bool isDark;
+
+  const _MetricCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.accent,
+    required this.isDark,
+    this.unit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: NeoTheme.spaceMd, vertical: NeoTheme.spaceSm + 2),
+      decoration: NeoTheme.cardDecoration(isDark: isDark).copyWith(
+        border: Border.all(color: accent, width: NeoTheme.borderWidthThin),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: accent, size: 18),
+          const SizedBox(width: NeoTheme.spaceSm),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                  color: isDark ? AppColors.textSecondary : Colors.black54,
+                ),
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      height: 1.1,
+                    ),
+                  ),
+                  if (unit != null) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      unit!,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? AppColors.textSecondary
+                            : Colors.black54,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Donut chart of categorized tasks + a side-by-side legend. "Bez kategorie"
+/// is shown as a separate footer line, not a chart slice — otherwise it tends
+/// to dominate and crowd out the real categories.
+class _CategoryBreakdown extends StatelessWidget {
+  final Map<String, int> categoryCounts;
+  final int uncategorizedCount;
+  final bool isDark;
+
+  const _CategoryBreakdown({
+    required this.categoryCounts,
+    required this.uncategorizedCount,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = categoryCounts.entries
+        .map((e) {
+          final cat = Categories.byKey(e.key);
+          return cat == null ? null : (cat: cat, count: e.value);
+        })
+        .whereType<({TaskCategory cat, int count})>()
+        .toList()
+      ..sort((a, b) => b.count.compareTo(a.count));
+    final categorizedTotal =
+        entries.fold<int>(0, (acc, e) => acc + e.count);
+
+    return Container(
+      decoration: NeoTheme.cardDecoration(isDark: isDark),
+      padding: const EdgeInsets.all(NeoTheme.spaceMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LayoutBuilder(builder: (context, constraints) {
+            final stacked = constraints.maxWidth < 380;
+            final chart = SizedBox(
+              width: stacked ? double.infinity : 180,
+              height: 180,
+              child: entries.isEmpty
+                  ? _ChartEmpty(isDark: isDark)
+                  : PieChart(
+                      PieChartData(
+                        sections: entries.map((e) {
+                          final pct =
+                              (e.count / categorizedTotal * 100).round();
+                          return PieChartSectionData(
+                            value: e.count.toDouble(),
+                            // Show in-slice % only for slices large enough to
+                            // fit a label; smaller ones live in the legend.
+                            title: pct >= 12 ? '$pct%' : '',
+                            color: e.cat.color,
+                            radius: 50,
+                            titleStyle: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black,
+                            ),
+                          );
+                        }).toList(),
+                        sectionsSpace: 3,
+                        centerSpaceRadius: 42,
+                        startDegreeOffset: -90,
+                      ),
+                    ),
+            );
+
+            final legend = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final e in entries)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: e.cat.color,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          e.cat.label,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${e.count}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? AppColors.textSecondary
+                                : Colors.black54,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            );
+
+            if (entries.isEmpty) {
+              return chart;
+            }
+
+            if (stacked) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(child: chart),
+                  const SizedBox(height: NeoTheme.spaceMd),
+                  legend,
+                ],
+              );
+            }
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                chart,
+                const SizedBox(width: NeoTheme.spaceMd),
+                Expanded(child: legend),
+              ],
+            );
+          }),
+          if (uncategorizedCount > 0) ...[
+            const SizedBox(height: NeoTheme.spaceSm),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: NeoTheme.spaceSm, vertical: 6),
+              decoration: BoxDecoration(
+                color: (isDark ? Colors.white : Colors.black)
+                    .withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(NeoTheme.radiusSmall),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.label_off_outlined,
+                      size: 14,
+                      color: isDark
+                          ? AppColors.textSecondary
+                          : Colors.black54),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '${Strings.uncategorizedLine}: $uncategorizedCount',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? AppColors.textSecondary
+                            : Colors.black54,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ChartEmpty extends StatelessWidget {
+  final bool isDark;
+  const _ChartEmpty({required this.isDark});
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        Strings.noCategorizedTasks,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 12,
+          fontStyle: FontStyle.italic,
+          color: isDark ? AppColors.textSecondary : Colors.black54,
+        ),
+      ),
     );
   }
 }

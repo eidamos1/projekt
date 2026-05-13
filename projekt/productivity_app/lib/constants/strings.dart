@@ -41,6 +41,8 @@ abstract final class Strings {
   static const taskTitleLabel = 'Nazev ukolu';
   static const taskTypeLabel = 'Typ ukolu';
   static const taskCodeLabel = 'Kod ukolu';
+  static const habitTitleLabel = 'Nazev navyku';
+  static const habitTypeLabel = 'Typ navyku';
 
   // Empty states — short, confident voice (no exclamation marks, no "klikni na").
   static const noTasksTitle = 'Zadne ukoly.';
@@ -126,15 +128,33 @@ abstract final class Strings {
       'Prijmat notifikace pri potvrzeni/odmiteni ukolu';
   static const deleteAccountAction = 'Smazat ucet';
   static const deleteAccountSubtitle = 'Kompletne odstrani vsechna data';
+  static const profileSection = 'Profil';
+  static const nicknameSetting = 'Prezdivka';
+  static const changeNicknameTitle = 'Zmenit prezdivku';
+  static const nicknameTooShort = 'Prezdivka musi mit aspon 2 znaky.';
+  static const nicknameUpdated = 'Prezdivka aktualizovana.';
+  static const nicknameUpdateError = 'Nepodarilo se ulozit prezdivku.';
+  static const logoutAction = 'Odhlasit se';
+  static const logoutSubtitle = 'Vratis se na prihlasovaci obrazovku';
+  static const logoutConfirm = 'Opravdu se chces odhlasit?';
+  static const aboutAppTitle = 'O aplikaci';
+  static const aboutAppCopy =
+      'Motivator je gamifikovany planovac. Splnis ukol, kamarad potvrdi, ty beres XP.';
+  static const aboutAppVersion = 'Verze';
 
   // Stats
   static const totalTasks = 'Celkem ukolu';
   static const completedTasks = 'Splneno';
   static const thisWeek = 'Tento tyden';
   static const thisMonth = 'Tento mesic';
-  static const bestDay = 'Nejproduktivnejsi den';
+  static const bestDay = 'Nejlepsi den';
   static const xpLast7Days = 'XP za poslednich 7 dni';
   static const taskTypeRatio = 'Pomer typu ukolu';
+  static const streakLabel = 'Serie';
+  static const heatmapLess = 'mene';
+  static const heatmapMore = 'vice';
+  static const uncategorizedLine = 'Bez kategorie';
+  static const noCategorizedTasks = 'Zatim zadne kategorizovane ukoly.';
 
   // Rewards
   static String rewardText(int xp, int coins) {
@@ -211,8 +231,4 @@ abstract final class Strings {
     final unit = current == 1 ? 'den' : (current >= 2 && current <= 4 ? 'dny' : 'dni');
     return 'Serie: $current $unit';
   }
-  static String summaryLine(int splneno, int celkem, String? bestDay) =>
-      bestDay == null
-          ? 'Splneno $splneno \u00b7 Celkem $celkem'
-          : 'Splneno $splneno \u00b7 Celkem $celkem \u00b7 Nejlepsi den: $bestDay';
 }

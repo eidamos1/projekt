@@ -27,6 +27,142 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   final _userService = UserService();
 
+  Future<void> _editNickname(BuildContext context, String current) async {
+    final controller = TextEditingController(text: current);
+    final isDark = context.isDark;
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
+          side: BorderSide(
+            color: isDark ? AppColors.borderSubtle : AppColors.borderBold,
+            width: NeoTheme.borderWidth,
+          ),
+        ),
+        title: const Text(Strings.changeNicknameTitle),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 24,
+          decoration: InputDecoration(
+            labelText: Strings.nicknameSetting,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
+            ),
+          ),
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(Strings.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text(Strings.save),
+          ),
+        ],
+      ),
+    );
+    if (result == null || result == current) return;
+    if (result.length < 2) {
+      if (context.mounted) showErrorSnack(context, Strings.nicknameTooShort);
+      return;
+    }
+    try {
+      await _userService.updateNickname(result);
+      if (context.mounted) showSuccessSnack(context, Strings.nicknameUpdated);
+    } catch (_) {
+      if (context.mounted) {
+        showErrorSnack(context, Strings.nicknameUpdateError);
+      }
+    }
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final isDark = context.isDark;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
+          side: BorderSide(
+            color: isDark ? AppColors.borderSubtle : AppColors.borderBold,
+            width: NeoTheme.borderWidth,
+          ),
+        ),
+        title: const Text(Strings.logoutAction),
+        content: const Text(Strings.logoutConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text(Strings.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(Strings.logoutAction),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await AuthService().signOut();
+    if (context.mounted) {
+      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+    }
+  }
+
+  void _showAbout(BuildContext context) {
+    final isDark = context.isDark;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
+          side: BorderSide(
+            color: isDark ? AppColors.borderSubtle : AppColors.borderBold,
+            width: NeoTheme.borderWidth,
+          ),
+        ),
+        title: const Text(Strings.aboutAppTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              Strings.appName,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+                color: context.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${Strings.aboutAppVersion} 1.0.0',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+                color: isDark ? AppColors.textSecondary : Colors.black54,
+              ),
+            ),
+            const SizedBox(height: NeoTheme.spaceMd),
+            const Text(Strings.aboutAppCopy),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(Strings.confirm),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _deleteAccount(BuildContext context) async {
     final isDark = context.isDark;
     bool confirm = await showDialog(
@@ -148,6 +284,27 @@ class _SettingsPageState extends State<SettingsPage> {
                 );
               },
             ),
+            // Nickname (live from user doc)
+            StreamBuilder<DocumentSnapshot>(
+              stream: _userService.profileStream(),
+              builder: (context, snap) {
+                String nickname = '...';
+                if (snap.hasData && snap.data!.exists) {
+                  final data = snap.data!.data() as Map<String, dynamic>?;
+                  nickname = (data?['nickname'] as String?) ?? '';
+                }
+                return ListTile(
+                  leading: const Icon(Icons.person_outline_rounded),
+                  title: const Text(Strings.nicknameSetting),
+                  subtitle: Text(nickname.isEmpty ? '—' : nickname),
+                  trailing: const Icon(Icons.edit_outlined, size: 18),
+                  onTap: nickname.isEmpty
+                      ? null
+                      : () => _editNickname(context, nickname),
+                );
+              },
+            ),
+            const Divider(),
             // Dark mode
             ListTile(
               leading: const Icon(Icons.dark_mode),
@@ -159,26 +316,42 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             const Divider(),
             // Layout mode
-            ListTile(
-              leading: const Icon(Icons.view_compact_outlined),
-              title: const Text(Strings.layoutMode),
-              trailing: SegmentedButton<LayoutMode>(
-                segments: const [
-                  ButtonSegment(
-                    value: LayoutMode.compact,
-                    label: Text(Strings.layoutCompact),
-                    icon: Icon(Icons.view_compact_outlined),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.view_compact_outlined),
+                      const SizedBox(width: 16),
+                      const Text(Strings.layoutMode,
+                          style: TextStyle(fontSize: 16)),
+                    ],
                   ),
-                  ButtonSegment(
-                    value: LayoutMode.spread,
-                    label: Text(Strings.layoutSpread),
-                    icon: Icon(Icons.width_full_outlined),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<LayoutMode>(
+                      segments: const [
+                        ButtonSegment(
+                          value: LayoutMode.compact,
+                          label: Text(Strings.layoutCompact),
+                          icon: Icon(Icons.view_compact_outlined),
+                        ),
+                        ButtonSegment(
+                          value: LayoutMode.spread,
+                          label: Text(Strings.layoutSpread),
+                          icon: Icon(Icons.width_full_outlined),
+                        ),
+                      ],
+                      selected: {themeProvider.layoutMode},
+                      onSelectionChanged: (selection) {
+                        themeProvider.setLayoutMode(selection.first);
+                      },
+                    ),
                   ),
                 ],
-                selected: {themeProvider.layoutMode},
-                onSelectionChanged: (selection) {
-                  themeProvider.setLayoutMode(selection.first);
-                },
               ),
             ),
             const Divider(),
@@ -287,6 +460,22 @@ class _SettingsPageState extends State<SettingsPage> {
               onTap: () => Navigator.pushNamed(context, '/habits'),
             ),
             const Divider(),
+            // About app
+            ListTile(
+              leading: const Icon(Icons.info_outline_rounded),
+              title: const Text(Strings.aboutAppTitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showAbout(context),
+            ),
+            const Divider(),
+            // Logout
+            ListTile(
+              leading: const Icon(Icons.logout_rounded),
+              title: const Text(Strings.logoutAction),
+              subtitle: const Text(Strings.logoutSubtitle),
+              onTap: () => _confirmLogout(context),
+            ),
+            const Divider(),
             // Delete account
             ListTile(
               leading: const Icon(Icons.delete_forever, color: AppColors.neonPink),
@@ -296,6 +485,7 @@ class _SettingsPageState extends State<SettingsPage> {
               subtitle: const Text(Strings.deleteAccountSubtitle),
               onTap: () => _deleteAccount(context),
             ),
+            const SizedBox(height: NeoTheme.spaceLg),
           ],
         ),
       ),

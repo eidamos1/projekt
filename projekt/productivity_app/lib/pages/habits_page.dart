@@ -52,7 +52,7 @@ class _HabitsPageState extends State<HabitsPage> {
       children: [
         ListTile(
           leading: const Icon(Icons.edit_rounded),
-          title: const Text(Strings.editTaskAction),
+          title: const Text(Strings.editHabit),
           onTap: () {
             Navigator.pop(context);
             _edit(h);
