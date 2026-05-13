@@ -1,7 +1,7 @@
-/// Helpers for week-aligned date math. Used by weekly XP reset + leaderboard.
-///
-/// Convention: weeks start on Monday (weekday = DateTime.monday = 1).
-/// Sunday is weekday = 7.
+// Helpers for week-aligned date math. Used by weekly XP reset + leaderboard.
+//
+// Convention: weeks start on Monday (weekday = DateTime.monday = 1).
+// Sunday is weekday = 7.
 
 /// Returns Monday 00:00 (local time) of the week containing [d].
 ///
