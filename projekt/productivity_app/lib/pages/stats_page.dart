@@ -204,24 +204,27 @@ class _StatsPageState extends State<StatsPage> {
               // Heatmap section
               const Text(Strings.lastYearHeader, style: NeoTheme.subhead),
               const SizedBox(height: NeoTheme.spaceSm),
-              YearHeatmap(
-                tasksPerDay: tasksPerDay(_allTasks),
-                firstTaskDate: () {
-                  final dates = _allTasks
-                      .map((t) => t.date)
-                      .where((d) => d.isNotEmpty);
-                  return dates.isEmpty
-                      ? null
-                      : dates.reduce((a, b) => a.compareTo(b) < 0 ? a : b);
-                }(),
-                onCellTap: (date) {
-                  final dateStr =
-                      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-                  final dayTasks = _allTasks
-                      .where((t) => t.completed && t.date == dateStr)
-                      .toList();
-                  showDayDetailSheet(context, date, dayTasks);
-                },
+              SizedBox(
+                width: double.infinity,
+                child: YearHeatmap(
+                  tasksPerDay: tasksPerDay(_allTasks),
+                  firstTaskDate: () {
+                    final dates = _allTasks
+                        .map((t) => t.date)
+                        .where((d) => d.isNotEmpty);
+                    return dates.isEmpty
+                        ? null
+                        : dates.reduce((a, b) => a.compareTo(b) < 0 ? a : b);
+                  }(),
+                  onCellTap: (date) {
+                    final dateStr =
+                        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                    final dayTasks = _allTasks
+                        .where((t) => t.completed && t.date == dateStr)
+                        .toList();
+                    showDayDetailSheet(context, date, dayTasks);
+                  },
+                ),
               ),
               const SizedBox(height: NeoTheme.spaceSm),
               Text(
