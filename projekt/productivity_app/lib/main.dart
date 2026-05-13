@@ -20,6 +20,7 @@ import 'pages/stats_page.dart';
 import 'pages/notifications_page.dart';
 import 'pages/habits_page.dart';
 import 'pages/profile_page.dart';
+import 'pages/friend_invite_screen.dart';
 import 'widgets/achievement_unlock_toast.dart';
 import 'constants/app_colors.dart';
 import 'constants/neo_theme.dart';
@@ -193,6 +194,13 @@ class _MyAppState extends State<MyApp> {
       return;
     }
 
+    if (uri.host == 'friend' && code != null) {
+      Future.delayed(const Duration(seconds: 1), () {
+        navigatorKey.currentState?.pushNamed('/friend?code=$code');
+      });
+      return;
+    }
+
     if (code == null && uri.fragment.isNotEmpty) {
       try {
         final fragmentUri = Uri.parse('dummy://dummy/${uri.fragment}');
@@ -204,9 +212,20 @@ class _MyAppState extends State<MyApp> {
         uri.path.contains('confirm') ||
         uri.fragment.contains('confirm');
 
+    bool isFriendPage = uri.host == 'friend' ||
+        uri.path.contains('friend') ||
+        uri.fragment.contains('friend');
+
     if (isConfirmPage && code != null) {
       Future.delayed(const Duration(seconds: 1), () {
         navigatorKey.currentState?.pushNamed('/confirm', arguments: code);
+      });
+      return;
+    }
+
+    if (isFriendPage && code != null) {
+      Future.delayed(const Duration(seconds: 1), () {
+        navigatorKey.currentState?.pushNamed('/friend?code=$code');
       });
     }
   }
@@ -375,6 +394,21 @@ class _MyAppState extends State<MyApp> {
         '/notifications': (context) => const NotificationsPage(),
         '/habits': (context) => const HabitsPage(),
         '/profile': (context) => const ProfilePage(),
+      },
+      // Handle parameterised routes (e.g. /friend?code=XXX) that the static
+      // `routes` map cannot express. The static map takes priority; this only
+      // fires for unmatched names.
+      onGenerateRoute: (settings) {
+        final name = settings.name ?? '';
+        if (name.startsWith('/friend')) {
+          final uri = Uri.parse(name);
+          final code = uri.queryParameters['code'] ?? '';
+          return MaterialPageRoute(
+            builder: (_) => FriendInviteScreen(code: code),
+            settings: settings,
+          );
+        }
+        return null;
       },
     );
   }
