@@ -19,6 +19,7 @@ import 'pages/settings.dart';
 import 'pages/stats_page.dart';
 import 'pages/notifications_page.dart';
 import 'pages/habits_page.dart';
+import 'pages/profile_page.dart';
 import 'widgets/achievement_unlock_toast.dart';
 import 'constants/app_colors.dart';
 import 'constants/neo_theme.dart';
@@ -373,6 +374,7 @@ class _MyAppState extends State<MyApp> {
         '/stats': (context) => const StatsPage(),
         '/notifications': (context) => const NotificationsPage(),
         '/habits': (context) => const HabitsPage(),
+        '/profile': (context) => const ProfilePage(),
       },
     );
   }
