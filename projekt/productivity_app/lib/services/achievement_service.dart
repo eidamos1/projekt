@@ -222,9 +222,11 @@ class AchievementService {
   }
 
   Future<void> setActiveTitle(String? id) async {
-    await _firestore.collection('users').doc(_uid).update({
-      'activeTitle': id,
-    });
+    // set+merge survives the edge case of a missing user doc; update would throw.
+    await _firestore.collection('users').doc(_uid).set(
+      {'activeTitle': id},
+      SetOptions(merge: true),
+    );
   }
 
   Stream<String?> activeTitleStream() {

@@ -16,11 +16,15 @@ void showAchievementUnlockToast(BuildContext context, Achievement ach) {
       elevation: 0,
       behavior: SnackBarBehavior.floating,
       content: GestureDetector(
-        onTap: () => Navigator.pushNamed(
-          context,
-          '/stats',
-          arguments: {'highlightId': ach.id},
-        ),
+        onTap: () {
+          // Dismiss the toast before navigating so it doesn't linger on /stats.
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          Navigator.pushNamed(
+            context,
+            '/stats',
+            arguments: {'highlightId': ach.id},
+          );
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
