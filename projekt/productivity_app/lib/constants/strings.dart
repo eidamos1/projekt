@@ -43,8 +43,8 @@ abstract final class Strings {
   static const taskCodeLabel = 'Kod ukolu';
 
   // Empty states — short, confident voice (no exclamation marks, no "klikni na").
-  static const noTasksTitle = 'Cisty stol.';
-  static const noTasksSubtitle = 'Pridej ukol, vydelej XP.';
+  static const noTasksTitle = 'Zadne ukoly.';
+  static const noTasksSubtitle = 'Pridej prvni a vydelej XP.';
   static const noNotifications = 'Klid. Nikdo se neozyva.';
   static const expiringNotification = 'Ukol vyprsi zitra.';
   static const noStatsData = 'Zatim nuly. Splnis ukol, prijdou cisla.';
@@ -82,7 +82,7 @@ abstract final class Strings {
   static const stats = 'Statistiky';
   static const confirmCode = 'Potvrdit kod';
   static const settings = 'Nastaveni';
-  static const logout = 'Odhlasit';
+  static const logout = 'Odhlasit se';
   static const readAll = 'Precist vse';
   static const today = 'Dnes';
   static const confirmTask = 'Potvrzeni ukolu';
@@ -108,7 +108,7 @@ abstract final class Strings {
   static const register = 'Registrace';
   static const loginButton = 'Prihlasit';
   static const registerButton = 'Registrovat';
-  static const googleLogin = 'Google Prihlaseni';
+  static const googleLogin = 'Prihlasit pres Google';
   static const noAccountPrompt = 'Nemas ucet? Registrace';
   static const hasAccountPrompt = 'Mas ucet? Prihlaseni';
   static const nicknameLabel = 'Tvoje prezdivka';
@@ -137,8 +137,12 @@ abstract final class Strings {
   static const taskTypeRatio = 'Pomer typu ukolu';
 
   // Rewards
-  static String rewardText(int xp, int coins) =>
-      'Odmena: $xp XP | $coins Minci';
+  static String rewardText(int xp, int coins) {
+    final coinWord = coins == 1
+        ? 'Mince'
+        : (coins >= 2 && coins <= 4 ? 'Mince' : 'Minci');
+    return 'Odmena: $xp XP | $coins $coinWord';
+  }
 
   // Day names
   static const dayNames = {

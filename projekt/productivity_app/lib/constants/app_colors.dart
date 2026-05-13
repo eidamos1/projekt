@@ -74,7 +74,7 @@ abstract final class AppColors {
     (name: 'Neon ruzova', color: neonPink),
     (name: 'Neon zluta', color: neonYellow),
     (name: 'Neon cyan', color: neonCyan),
-    (name: 'Neon oranz', color: neonOrange),
+    (name: 'Neon oranzova', color: neonOrange),
     (name: 'Modra', color: Color(0xFF4D8EFF)),
     (name: 'Fialova', color: Color(0xFFBB66FF)),
   ];
