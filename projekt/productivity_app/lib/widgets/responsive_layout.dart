@@ -13,8 +13,15 @@ class ResponsiveLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    if (!themeProvider.isCompactMode) {
-      return child;
+    // Kompaktni = centered narrow content, no sidebar. Rozlozeny = use full
+    // width with sidebar when there's room.
+    if (themeProvider.isCompactMode) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: Layout.maxContentWidth),
+          child: child,
+        ),
+      );
     }
 
     final screenWidth = MediaQuery.of(context).size.width;
