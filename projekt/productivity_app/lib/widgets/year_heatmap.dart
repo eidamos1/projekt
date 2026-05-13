@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 
 class YearHeatmap extends StatelessWidget {
@@ -51,8 +52,12 @@ class YearHeatmap extends StatelessWidget {
     // Available width = parent constraint minus container padding (2*spaceSm=16)
     // minus left weekday label column (~20) minus its spacing (4).
     final availableWidth = constraints.maxWidth - 16 - 24;
-    // Cell size scales so all 53 columns fit horizontally without scroll.
-    final cellSize = (availableWidth / 53 - spacing).clamp(6.0, 22.0);
+    // Cell size scales so all 53 columns fit horizontally when possible.
+    // Min 12px so cells stay readable on mobile (horizontal scroll handles
+    // the overflow when viewport is narrow).
+    final cellSize = (availableWidth / 53 - spacing).clamp(12.0, 22.0);
+    final gridWidth = 24 + 53 * (cellSize + spacing);
+    final overflows = gridWidth > constraints.maxWidth - 16;
 
     final now = DateTime.now();
     final todayMidnight = DateTime(now.year, now.month, now.day);
@@ -170,13 +175,46 @@ class YearHeatmap extends StatelessWidget {
       ),
     );
 
-    // Cells always fit the available width (dynamic cellSize), so no
-    // horizontal scroll, no fade indicator needed — single path.
+    // When the grid overflows the container (mobile width), show a fade
+    // indicator on the right edge so users see there's more to scroll.
+    if (!overflows) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(NeoTheme.spaceSm),
+        decoration: NeoTheme.cardDecoration(isDark: isDark),
+        child: grid,
+      );
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(NeoTheme.spaceSm),
       decoration: NeoTheme.cardDecoration(isDark: isDark),
-      child: grid,
+      child: Stack(
+        children: [
+          grid,
+          Positioned(
+            right: 0,
+            top: 0,
+            bottom: 0,
+            child: IgnorePointer(
+              child: Container(
+                width: 24,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Colors.transparent,
+                      isDark ? AppColors.cardDark : AppColors.cardLight,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
