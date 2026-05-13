@@ -6,6 +6,7 @@ import '../services/habit_service.dart';
 import '../constants/task_categories.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/neo_bottom_nav.dart';
+import '../widgets/responsive_layout.dart';
 import '../widgets/neo_bottom_sheet.dart';
 import '../widgets/neo_skeleton.dart';
 import '../widgets/dialogs/task_form_dialog.dart';
@@ -133,7 +134,8 @@ class _HabitsPageState extends State<HabitsPage> {
     final isDark = context.isDark;
     return Scaffold(
       appBar: AppBar(title: const Text(Strings.habitsMine)),
-      body: StreamBuilder<List<Habit>>(
+      body: ResponsiveLayout(
+        child: StreamBuilder<List<Habit>>(
         stream: _habitService.habitsStream(),
         builder: (context, snap) {
           if (!snap.hasData) {
@@ -250,6 +252,7 @@ class _HabitsPageState extends State<HabitsPage> {
             },
           );
         },
+        ),
       ),
       bottomNavigationBar: const NeoBottomNav(currentIndex: 1),
     );
