@@ -1,6 +1,6 @@
 import '../models/task.dart';
 
-/// Vrati Map<yyyy-MM-dd → pocet splnenych ukolu>.
+/// Vrati Map z yyyy-MM-dd na pocet splnenych ukolu.
 Map<String, int> tasksPerDay(List<Task> tasks) {
   final counts = <String, int>{};
   for (final t in tasks) {
