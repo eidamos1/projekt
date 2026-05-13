@@ -31,6 +31,66 @@ class YearHeatmap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox.shrink(); // skeleton, real render comes later
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+    final mediaWidth = MediaQuery.of(context).size.width;
+    final isWide = mediaWidth >= 1080;
+    final cellSize = isWide ? 18.0 : 12.0;
+    const spacing = 2.0;
+
+    final cells = cellsFor(DateTime.now());
+    final firstCellDate = firstTaskDate != null
+        ? DateTime.parse(firstTaskDate!)
+        : null;
+
+    final columns = <Widget>[];
+    for (int week = 0; week < 53; week++) {
+      final rows = <Widget>[];
+      for (int day = 0; day < 7; day++) {
+        final idx = week * 7 + day;
+        if (idx >= cells.length) {
+          rows.add(SizedBox(width: cellSize, height: cellSize));
+          continue;
+        }
+        final date = cells[idx];
+        final dateStr =
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        final count = tasksPerDay[dateStr] ?? 0;
+        final bucket = intensityBucket(count);
+        final preSignup = firstCellDate != null && date.isBefore(firstCellDate);
+
+        Color color;
+        if (preSignup) {
+          color = Colors.transparent;
+        } else if (bucket == 0) {
+          color = isDark ? const Color(0xFF1A1A24) : const Color(0xFFE8E8E8);
+        } else {
+          final alpha = 0.25 * bucket;
+          color = primary.withValues(alpha: alpha);
+        }
+
+        rows.add(GestureDetector(
+          onTap: count > 0 ? () => onCellTap(date) : null,
+          child: Container(
+            width: cellSize,
+            height: cellSize,
+            margin: const EdgeInsets.symmetric(vertical: spacing / 2),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ));
+      }
+      columns.add(Padding(
+        padding: const EdgeInsets.only(right: spacing),
+        child: Column(children: rows),
+      ));
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(children: columns),
+    );
   }
 }
