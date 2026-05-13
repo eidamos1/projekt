@@ -1,7 +1,8 @@
 import 'dart:math';
 
-/// Charset for invite codes. 30 chars total. Ambiguous chars excluded:
-/// no 0/O, no 1/I/L. Easier to read aloud and to type from a screenshot.
+/// Charset for invite codes. 31 chars total (23 letters + 8 digits).
+/// Ambiguous chars excluded: no 0/O, no 1/I/L. Easier to read aloud and
+/// to type from a screenshot.
 const _kInviteCharset = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const _kInviteCodeLength = 8;
 
