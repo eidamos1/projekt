@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/neo_theme.dart';
 
 class YearHeatmap extends StatelessWidget {
   final Map<String, int> tasksPerDay;
@@ -128,24 +129,28 @@ class YearHeatmap extends StatelessWidget {
       ));
     }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 20),
-            child: Row(children: monthLabels),
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Column(children: weekLabels),
-              const SizedBox(width: 4),
-              Row(children: columns),
-            ],
-          ),
-        ],
+    return Container(
+      padding: const EdgeInsets.all(NeoTheme.spaceSm),
+      decoration: NeoTheme.cardDecoration(isDark: isDark),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 20),
+              child: Row(children: monthLabels),
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(children: weekLabels),
+                const SizedBox(width: 4),
+                Row(children: columns),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
