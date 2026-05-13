@@ -16,6 +16,7 @@ import '../utils/stats_helpers.dart';
 import '../widgets/achievement_grid.dart';
 import '../widgets/dialogs/achievement_detail_sheet.dart';
 import '../widgets/dialogs/day_detail_sheet.dart';
+import '../widgets/empty_state.dart';
 import '../widgets/neo_bottom_nav.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/year_heatmap.dart';
@@ -117,6 +118,17 @@ class _StatsPageState extends State<StatsPage> {
       return Scaffold(
         appBar: AppBar(title: const Text(Strings.stats)),
         body: const Center(child: CircularProgressIndicator()),
+        bottomNavigationBar: const NeoBottomNav(currentIndex: 2),
+      );
+    }
+
+    if (_allTasks.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: const Text(Strings.stats)),
+        body: const EmptyState(
+          icon: Icons.bar_chart_rounded,
+          title: Strings.noStatsData,
+        ),
         bottomNavigationBar: const NeoBottomNav(currentIndex: 2),
       );
     }
