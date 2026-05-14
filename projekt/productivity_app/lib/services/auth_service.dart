@@ -47,7 +47,7 @@ class AuthService {
     UserCredential userCred = await _auth.signInWithCredential(credential);
 
     await _firestore.collection('users').doc(userCred.user!.uid).set({
-      'nickname': googleUser.displayName ?? 'Hrac',
+      'nickname': googleUser.displayName ?? 'Hráč',
       'photoUrl': googleUser.photoUrl,
     }, SetOptions(merge: true));
 

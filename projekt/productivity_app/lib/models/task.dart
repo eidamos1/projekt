@@ -86,11 +86,11 @@ class Task {
   String get typeLabel {
     switch (type) {
       case TaskType.daily:
-        return Strings.typeDailyAccented;
+        return Strings.typeDaily;
       case TaskType.weekly:
-        return Strings.typeWeeklyAccented;
+        return Strings.typeWeekly;
       case TaskType.monthly:
-        return Strings.typeMonthlyAccented;
+        return Strings.typeMonthly;
     }
   }
 }

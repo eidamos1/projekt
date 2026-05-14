@@ -70,12 +70,12 @@ abstract final class AppColors {
   }
 
   static const List<({String name, Color color})> themeOptions = [
-    (name: 'Neon zelena', color: neonGreen),
-    (name: 'Neon ruzova', color: neonPink),
-    (name: 'Neon zluta', color: neonYellow),
+    (name: 'Neon zelená', color: neonGreen),
+    (name: 'Neon růžová', color: neonPink),
+    (name: 'Neon žlutá', color: neonYellow),
     (name: 'Neon cyan', color: neonCyan),
-    (name: 'Neon oranzova', color: neonOrange),
-    (name: 'Modra', color: Color(0xFF4D8EFF)),
-    (name: 'Fialova', color: Color(0xFFBB66FF)),
+    (name: 'Neon oranžová', color: neonOrange),
+    (name: 'Modrá', color: Color(0xFF4D8EFF)),
+    (name: 'Fialová', color: Color(0xFFBB66FF)),
   ];
 }

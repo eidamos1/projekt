@@ -21,6 +21,7 @@ import 'pages/notifications_page.dart';
 import 'pages/habits_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/friend_invite_screen.dart';
+import 'pages/friend_profile_page.dart';
 import 'widgets/achievement_unlock_toast.dart';
 import 'constants/app_colors.dart';
 import 'constants/neo_theme.dart';
@@ -404,6 +405,16 @@ class _MyAppState extends State<MyApp> {
       // fires for unmatched names.
       onGenerateRoute: (settings) {
         final name = settings.name ?? '';
+        // Order matters: /friend-profile must be checked before /friend
+        // because '/friend-profile' also startsWith('/friend').
+        if (name.startsWith('/friend-profile')) {
+          final uri = Uri.parse(name);
+          final uid = uri.queryParameters['uid'] ?? '';
+          return MaterialPageRoute(
+            builder: (_) => FriendProfilePage(uid: uid),
+            settings: settings,
+          );
+        }
         if (name.startsWith('/friend')) {
           final uri = Uri.parse(name);
           final code = uri.queryParameters['code'] ?? '';

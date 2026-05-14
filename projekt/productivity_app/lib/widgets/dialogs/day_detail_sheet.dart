@@ -8,9 +8,9 @@ import '../../utils/context_extensions.dart';
 import '../neo_bottom_sheet.dart';
 
 String _pluralUkol(int n) {
-  if (n == 1) return 'ukol';
-  if (n >= 2 && n <= 4) return 'ukoly';
-  return 'ukolu';
+  if (n == 1) return 'úkol';
+  if (n >= 2 && n <= 4) return 'úkoly';
+  return 'úkolů';
 }
 
 void showDayDetailSheet(BuildContext context, DateTime date, List<Task> dayTasks) {

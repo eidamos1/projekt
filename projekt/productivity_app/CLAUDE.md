@@ -97,7 +97,7 @@ taskCodes/{code}/    # Global index for confirm-flow lookup
 - Tasks color-coded by type: daily=blue, weekly=orange, monthly=purple.
 
 ### Language
-All UI strings live in `lib/constants/strings.dart` in **Czech without diacritics** (e.g. `Uzivatel neni prihlasen`, not `Uživatel není přihlášen`). No i18n framework. When adding strings, add a constant to `Strings` rather than inlining.
+All UI strings live in `lib/constants/strings.dart` in **proper Czech with diacritics** (e.g. `Uživatel není přihlášen`). Earlier code may still use diacritic-less forms — fix on touch. No i18n framework. When adding strings, add a constant to `Strings` rather than inlining. The brand name `MOTIVATOR` (constant `Strings.appName`) stays uppercase Latin without diacritics.
 
 ### Firebase Project
 - Project ID: `calendar-mot`

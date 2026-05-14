@@ -3,7 +3,7 @@ import 'app_colors.dart';
 
 /// Predefined category for tasks. Stored in Firestore by [key]; UI looks up
 /// the rest via [Categories.byKey]. Keys are stable identifiers — never rename
-/// without a migration. Labels are display strings (Czech without diacritics).
+/// without a migration. Labels are display strings (proper Czech with diacritics).
 class TaskCategory {
   final String key;
   final String label;
@@ -21,13 +21,13 @@ class TaskCategory {
 abstract final class Categories {
   static const work = TaskCategory(
     key: 'work',
-    label: 'Prace',
+    label: 'Práce',
     icon: Icons.work_rounded,
     color: AppColors.neonOrange,
   );
   static const personal = TaskCategory(
     key: 'personal',
-    label: 'Osobni',
+    label: 'Osobní',
     icon: Icons.person_rounded,
     color: AppColors.neonGreen,
   );
@@ -45,13 +45,13 @@ abstract final class Categories {
   );
   static const home = TaskCategory(
     key: 'home',
-    label: 'Domacnost',
+    label: 'Domácnost',
     icon: Icons.home_rounded,
     color: AppColors.neonYellow,
   );
   static const health = TaskCategory(
     key: 'health',
-    label: 'Zdravi',
+    label: 'Zdraví',
     icon: Icons.favorite_rounded,
     color: AppColors.neonPink,
   );
@@ -63,7 +63,7 @@ abstract final class Categories {
   );
   static const other = TaskCategory(
     key: 'other',
-    label: 'Jine',
+    label: 'Jiné',
     icon: Icons.label_outline_rounded,
     color: Color(0xFF8888AA),
   );

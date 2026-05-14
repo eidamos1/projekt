@@ -16,6 +16,7 @@ import '../utils/context_extensions.dart';
 import '../utils/date_helpers.dart';
 import '../utils/stats_helpers.dart';
 import '../widgets/achievement_grid.dart';
+import '../widgets/friend_badges.dart';
 import '../widgets/dialogs/achievement_detail_sheet.dart';
 import '../widgets/dialogs/day_detail_sheet.dart';
 import '../widgets/empty_state.dart';
@@ -293,7 +294,7 @@ class _MetricRow extends StatelessWidget {
             value: '$streak',
             unit: streak == 1
                 ? 'den'
-                : (streak >= 2 && streak <= 4 ? 'dny' : 'dni'),
+                : (streak >= 2 && streak <= 4 ? 'dny' : 'dní'),
             icon: Icons.local_fire_department,
             accent: AppColors.neonPink,
             isDark: isDark,
@@ -589,6 +590,112 @@ class _ChartEmpty extends StatelessWidget {
   }
 }
 
+/// Single leaderboard row inside the compact `/stats` widget.
+///
+/// Tap behaviour: non-isMe row -> `/friend-profile?uid=<uid>`, isMe row ->
+/// `/profile`. The whole row uses `HitTestBehavior.opaque` so the empty
+/// space between rank and XP is also tappable.
+class _LeaderboardRow extends StatelessWidget {
+  final FriendRank rank;
+  final bool isDark;
+  const _LeaderboardRow({required this.rank, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        if (rank.isMe) {
+          Navigator.pushNamed(context, '/profile');
+        } else {
+          Navigator.pushNamed(context, '/friend-profile?uid=${rank.uid}');
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            // Rank slot — same fixed width whether it's a trophy or a number,
+            // so all rows align vertically.
+            SizedBox(
+              width: 24,
+              child: rank.rank == 1
+                  ? const Icon(
+                      Icons.emoji_events_rounded,
+                      color: AppColors.neonYellow,
+                      size: 18,
+                    )
+                  : Text(
+                      '${rank.rank}.',
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+            ),
+            // Level badge between rank and nickname — primary tint at lvl 5+.
+            _LeaderboardLevelBadge(uid: rank.uid),
+            const SizedBox(width: NeoTheme.spaceSm),
+            Expanded(
+              child: Text(
+                rank.nickname,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  // Rank 1 always pops in primary too, even when it's not me.
+                  fontWeight: (rank.isMe || rank.rank == 1)
+                      ? FontWeight.w800
+                      : FontWeight.w600,
+                  color: (rank.isMe || rank.rank == 1)
+                      ? context.primaryColor
+                      : null,
+                ),
+              ),
+            ),
+            Text(
+              '${rank.weeklyXp} XP',
+              style: TextStyle(
+                fontWeight:
+                    rank.rank == 1 ? FontWeight.w800 : FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Streams `users/{uid}.level` and renders it as a [LevelBadge]. Same idea
+/// as profile_page's _FriendLevelBadge but lives here so the two pages
+/// don't depend on each other's internals.
+class _LeaderboardLevelBadge extends StatelessWidget {
+  final String uid;
+  const _LeaderboardLevelBadge({required this.uid});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .snapshots(),
+      builder: (context, snap) {
+        int level = 1;
+        if (snap.hasData && snap.data!.exists) {
+          final data = snap.data!.data();
+          if (data != null) {
+            final stored = data['level'] as int?;
+            if (stored != null) {
+              level = stored;
+            } else {
+              final xp = (data['xp'] as int?) ?? 0;
+              level = (xp ~/ 100) + 1;
+            }
+          }
+        }
+        return LevelBadge(level: level);
+      },
+    );
+  }
+}
+
 class _LeaderboardWidget extends StatelessWidget {
   final bool isDark;
   const _LeaderboardWidget({required this.isDark});
@@ -610,53 +717,23 @@ class _LeaderboardWidget extends StatelessWidget {
           children: [
             Text(Strings.leaderboardHeader, style: NeoTheme.subhead),
             const SizedBox(height: NeoTheme.spaceSm),
-            GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/profile'),
-              child: Container(
-                decoration: NeoTheme.cardDecoration(isDark: isDark),
-                padding: const EdgeInsets.all(NeoTheme.spaceMd),
-                child: Column(
-                  children: [
-                    for (final r in top)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: 24,
-                              child: Text(
-                                '${r.rank}.',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w800),
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                r.nickname,
-                                style: TextStyle(
-                                  fontWeight: r.isMe
-                                      ? FontWeight.w800
-                                      : FontWeight.w600,
-                                  color: r.isMe
-                                      ? context.primaryColor
-                                      : null,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              '${r.weeklyXp} XP',
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w700),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (more > 0) ...[
-                      const SizedBox(height: 4),
-                      Align(
+            Container(
+              decoration: NeoTheme.cardDecoration(isDark: isDark),
+              padding: const EdgeInsets.all(NeoTheme.spaceMd),
+              child: Column(
+                children: [
+                  for (final r in top)
+                    _LeaderboardRow(rank: r, isDark: isDark),
+                  if (more > 0) ...[
+                    const SizedBox(height: 4),
+                    GestureDetector(
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/profile'),
+                      behavior: HitTestBehavior.opaque,
+                      child: Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          '+ $more dalsi',
+                          '+ $more další',
                           style: TextStyle(
                             fontSize: 12,
                             color: isDark
@@ -665,9 +742,9 @@ class _LeaderboardWidget extends StatelessWidget {
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ],

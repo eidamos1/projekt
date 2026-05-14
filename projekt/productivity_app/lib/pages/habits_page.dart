@@ -38,11 +38,11 @@ class _HabitsPageState extends State<HabitsPage> {
   String _typeLabel(TaskType t) {
     switch (t) {
       case TaskType.daily:
-        return Strings.typeDailyAccented;
+        return Strings.typeDaily;
       case TaskType.weekly:
-        return Strings.typeWeeklyAccented;
+        return Strings.typeWeekly;
       case TaskType.monthly:
-        return Strings.typeMonthlyAccented;
+        return Strings.typeMonthly;
     }
   }
 

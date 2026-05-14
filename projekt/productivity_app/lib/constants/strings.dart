@@ -1,261 +1,275 @@
 abstract final class Strings {
   // Task type labels
-  static const typeDaily = 'Denni';
-  static const typeWeekly = 'Tydenni';
-  static const typeMonthly = 'Mesicni';
-  static const typeDailyAccented = 'Denn\u00ed';
-  static const typeWeeklyAccented = 'T\u00fddenn\u00ed';
-  static const typeMonthlyAccented = 'M\u011bs\u00ed\u010dn\u00ed';
+  static const typeDaily = 'Denní';
+  static const typeWeekly = 'Týdenní';
+  static const typeMonthly = 'Měsíční';
 
   // Buttons
-  static const cancel = 'Zrusit';
+  static const cancel = 'Zrušit';
   static const delete = 'Smazat';
-  static const save = 'Ulozit';
-  static const createTask = 'Vytvorit ukol';
+  static const save = 'Uložit';
+  static const createTask = 'Vytvořit úkol';
   static const confirm = 'Potvrdit';
-  static const reject = 'ODMITNOUT';
+  static const reject = 'ODMÍTNOUT';
   static const confirmUpper = 'POTVRDIT';
 
   // Status
-  static const statusCompleted = 'Splneno';
-  static const statusRejected = 'Odmitnuto';
-  static const statusPending = 'Ceka na potvrzeni';
+  static const statusCompleted = 'Splněno';
+  static const statusRejected = 'Odmítnuto';
+  static const statusPending = 'Čeká na potvrzení';
   static const statusResend = 'Odeslat znovu';
 
   // Dialog titles
-  static const newTask = 'Novy ukol';
-  static const editTask = 'Upravit ukol';
-  static const deleteTask = 'Smazat ukol?';
-  static const deleteTaskConfirm = 'Opravdu chces smazat';
-  static const rejectTask = 'Odmitnout ukol';
-  static const rejectReason = 'Proc odmitas tento ukol?';
-  static const rejectReasonLabel = 'Duvod odmiteni';
-  static const rejectReasonHint = 'Napr. Fotka neodpovida ukolu...';
-  static const deleteAccount = 'Smazat ucet?';
+  static const newTask = 'Nový úkol';
+  static const editTask = 'Upravit úkol';
+  static const deleteTask = 'Smazat úkol?';
+  static const deleteTaskConfirm = 'Opravdu chceš smazat';
+  static const rejectTask = 'Odmítnout úkol';
+  static const rejectReason = 'Proč odmítáš tento úkol?';
+  static const rejectReasonLabel = 'Důvod odmítnutí';
+  static const rejectReasonHint = 'Např. Fotka neodpovídá úkolu...';
+  static const deleteAccount = 'Smazat účet?';
   static const deleteAccountWarning =
-      'Tato akce je nevratna. Prijdete o vsechny ukoly, XP a mince.';
-  static const deleteAccountButton = 'SMAZAT NAVZDY';
+      'Tato akce je nevratná. Přijdeš o všechny úkoly, XP a mince.';
+  static const deleteAccountButton = 'SMAZAT NAVŽDY';
 
   // Form hints
-  static const taskTitleHint = 'Co chces splnit?';
-  static const taskTitleLabel = 'Nazev ukolu';
-  static const taskTypeLabel = 'Typ ukolu';
-  static const taskCodeLabel = 'Kod ukolu';
-  static const habitTitleLabel = 'Nazev navyku';
-  static const habitTypeLabel = 'Typ navyku';
+  static const taskTitleHint = 'Co chceš splnit?';
+  static const taskTitleLabel = 'Název úkolu';
+  static const taskTypeLabel = 'Typ úkolu';
+  static const taskCodeLabel = 'Kód úkolu';
+  static const habitTitleLabel = 'Název návyku';
+  static const habitTypeLabel = 'Typ návyku';
 
   // Empty states — short, confident voice (no exclamation marks, no "klikni na").
-  static const noTasksTitle = 'Zadne ukoly.';
-  static const noTasksSubtitle = 'Pridej prvni a vydelej XP.';
-  static const noNotifications = 'Klid. Nikdo se neozyva.';
-  static const expiringNotification = 'Ukol vyprsi zitra.';
-  static const noStatsData = 'Zatim nuly. Splnis ukol, prijdou cisla.';
+  static const noTasksTitle = 'Žádné úkoly.';
+  static const noTasksSubtitle = 'Přidej první a vydělej XP.';
+  static const noNotifications = 'Klid. Nikdo se neozývá.';
+  static const expiringNotification = 'Úkol vyprší zítra.';
+  static const noStatsData = 'Zatím nuly. Splníš úkol, přijdou čísla.';
 
   // Snackbar messages
-  static const photoSaved = 'Dukaz ulozen!';
-  static const photoTooLarge = 'Obrazek je moc velky. Zkus jiny.';
-  static const photoRequired = 'Musis nejdriv vyfotit dukaz!';
-  static const taskResetOk = 'Ukol pripraven k novemu odeslani!';
-  static const taskResetError = 'Chyba pri resetu ukolu.';
-  static const taskConfirmed = 'Potvrzeno! Odmena pripsana.';
-  static const taskConfirmError = 'Chyba pri potvrzovani. Zkuste to znovu.';
-  static const taskRejected = 'Ukol byl odmitnut.';
-  static const taskRejectError = 'Chyba pri odmitani. Zkuste to znovu.';
+  static const photoSaved = 'Důkaz uložen!';
+  static const photoTooLarge = 'Obrázek je moc velký. Zkus jiný.';
+  static const photoRequired = 'Musíš nejdřív vyfotit důkaz!';
+  static const taskResetOk = 'Úkol připraven k novému odeslání!';
+  static const taskResetError = 'Chyba při resetu úkolu.';
+  static const taskConfirmed = 'Potvrzeno! Odměna připsána.';
+  static const taskConfirmError = 'Chyba při potvrzování. Zkuste to znovu.';
+  static const taskRejected = 'Úkol byl odmítnut.';
+  static const taskRejectError = 'Chyba při odmítání. Zkuste to znovu.';
   static const taskNotFound =
-      'Ukol s timto kodem nenalezen nebo uz byl potvrzen.';
-  static const taskSearchError = 'Chyba pri hledani: Zkuste to znovu.';
-  static const rejectReasonRequired = 'Zadej duvod odmiteni';
-  static const fillAllFields = 'Vyplnte vsechna pole';
-  static const loginError = 'Chyba prihlaseni';
-  static const accountDeleted = 'Ucet byl uspesne smazan.';
+      'Úkol s tímto kódem nenalezen nebo už byl potvrzen.';
+  static const taskSearchError = 'Chyba při hledání: Zkuste to znovu.';
+  static const rejectReasonRequired = 'Zadej důvod odmítnutí';
+  static const fillAllFields = 'Vyplňte všechna pole';
+  static const loginError = 'Chyba přihlášení';
+  static const accountDeleted = 'Účet byl úspěšně smazán.';
   static const accountDeleteError =
-      'Chyba mazani. Zkuste se odhlasit a znovu prihlasit.';
+      'Chyba mazání. Zkuste se odhlásit a znovu přihlásit.';
 
   // Task card
-  static const takePhoto = 'Vyfotit dukaz';
-  static const changePhoto = 'Zmenit fotku';
-  static const editTaskAction = 'Upravit ukol';
-  static const deleteTaskAction = 'Smazat ukol';
-  static const reasonPrefix = 'Duvod: ';
+  static const takePhoto = 'Vyfotit důkaz';
+  static const changePhoto = 'Změnit fotku';
+  static const editTaskAction = 'Upravit úkol';
+  static const deleteTaskAction = 'Smazat úkol';
+  static const reasonPrefix = 'Důvod: ';
   static const noPhoto = 'Bez fotky';
 
   // Navigation / AppBar
   static const notifications = 'Notifikace';
   static const stats = 'Statistiky';
-  static const confirmCode = 'Potvrdit kod';
-  static const settings = 'Nastaveni';
-  static const logout = 'Odhlasit se';
-  static const readAll = 'Precist vse';
+  static const confirmCode = 'Potvrdit kód';
+  static const settings = 'Nastavení';
+  static const logout = 'Odhlásit se';
+  static const readAll = 'Přečíst vše';
   static const today = 'Dnes';
-  static const confirmTask = 'Potvrzeni ukolu';
-  static const confirmingTask = 'Potvrzujes ukol:';
-  static const confirmAnother = 'Potvrdit dalsi';
-  static const goBack = 'Zpet';
+  static const confirmTask = 'Potvrzení úkolu';
+  static const confirmingTask = 'Potvrzuješ úkol:';
+  static const confirmAnother = 'Potvrdit další';
+  static const goBack = 'Zpět';
   static const confirmedHeadline = 'Hotovo!';
-  static const confirmedSubtitle = 'Odmena byla pripsana kamaradovi.';
+  static const confirmedSubtitle = 'Odměna byla připsána kamarádovi.';
 
   // Brand
   static const appName = 'MOTIVATOR';
-  static const tagline = 'Potvrzeno = odmeneno.';
+  static const tagline = 'Potvrzeno = odměněno.';
 
   // Categories
   static const categoriesLabel = 'KATEGORIE';
-  static const filterAll = 'Vse';
+  static const filterAll = 'Vše';
   static const filterByType = 'Typ';
   static const filterByCategory = 'Kategorie';
   static const noCategoryLabel = 'Bez kategorie';
 
   // Login
-  static const login = 'Prihlaseni';
+  static const login = 'Přihlášení';
   static const register = 'Registrace';
-  static const loginButton = 'Prihlasit';
+  static const loginButton = 'Přihlásit';
   static const registerButton = 'Registrovat';
-  static const googleLogin = 'Prihlasit pres Google';
-  static const noAccountPrompt = 'Nemas ucet? Registrace';
-  static const hasAccountPrompt = 'Mas ucet? Prihlaseni';
-  static const nicknameLabel = 'Tvoje prezdivka';
+  static const googleLogin = 'Přihlásit přes Google';
+  static const noAccountPrompt = 'Nemáš účet? Registrace';
+  static const hasAccountPrompt = 'Máš účet? Přihlášení';
+  static const nicknameLabel = 'Tvoje přezdívka';
   static const emailLabel = 'E-mail';
   static const passwordLabel = 'Heslo';
 
   // Settings
-  static const darkMode = 'Tmavy rezim';
-  static const layoutMode = 'Rozlozeni';
-  static const layoutCompact = 'Kompaktni';
-  static const layoutSpread = 'Rozlozeny';
-  static const colorTheme = 'Barevny motiv';
+  static const darkMode = 'Tmavý režim';
+  static const layoutMode = 'Rozložení';
+  static const layoutCompact = 'Kompaktní';
+  static const layoutSpread = 'Rozložený';
+  static const colorTheme = 'Barevný motiv';
   static const notificationsTitle = 'Notifikace';
   static const notificationsSubtitle =
-      'Prijmat notifikace pri potvrzeni/odmiteni ukolu';
-  static const deleteAccountAction = 'Smazat ucet';
-  static const deleteAccountSubtitle = 'Kompletne odstrani vsechna data';
+      'Přijímat notifikace při potvrzení/odmítnutí úkolu';
+  static const deleteAccountAction = 'Smazat účet';
+  static const deleteAccountSubtitle = 'Kompletně odstraní všechna data';
   static const profileSection = 'Profil';
-  static const nicknameSetting = 'Prezdivka';
-  static const changeNicknameTitle = 'Zmenit prezdivku';
-  static const nicknameTooShort = 'Prezdivka musi mit aspon 2 znaky.';
-  static const nicknameUpdated = 'Prezdivka aktualizovana.';
-  static const nicknameUpdateError = 'Nepodarilo se ulozit prezdivku.';
-  static const logoutAction = 'Odhlasit se';
-  static const logoutSubtitle = 'Vratis se na prihlasovaci obrazovku';
-  static const logoutConfirm = 'Opravdu se chces odhlasit?';
+  static const nicknameSetting = 'Přezdívka';
+  static const changeNicknameTitle = 'Změnit přezdívku';
+  static const nicknameTooShort = 'Přezdívka musí mít aspoň 2 znaky.';
+  static const nicknameUpdated = 'Přezdívka aktualizována.';
+  static const nicknameUpdateError = 'Nepodařilo se uložit přezdívku.';
+  static const logoutAction = 'Odhlásit se';
+  static const logoutSubtitle = 'Vrátíš se na přihlašovací obrazovku';
+  static const logoutConfirm = 'Opravdu se chceš odhlásit?';
   static const aboutAppTitle = 'O aplikaci';
   static const aboutAppCopy =
-      'Motivator je gamifikovany planovac. Splnis ukol, kamarad potvrdi, ty beres XP.';
+      'Motivátor je gamifikovaný plánovač. Splníš úkol, kamarád potvrdí, ty bereš XP.';
   static const aboutAppVersion = 'Verze';
 
   // Stats
-  static const totalTasks = 'Celkem ukolu';
-  static const completedTasks = 'Splneno';
-  static const thisWeek = 'Tento tyden';
-  static const thisMonth = 'Tento mesic';
-  static const bestDay = 'Nejlepsi den';
-  static const xpLast7Days = 'XP za poslednich 7 dni';
-  static const taskTypeRatio = 'Pomer typu ukolu';
-  static const streakLabel = 'Serie';
-  static const heatmapLess = 'mene';
-  static const heatmapMore = 'vice';
+  static const totalTasks = 'Celkem úkolů';
+  static const completedTasks = 'Splněno';
+  static const thisWeek = 'Tento týden';
+  static const thisMonth = 'Tento měsíc';
+  static const bestDay = 'Nejlepší den';
+  static const xpLast7Days = 'XP za posledních 7 dní';
+  static const taskTypeRatio = 'Poměr typů úkolů';
+  static const streakLabel = 'Série';
+  static const heatmapLess = 'méně';
+  static const heatmapMore = 'více';
   static const uncategorizedLine = 'Bez kategorie';
-  static const noCategorizedTasks = 'Zatim zadne kategorizovane ukoly.';
+  static const noCategorizedTasks = 'Zatím žádné kategorizované úkoly.';
 
   // Rewards
   static String rewardText(int xp, int coins) {
     final coinWord = coins == 1
         ? 'Mince'
-        : (coins >= 2 && coins <= 4 ? 'Mince' : 'Minci');
-    return 'Odmena: $xp XP | $coins $coinWord';
+        : (coins >= 2 && coins <= 4 ? 'Mince' : 'Mincí');
+    return 'Odměna: $xp XP | $coins $coinWord';
   }
 
   // Day names
   static const dayNames = {
-    1: 'Pondeli',
-    2: 'Utery',
-    3: 'Streda',
-    4: 'Ctvrtek',
-    5: 'Patek',
+    1: 'Pondělí',
+    2: 'Úterý',
+    3: 'Středa',
+    4: 'Čtvrtek',
+    5: 'Pátek',
     6: 'Sobota',
-    7: 'Nedele',
+    7: 'Neděle',
   };
 
   // Habits
-  static const habit = 'Navyk';
-  static const habitAccented = 'N\u00e1vyk';
-  static const habits = 'Navyky';
-  static const habitsAccented = 'N\u00e1vyky';
-  static const habitsMine = 'Moje navyky';
-  static const repeatTask = 'Opakovat pravidelne';
-  static const recurrenceEveryday = 'Kazdy den';
-  static const recurrenceWeekdays = 'Vsedni dny';
-  static const recurrenceCustom = 'Vlastni';
-  static const recurrenceLabel = 'Opakovani';
+  static const habit = 'Návyk';
+  static const habits = 'Návyky';
+  static const habitsMine = 'Moje návyky';
+  static const repeatTask = 'Opakovat pravidelně';
+  static const recurrenceEveryday = 'Každý den';
+  static const recurrenceWeekdays = 'Všední dny';
+  static const recurrenceCustom = 'Vlastní';
+  static const recurrenceLabel = 'Opakování';
   static const chooseDays = 'Vyber dny';
-  static const habitStreak = 'Serie navyku';
+  static const habitStreak = 'Série návyku';
   static const habitRecord = 'rekord';
-  static const editHabitOrInstance = 'Upravit jen tento ukol, nebo cely navyk?';
+  static const editHabitOrInstance = 'Upravit jen tento úkol, nebo celý návyk?';
   static const thisOnly = 'Jen tento';
-  static const wholeHabit = 'Cely navyk';
+  static const wholeHabit = 'Celý návyk';
   static const pauseHabit = 'Pozastavit';
   static const resumeHabit = 'Aktivovat';
-  static const deleteHabit = 'Smazat navyk';
-  static const editHabit = 'Upravit navyk';
-  static const deleteHabitConfirm = 'Smaze vsechny budouci instance. Minule zustanou.';
-  static const noHabitsTitle = 'Zadne navyky.';
-  static const noHabitsSubtitle = 'Pridej jeden v dialogu noveho ukolu.';
-  static const rewardTierWarning = 'Pozor: casta frekvence + mesicni tier = hodne XP.';
+  static const deleteHabit = 'Smazat návyk';
+  static const editHabit = 'Upravit návyk';
+  static const deleteHabitConfirm = 'Smaže všechny budoucí instance. Minulé zůstanou.';
+  static const noHabitsTitle = 'Žádné návyky.';
+  static const noHabitsSubtitle = 'Přidej jeden v dialogu nového úkolu.';
+  static const rewardTierWarning = 'Pozor: častá frekvence + měsíční tier = hodně XP.';
 
   static const weekdayShort = {
-    1: 'Po', 2: 'Ut', 3: 'St', 4: 'Ct', 5: 'Pa', 6: 'So', 7: 'Ne',
+    1: 'Po', 2: 'Út', 3: 'St', 4: 'Čt', 5: 'Pá', 6: 'So', 7: 'Ne',
   };
 
   // Uspechy (achievements)
-  static const achievementsHeader = 'USPECHY';
-  static const achievementEmptyHint = 'Splni neco neobvykleho a uvidi se.';
-  static const achievementFilterAll = 'vse';
-  static const achievementFilterSituational = 'situacni';
+  static const achievementsHeader = 'ÚSPĚCHY';
+  static const achievementEmptyHint = 'Splni něco neobvyklého a uvidí se.';
+  static const achievementFilterAll = 'vše';
+  static const achievementFilterSituational = 'situační';
   static const achievementFilterLore = 'tituly';
   static const achievementFilterAnti = 'anti';
   static const achievementFilterMilestone = 'mety';
   static const achievementUnlockedAt = 'Odemknuto';
   static const achievementSetAsTitle = 'NASADIT JAKO TITUL';
   static const achievementRemoveTitle = 'SUNDAT TITUL';
-  static const achievementNotifTitle = 'ODEMKL JSI USPECH';
-  static const achievementYourTitle = 'TVUJ TITUL';
-  static const achievementOpenStats = 'OTEVRIT STATISTIKY';
+  static const achievementNotifTitle = 'ODEMKL JSI ÚSPĚCH';
+  static const achievementYourTitle = 'TVŮJ TITUL';
+  static const achievementOpenStats = 'OTEVŘÍT STATISTIKY';
   static String achievementCounter(int unlocked, int total) =>
       '$unlocked / $total odhaleno';
   static String achievementUnlockToast(String title) =>
-      'Odemknul jsi: $title';
+      'Odemkl jsi: $title';
 
   // Friends
   static const profileTitle = 'Profil';
-  static const friendsHeader = 'KAMARADI';
-  static const inviteHeader = 'TVUJ INVITE';
-  static const shareInvite = 'Sdilet pozvanku';
+  static const friendsHeader = 'KAMARÁDI';
+  static const inviteHeader = 'TVŮJ INVITE';
+  static const shareInvite = 'Sdílet pozvánku';
   static const regenerateInvite = 'Regenerovat';
-  static const addFriendAction = 'Pridat kamarada';
-  static const inviteShareText = 'Cau! Pridej me na Motivatoru. Otevri tenhle odkaz:\n';
-  static const inviteScreenTitle = 'Pozvanka';
-  static const inviteAddPromptPrefix = 'Pridat ';
-  static const inviteAddPromptSuffix = ' jako kamarada?';
-  static const inviteAddButton = 'Pridat';
-  static const inviteOwnCode = 'Tohle je tvuj vlastni invite. Sdilej ho s kamarady.';
-  static const inviteAlreadyFriendSuffix = 'uz je tvuj kamarad.';
-  static const inviteNotFound = 'Pozvanka nenalezena. Mozna byla zrusena.';
-  static const friendAddedToast = 'Pridano do kamaradu.';
-  static const friendAddError = 'Chyba pri pridavani kamarada.';
-  static const removeFriendAction = 'Odstranit z kamaradu';
-  static const removeFriendConfirm = 'Odstranit z kamaradu?';
-  static const noFriendsYet = 'Zatim zadne. Sdilej svou pozvanku.';
-  static const leaderboardHeader = 'KAMARADI TENTO TYDEN';
-  static const leaderboardEmpty = 'Pridej kamarade abys videl zebricek.';
-  static const xpThisWeekShort = 'XP tento tyden';
+  static const addFriendAction = 'Přidat kamaráda';
+  static const inviteShareText = 'Čau! Přidej mě na Motivátoru. Otevři tenhle odkaz:\n';
+  static const inviteScreenTitle = 'Pozvánka';
+  static const inviteAddPromptPrefix = 'Přidat ';
+  static const inviteAddPromptSuffix = ' jako kamaráda?';
+  static const inviteAddButton = 'Přidat';
+  static const inviteOwnCode = 'Tohle je tvůj vlastní invite. Sdílej ho s kamarády.';
+  static const inviteAlreadyFriendSuffix = 'už je tvůj kamarád.';
+  static const inviteNotFound = 'Pozvánka nenalezena. Možná byla zrušena.';
+  static const friendAddedToast = 'Přidáno do kamarádů.';
+  static const friendAddError = 'Chyba při přidávání kamaráda.';
+  static const removeFriendAction = 'Odstranit z kamarádů';
+  static const removeFriendConfirm = 'Odstranit z kamarádů?';
+  static const noFriendsYet = 'Zatím žádné. Sdílej svou pozvánku.';
+  static const leaderboardHeader = 'KAMARÁDI TENTO TÝDEN';
+  static const leaderboardEmpty = 'Přidej kamaráda abys viděl žebříček.';
+  static const xpThisWeekShort = 'XP tento týden';
+
+  // Friend profile (read-only view)
+  static const friendProfileTitle = 'Profil kamaráda';
+  static const friendStatsHeader = 'STATISTIKY';
+  static const friendNotFound = 'Profil nenalezen.';
+  static const friendStatLevel = 'Level';
+  static const friendStatCompleted = 'Splněno úkolů';
+  static const friendStatWeekly = 'Tento týden';
+  static const friendStatCoins = 'Mince';
+  static const friendStatAchievements = 'Úspěchy';
+  static const friendStatStreak = 'Série';
+
+  /// Formats a day count with Czech pluralization (1 den / 2-4 dny / 5+ dní).
+  static String dayPlural(int n) {
+    if (n == 1) return '$n den';
+    if (n >= 2 && n <= 4) return '$n dny';
+    return '$n dní';
+  }
+
   // Notification copy
-  static const friendPendingTitlePrefix = ' caka na potvrzeni';
-  static const friendAddedTitleSuffix = ' te pridal jako kamarada';
+  static const friendPendingTitlePrefix = ' čeká na potvrzení';
+  static const friendAddedTitleSuffix = ' tě přidal jako kamaráda';
 
   // Stats refactor
-  static const lastYearHeader = 'POSLEDNICH 365 DNI';
-  static const categoryRatio = 'POMER KATEGORII';
+  static const lastYearHeader = 'POSLEDNÍCH 365 DNÍ';
+  static const categoryRatio = 'POMĚR KATEGORIÍ';
   static String streakLine(int current) {
-    final unit = current == 1 ? 'den' : (current >= 2 && current <= 4 ? 'dny' : 'dni');
-    return 'Serie: $current $unit';
+    final unit = current == 1 ? 'den' : (current >= 2 && current <= 4 ? 'dny' : 'dní');
+    return 'Série: $current $unit';
   }
 }

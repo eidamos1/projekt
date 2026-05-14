@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../models/friend_profile.dart';
 import '../models/friend_rank.dart';
 import '../utils/date_helpers.dart';
 import '../utils/invite_code.dart';
@@ -202,7 +203,7 @@ class FriendService {
     final uid = _uid;
     if (uid == null) return;
     final mySnap = await _userDoc(uid).get();
-    final myNick = (mySnap.data()?['nickname'] as String?) ?? 'Hrac';
+    final myNick = (mySnap.data()?['nickname'] as String?) ?? 'Hráč';
     final friendsSnap = await _friendsCol(uid).get();
     if (friendsSnap.docs.isEmpty) return;
     final now = nowMinuteString();
@@ -257,6 +258,55 @@ class FriendService {
     batch.delete(_friendsCol(uid).doc(otherUid));
     batch.delete(_friendsCol(otherUid).doc(uid));
     await batch.commit();
+  }
+
+  /// Returns the public-ish snapshot of another user's profile. Returns null
+  /// if the user doc doesn't exist or the caller isn't authenticated.
+  ///
+  /// Reads `users/{otherUid}` plus two `count()` aggregate queries against
+  /// the `achievements/` and `tasks where completed=true` subcollections.
+  /// Weekly XP is normalised the same way the leaderboard does it —
+  /// if the stored `weeklyXpWeekStart` is not the current Monday, the
+  /// stored counter is stale and `weeklyXp` is reported as 0.
+  Future<FriendProfile?> loadFriendProfile(String otherUid) async {
+    if (_uid == null) return null;
+    final userDoc = await _firestore.collection('users').doc(otherUid).get();
+    if (!userDoc.exists) return null;
+    final data = userDoc.data()!;
+    final achievementsCount = (await _firestore
+                .collection('users')
+                .doc(otherUid)
+                .collection('achievements')
+                .count()
+                .get())
+            .count ??
+        0;
+    final tasksCount = (await _firestore
+                .collection('users')
+                .doc(otherUid)
+                .collection('tasks')
+                .where('completed', isEqualTo: true)
+                .count()
+                .get())
+            .count ??
+        0;
+    final mondayStr = mondayStringOf(DateTime.now());
+    final weekStartStored = data['weeklyXpWeekStart'] as String?;
+    final freshWeeklyXp = weekStartStored == mondayStr
+        ? (data['weeklyXp'] as int? ?? 0)
+        : 0;
+    return FriendProfile(
+      uid: otherUid,
+      nickname: (data['nickname'] as String?) ?? 'Hráč',
+      xp: (data['xp'] as int?) ?? 0,
+      coins: (data['coins'] as int?) ?? 0,
+      level: (data['level'] as int?) ?? 1,
+      streak: (data['streak'] as int?) ?? 0,
+      weeklyXp: freshWeeklyXp,
+      activeTitleId: data['activeTitle'] as String?,
+      achievementsUnlockedCount: achievementsCount,
+      totalCompletedTasks: tasksCount,
+    );
   }
 
   /// Stream of the current user's friend list. Each entry:
