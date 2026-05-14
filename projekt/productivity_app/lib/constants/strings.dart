@@ -242,6 +242,25 @@ abstract final class Strings {
   static const leaderboardHeader = 'KAMARÁDI TENTO TÝDEN';
   static const leaderboardEmpty = 'Přidej kamaráda abys viděl žebříček.';
   static const xpThisWeekShort = 'XP tento týden';
+
+  // Friend profile (read-only view)
+  static const friendProfileTitle = 'Profil kamaráda';
+  static const friendStatsHeader = 'STATISTIKY';
+  static const friendNotFound = 'Profil nenalezen.';
+  static const friendStatLevel = 'Level';
+  static const friendStatCompleted = 'Splněno úkolů';
+  static const friendStatWeekly = 'Tento týden';
+  static const friendStatCoins = 'Mince';
+  static const friendStatAchievements = 'Úspěchy';
+  static const friendStatStreak = 'Série';
+
+  /// Formats a day count with Czech pluralization (1 den / 2-4 dny / 5+ dní).
+  static String dayPlural(int n) {
+    if (n == 1) return '$n den';
+    if (n >= 2 && n <= 4) return '$n dny';
+    return '$n dní';
+  }
+
   // Notification copy
   static const friendPendingTitlePrefix = ' čeká na potvrzení';
   static const friendAddedTitleSuffix = ' tě přidal jako kamaráda';
