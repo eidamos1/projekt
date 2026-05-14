@@ -19,9 +19,17 @@ service cloud.firestore {
 
       // Notifikace uzivatele
       match /notifications/{notifId} {
-        allow read, delete: if request.auth != null && request.auth.uid == uid;
+        allow read: if request.auth != null && request.auth.uid == uid;
         allow create: if request.auth != null;
         allow update: if request.auth != null && request.auth.uid == uid;
+        // Delete — vlastnik inboxu, nebo puvodni odesilatel
+        // (`fromUid`). Druhy pripad je nutny pro friend-feed cleanup, kdy
+        // vlastnik tasku maze friend_pending notifs ze vsech kamaradskych
+        // inboxu po potvrzeni/odmiteni.
+        allow delete: if request.auth != null
+                      && (request.auth.uid == uid
+                          || (resource.data.fromUid is string
+                              && request.auth.uid == resource.data.fromUid));
       }
 
       // Navyky uzivatele — owner plne, ostatni jen cteni (nutne pro habit-streak update v confirm flow)
