@@ -121,11 +121,30 @@ class _StatsPageState extends State<StatsPage> {
     }
 
     if (_allTasks.isEmpty) {
+      final isDark = context.isDark;
       return Scaffold(
         appBar: AppBar(title: const Text(Strings.stats)),
-        body: const EmptyState(
-          icon: Icons.bar_chart_rounded,
-          title: Strings.noStatsData,
+        body: ResponsiveLayout(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(NeoTheme.spaceMd),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Leaderboard renders only if user has at least 1 friend.
+                // Users with friends but no own tasks shouldn't be cut off
+                // from the social view by the empty-stats early return.
+                _LeaderboardWidget(isDark: isDark),
+                const SizedBox(height: NeoTheme.spaceLg),
+                const SizedBox(
+                  height: 320,
+                  child: EmptyState(
+                    icon: Icons.bar_chart_rounded,
+                    title: Strings.noStatsData,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
         bottomNavigationBar: const NeoBottomNav(currentIndex: 2),
       );
