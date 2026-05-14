@@ -7,9 +7,9 @@ import 'app_colors.dart';
 abstract final class Achievements {
   static final Achievement _patecniHrdina = Achievement(
     id: 'patecni_hrdina',
-    title: 'Patecni hrdina',
-    teaser: 'Nekdo zna cenu vikendu.',
-    description: 'Splnil jsi navyk ctyri patky po sobe.',
+    title: 'Páteční hrdina',
+    teaser: 'Někdo zná cenu víkendu.',
+    description: 'Splnil jsi návyk čtyři pátky po sobě.',
     type: AchType.situational,
     icon: Icons.weekend_rounded,
     color: AppColors.neonYellow,
@@ -36,8 +36,8 @@ abstract final class Achievements {
   static final Achievement _comebackKid = Achievement(
     id: 'comeback_kid',
     title: 'Comeback',
-    teaser: 'Nevzdal jsi to po prvni rane.',
-    description: 'Potvrdil jsi ukol, ktery byl drive zamitnut.',
+    teaser: 'Nevzdal jsi to po první ráně.',
+    description: 'Potvrdil jsi úkol, který byl dříve zamítnut.',
     type: AchType.situational,
     icon: Icons.refresh_rounded,
     color: AppColors.neonGreen,
@@ -47,9 +47,9 @@ abstract final class Achievements {
 
   static final Achievement _pulnocniZachrana = Achievement(
     id: 'pulnocni_zachrana',
-    title: 'Pulnocni zachrana',
-    teaser: 'Nekdo to nevzda ani v posledni minute.',
-    description: 'Splnil jsi ukol po 23:00.',
+    title: 'Půlnoční záchrana',
+    teaser: 'Někdo to nevzdá ani v poslední minutě.',
+    description: 'Splnil jsi úkol po 23:00.',
     type: AchType.situational,
     icon: Icons.access_time_rounded,
     color: AppColors.neonPink,
@@ -61,9 +61,9 @@ abstract final class Achievements {
 
   static final Achievement _ranoJeMoudrejsi = Achievement(
     id: 'rano_je_moudrejsi',
-    title: 'Rano je moudrejsi',
-    teaser: 'Vstavas s prvnimi taxiky.',
-    description: 'Splnil jsi ukol pred 7:00.',
+    title: 'Ráno je moudřejší',
+    teaser: 'Vstáváš s prvními taxíky.',
+    description: 'Splnil jsi úkol před 7:00.',
     type: AchType.situational,
     icon: Icons.wb_sunny_rounded,
     color: AppColors.neonOrange,
@@ -75,9 +75,9 @@ abstract final class Achievements {
 
   static final Achievement _bourak = Achievement(
     id: 'bourak',
-    title: 'Bourak',
-    teaser: 'Manana? Tak ne dnes.',
-    description: 'Splnil jsi 3+ ukoly za jeden den.',
+    title: 'Bourák',
+    teaser: 'Mañana? Tak ne dnes.',
+    description: 'Splnil jsi 3+ úkoly za jeden den.',
     type: AchType.situational,
     icon: Icons.bolt_rounded,
     color: AppColors.neonCyan,
@@ -94,8 +94,8 @@ abstract final class Achievements {
   static final Achievement _hatTrick = Achievement(
     id: 'hat_trick',
     title: 'Hat-trick',
-    teaser: 'Trojita kombinace.',
-    description: 'Splnil jsi denni, tydenni i mesicni ukol v jeden den.',
+    teaser: 'Trojitá kombinace.',
+    description: 'Splnil jsi denní, týdenní i měsíční úkol v jeden den.',
     type: AchType.situational,
     icon: Icons.emoji_events_rounded,
     color: AppColors.neonYellow,
@@ -114,9 +114,9 @@ abstract final class Achievements {
 
   static final Achievement _nedelniKlid = Achievement(
     id: 'nedelni_klid',
-    title: 'Nedelni klid',
-    teaser: 'Den odpocinku je taky den.',
-    description: 'Splnil jsi navyk ve 4 nedelich po sobe.',
+    title: 'Nedělní klid',
+    teaser: 'Den odpočinku je taky den.',
+    description: 'Splnil jsi návyk ve 4 nedělích po sobě.',
     type: AchType.situational,
     icon: Icons.self_improvement_rounded,
     color: AppColors.neonCyan,
@@ -142,9 +142,9 @@ abstract final class Achievements {
 
   static final Achievement _univerzal = Achievement(
     id: 'univerzal',
-    title: 'Univerzal',
-    teaser: 'Jeden mozek, sto sluzeb.',
-    description: 'Splnil jsi ukoly ze 3 ruznych kategorii v jeden den.',
+    title: 'Univerzál',
+    teaser: 'Jeden mozek, sto služeb.',
+    description: 'Splnil jsi úkoly ze 3 různých kategorií v jeden den.',
     type: AchType.situational,
     icon: Icons.dynamic_feed_rounded,
     color: AppColors.neonPink,
@@ -160,9 +160,9 @@ abstract final class Achievements {
 
   static final Achievement _prokrastinator = Achievement(
     id: 'prokrastinator',
-    title: 'Prokrastinator',
-    teaser: 'Cas leti nejak rychle, ze?',
-    description: 'Splnil jsi 5 ukolu v posledni hodine pred pulnoci.',
+    title: 'Prokrastinátor',
+    teaser: 'Čas letí nějak rychle, že?',
+    description: 'Splnil jsi 5 úkolů v poslední hodině před půlnocí.',
     type: AchType.antiAchievement,
     icon: Icons.hourglass_bottom_rounded,
     color: AppColors.neonOrange,
@@ -179,9 +179,9 @@ abstract final class Achievements {
 
   static final Achievement _zlomenySlib = Achievement(
     id: 'zlomeny_slib',
-    title: 'Zlomeny slib',
-    teaser: 'Tak blizko.',
-    description: 'Rozbil jsi serii navyku, ktera trvala 7+ dni.',
+    title: 'Zlomený slib',
+    teaser: 'Tak blízko.',
+    description: 'Rozbil jsi sérii návyku, která trvala 7+ dní.',
     type: AchType.antiAchievement,
     icon: Icons.heart_broken_rounded,
     color: AppColors.neonPink,
@@ -192,9 +192,9 @@ abstract final class Achievements {
 
   static final Achievement _krasovePanstvi = Achievement(
     id: 'krasove_panstvi',
-    title: 'Krasove panstvi',
-    teaser: 'Vsechno chce trenink.',
-    description: 'Mas 3 zamitnuti za jeden tyden.',
+    title: 'Krasové panství',
+    teaser: 'Všechno chce trénink.',
+    description: 'Máš 3 zamítnutí za jeden týden.',
     type: AchType.antiAchievement,
     icon: Icons.do_not_disturb_rounded,
     color: AppColors.neonOrange,
@@ -214,9 +214,9 @@ abstract final class Achievements {
 
   static final Achievement _fantom = Achievement(
     id: 'fantom',
-    title: 'Fantom kalendare',
-    teaser: 'Planovat je snadnejsi nez plnit.',
-    description: '5+ tvych ukolu vyprselo bez splneni.',
+    title: 'Fantom kalendáře',
+    teaser: 'Plánovat je snadnější než plnit.',
+    description: '5+ tvých úkolů vypršelo bez splnění.',
     type: AchType.antiAchievement,
     icon: Icons.event_busy_rounded,
     color: AppColors.neonPink,
@@ -225,9 +225,9 @@ abstract final class Achievements {
 
   static final Achievement _nocniSova = Achievement(
     id: 'nocni_sova',
-    title: 'Nocni sova',
-    teaser: 'Den ma 24 hodin, pouziva se jen ta druha polovina.',
-    description: 'Splnil jsi 10 ukolu po 22:00.',
+    title: 'Noční sova',
+    teaser: 'Den má 24 hodin, používá se jen ta druhá polovina.',
+    description: 'Splnil jsi 10 úkolů po 22:00.',
     type: AchType.loreTitle,
     icon: Icons.nightlight_round,
     color: AppColors.neonCyan,
@@ -243,9 +243,9 @@ abstract final class Achievements {
 
   static final Achievement _spartanek = Achievement(
     id: 'spartanek',
-    title: 'Spartanek',
-    teaser: 'Telo je chram.',
-    description: '14denni serie na navyku v kategorii Sport.',
+    title: 'Spartánek',
+    teaser: 'Tělo je chrám.',
+    description: '14denní série na návyku v kategorii Sport.',
     type: AchType.loreTitle,
     icon: Icons.fitness_center_rounded,
     color: AppColors.neonCyan,
@@ -256,9 +256,9 @@ abstract final class Achievements {
 
   static final Achievement _stovkar = Achievement(
     id: 'stovkar',
-    title: 'Stovkar',
+    title: 'Stovkař',
     teaser: 'Trochu klasika.',
-    description: 'Splnil jsi 100 ukolu.',
+    description: 'Splnil jsi 100 úkolů.',
     type: AchType.milestone,
     icon: Icons.military_tech_rounded,
     color: AppColors.neonYellow,
