@@ -589,6 +589,59 @@ class _ChartEmpty extends StatelessWidget {
   }
 }
 
+/// Single leaderboard row inside the compact `/stats` widget.
+///
+/// Tap behaviour: non-isMe row -> `/friend-profile?uid=<uid>`, isMe row ->
+/// `/profile`. The whole row uses `HitTestBehavior.opaque` so the empty
+/// space between rank and XP is also tappable.
+class _LeaderboardRow extends StatelessWidget {
+  final FriendRank rank;
+  final bool isDark;
+  const _LeaderboardRow({required this.rank, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        if (rank.isMe) {
+          Navigator.pushNamed(context, '/profile');
+        } else {
+          Navigator.pushNamed(context, '/friend-profile?uid=${rank.uid}');
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 24,
+              child: Text(
+                '${rank.rank}.',
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                rank.nickname,
+                style: TextStyle(
+                  fontWeight:
+                      rank.isMe ? FontWeight.w800 : FontWeight.w600,
+                  color: rank.isMe ? context.primaryColor : null,
+                ),
+              ),
+            ),
+            Text(
+              '${rank.weeklyXp} XP',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _LeaderboardWidget extends StatelessWidget {
   final bool isDark;
   const _LeaderboardWidget({required this.isDark});
@@ -610,50 +663,20 @@ class _LeaderboardWidget extends StatelessWidget {
           children: [
             Text(Strings.leaderboardHeader, style: NeoTheme.subhead),
             const SizedBox(height: NeoTheme.spaceSm),
-            GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/profile'),
-              child: Container(
-                decoration: NeoTheme.cardDecoration(isDark: isDark),
-                padding: const EdgeInsets.all(NeoTheme.spaceMd),
-                child: Column(
-                  children: [
-                    for (final r in top)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: 24,
-                              child: Text(
-                                '${r.rank}.',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w800),
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                r.nickname,
-                                style: TextStyle(
-                                  fontWeight: r.isMe
-                                      ? FontWeight.w800
-                                      : FontWeight.w600,
-                                  color: r.isMe
-                                      ? context.primaryColor
-                                      : null,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              '${r.weeklyXp} XP',
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w700),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (more > 0) ...[
-                      const SizedBox(height: 4),
-                      Align(
+            Container(
+              decoration: NeoTheme.cardDecoration(isDark: isDark),
+              padding: const EdgeInsets.all(NeoTheme.spaceMd),
+              child: Column(
+                children: [
+                  for (final r in top)
+                    _LeaderboardRow(rank: r, isDark: isDark),
+                  if (more > 0) ...[
+                    const SizedBox(height: 4),
+                    GestureDetector(
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/profile'),
+                      behavior: HitTestBehavior.opaque,
+                      child: Align(
                         alignment: Alignment.centerRight,
                         child: Text(
                           '+ $more další',
@@ -665,9 +688,9 @@ class _LeaderboardWidget extends StatelessWidget {
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ],

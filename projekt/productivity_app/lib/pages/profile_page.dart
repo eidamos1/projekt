@@ -249,6 +249,8 @@ class _FriendCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onTap: () =>
+          Navigator.pushNamed(context, '/friend-profile?uid=$uid'),
       onLongPress: onRemove,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
