@@ -61,6 +61,18 @@ class _TaskCardState extends State<TaskCard>
     _flashAnim = Tween<double>(begin: 0.3, end: 0.0).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeOut),
     );
+
+    // Defensive cleanup: if we mount with an already-resolved task that had
+    // a photo uploaded, the friend_pending notif may still linger in friend
+    // inboxes from a session where we weren't online to catch the transition
+    // (so didUpdateWidget's cleanup never fired). The cleanup is idempotent —
+    // deleting a missing doc is a no-op.
+    final hasPhoto = widget.task.imageBase64 != null &&
+        widget.task.imageBase64!.isNotEmpty;
+    final isResolved = widget.task.completed || widget.task.rejected;
+    if (hasPhoto && isResolved) {
+      FriendService().cleanupFriendPendingNotifs(widget.task.id).ignore();
+    }
   }
 
   @override
