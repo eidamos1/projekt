@@ -6,6 +6,7 @@ import '../constants/strings.dart';
 import '../models/friend_profile.dart';
 import '../services/friend_service.dart';
 import '../utils/context_extensions.dart';
+import '../widgets/friend_badges.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/title_chip.dart';
 
@@ -164,7 +165,7 @@ class _Header extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: NeoTheme.spaceSm),
-              _StreakFlame(streak: profile.streak, size: 16),
+              StreakFlame(streak: profile.streak, size: 16),
               const SizedBox(width: 4),
               Text(
                 Strings.dayPlural(profile.streak),
@@ -284,66 +285,3 @@ class _Divider extends StatelessWidget {
   }
 }
 
-/// Pulses Icons.local_fire_department once every ~1.1s when [streak] >= 7.
-/// Renders the static icon otherwise. Kept private to this file because it
-/// matches the friend-profile header sizing; profile_page uses its own copy
-/// tuned for the leaderboard row.
-class _StreakFlame extends StatefulWidget {
-  final int streak;
-  final double size;
-  const _StreakFlame({required this.streak, this.size = 16});
-
-  @override
-  State<_StreakFlame> createState() => _StreakFlameState();
-}
-
-class _StreakFlameState extends State<_StreakFlame>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1100),
-    );
-    if (widget.streak >= 7) _ctrl.repeat(reverse: true);
-  }
-
-  @override
-  void didUpdateWidget(_StreakFlame old) {
-    super.didUpdateWidget(old);
-    final shouldRun = widget.streak >= 7;
-    if (shouldRun && !_ctrl.isAnimating) {
-      _ctrl.repeat(reverse: true);
-    } else if (!shouldRun && _ctrl.isAnimating) {
-      _ctrl.stop();
-      _ctrl.value = 0;
-    }
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (context, _) {
-        final scale = 1.0 + 0.18 * _ctrl.value;
-        return Transform.scale(
-          scale: scale,
-          child: Icon(
-            Icons.local_fire_department,
-            size: widget.size,
-            color: AppColors.neonPink,
-          ),
-        );
-      },
-    );
-  }
-}

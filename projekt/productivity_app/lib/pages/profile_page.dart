@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import '../constants/app_colors.dart';
@@ -7,6 +8,7 @@ import '../models/friend_rank.dart';
 import '../services/friend_service.dart';
 import '../utils/context_extensions.dart';
 import '../utils/ui_helpers.dart';
+import '../widgets/friend_badges.dart';
 import '../widgets/responsive_layout.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -268,7 +270,12 @@ class _FriendCard extends StatelessWidget {
                     color: Colors.black, fontWeight: FontWeight.w800),
               ),
             ),
-            const SizedBox(width: NeoTheme.spaceMd),
+            const SizedBox(width: NeoTheme.spaceSm),
+            // Level badge — falls back to "1" while the per-friend user doc
+            // is loading. Stream is cheap (single-doc snapshot) and updates
+            // live so a friend levelling up while you watch is visible.
+            _FriendLevelBadge(uid: uid),
+            const SizedBox(width: NeoTheme.spaceSm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,23 +283,26 @@ class _FriendCard extends StatelessWidget {
                   Text(
                     nickname,
                     style: const TextStyle(fontWeight: FontWeight.w700),
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      const Icon(Icons.local_fire_department,
-                          size: 12, color: AppColors.neonPink),
+                      StreakFlame(streak: streak, size: 12),
                       const SizedBox(width: 3),
                       Text('$streak',
                           style: const TextStyle(fontSize: 11)),
                       const SizedBox(width: 8),
-                      Text(
-                        '· $weeklyXp ${Strings.xpThisWeekShort}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isDark
-                              ? AppColors.textSecondary
-                              : Colors.black54,
+                      Flexible(
+                        child: Text(
+                          '· $weeklyXp ${Strings.xpThisWeekShort}',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark
+                                ? AppColors.textSecondary
+                                : Colors.black54,
+                          ),
                         ),
                       ),
                     ],
@@ -300,17 +310,62 @@ class _FriendCard extends StatelessWidget {
                 ],
               ),
             ),
-            Text(
-              '$rank.',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: isDark ? AppColors.textSecondary : Colors.black54,
-              ),
-            ),
+            // Rank-1 trophy instead of the plain "1." text.
+            rank == 1
+                ? const Icon(
+                    Icons.emoji_events_rounded,
+                    color: AppColors.neonYellow,
+                    size: 18,
+                  )
+                : Text(
+                    '$rank.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: isDark
+                          ? AppColors.textSecondary
+                          : Colors.black54,
+                    ),
+                  ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Single-doc stream of `users/{uid}.level`, rendered as a [LevelBadge].
+/// While loading we show a "1" badge so the row layout doesn't jump when
+/// the snapshot arrives.
+class _FriendLevelBadge extends StatelessWidget {
+  final String uid;
+  const _FriendLevelBadge({required this.uid});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .snapshots(),
+      builder: (context, snap) {
+        int level = 1;
+        if (snap.hasData && snap.data!.exists) {
+          final data = snap.data!.data();
+          if (data != null) {
+            // Prefer the stored level field, fall back to xp-derived value
+            // for any historical docs that never got a level write.
+            final stored = data['level'] as int?;
+            if (stored != null) {
+              level = stored;
+            } else {
+              final xp = (data['xp'] as int?) ?? 0;
+              level = (xp ~/ 100) + 1;
+            }
+          }
+        }
+        return LevelBadge(level: level);
+      },
     );
   }
 }
