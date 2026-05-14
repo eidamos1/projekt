@@ -197,9 +197,9 @@ class TaskService {
     final doc = await _firestore.collection('users').doc(_uid).get();
     if (doc.exists) {
       final data = doc.data() as Map<String, dynamic>;
-      return data['nickname'] ?? 'Nekdo';
+      return data['nickname'] ?? 'Někdo';
     }
-    return 'Nekdo';
+    return 'Někdo';
   }
 
   Future<bool> _areNotificationsEnabled(DocumentReference userRef) async {
@@ -342,7 +342,7 @@ class TaskService {
       }
     });
 
-    final taskTitle = lookup.taskData['title'] ?? 'Ukol';
+    final taskTitle = lookup.taskData['title'] ?? 'Úkol';
     await _createNotification(
       ownerRef: lookup.userRef,
       type: 'confirmed',
@@ -360,7 +360,7 @@ class TaskService {
       'rejectionReason': reason,
     });
 
-    final taskTitle = lookup.taskData['title'] ?? 'Ukol';
+    final taskTitle = lookup.taskData['title'] ?? 'Úkol';
     await _createNotification(
       ownerRef: lookup.userRef,
       type: 'rejected',
@@ -455,7 +455,7 @@ class TaskService {
 
       await notifsRef.add({
         'type': 'expiring',
-        'taskTitle': data['title'] ?? 'Ukol',
+        'taskTitle': data['title'] ?? 'Úkol',
         'taskId': taskId,
         'message': null,
         'fromNickname': null,

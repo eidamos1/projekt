@@ -373,7 +373,7 @@ class _CalendarPageState extends State<CalendarPage> {
       stream: _taskService.userProfileStream(),
       builder: (context, snapshot) {
         int xp = 0, coins = 0, level = 1, streak = 0;
-        String nickname = 'Hrac';
+        String nickname = 'Hráč';
         String? photoUrl;
 
         if (snapshot.hasData && snapshot.data!.exists) {
@@ -382,7 +382,7 @@ class _CalendarPageState extends State<CalendarPage> {
           coins = data['coins'] ?? 0;
           level = data['level'] ?? 1;
           streak = data['streak'] ?? 0;
-          nickname = data['nickname'] ?? 'Hrac';
+          nickname = data['nickname'] ?? 'Hráč';
           photoUrl = data['photoUrl'];
         }
 
@@ -746,8 +746,8 @@ class _CalendarPageState extends State<CalendarPage> {
                     if (tasks.isEmpty) {
                       return const EmptyState(
                         icon: Icons.filter_list_off_rounded,
-                        title: 'Filtr nic nepusti.',
-                        subtitle: 'Zkus jine kategorie nebo typ.',
+                        title: 'Filtr nic nepustí.',
+                        subtitle: 'Zkus jiné kategorie nebo typ.',
                       );
                     }
 

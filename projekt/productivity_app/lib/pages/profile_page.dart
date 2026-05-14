@@ -222,7 +222,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       await _friendService.removeFriend(uid);
     } catch (_) {
-      if (mounted) showErrorSnack(context, 'Chyba pri odstranovani.');
+      if (mounted) showErrorSnack(context, 'Chyba při odstraňování.');
     }
   }
 }

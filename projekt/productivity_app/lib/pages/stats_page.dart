@@ -293,7 +293,7 @@ class _MetricRow extends StatelessWidget {
             value: '$streak',
             unit: streak == 1
                 ? 'den'
-                : (streak >= 2 && streak <= 4 ? 'dny' : 'dni'),
+                : (streak >= 2 && streak <= 4 ? 'dny' : 'dní'),
             icon: Icons.local_fire_department,
             accent: AppColors.neonPink,
             isDark: isDark,
@@ -656,7 +656,7 @@ class _LeaderboardWidget extends StatelessWidget {
                       Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          '+ $more dalsi',
+                          '+ $more další',
                           style: TextStyle(
                             fontSize: 12,
                             color: isDark

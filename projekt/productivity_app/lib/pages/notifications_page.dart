@@ -70,7 +70,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               if (type == 'confirmed') {
                 icon = Icons.check_circle_rounded;
                 accentColor = AppColors.neonGreen;
-                titleText = '${notif['fromNickname']} potvrdil/a ukol';
+                titleText = '${notif['fromNickname']} potvrdil/a úkol';
               } else if (type == 'expiring') {
                 icon = Icons.schedule_rounded;
                 accentColor = AppColors.neonOrange;
@@ -95,7 +95,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               } else {
                 icon = Icons.cancel_rounded;
                 accentColor = AppColors.neonPink;
-                titleText = '${notif['fromNickname']} odmitl/a ukol';
+                titleText = '${notif['fromNickname']} odmítl/a úkol';
               }
 
               // For achievement notifs, show achievement title in the subtitle

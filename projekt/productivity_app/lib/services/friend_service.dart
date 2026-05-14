@@ -202,7 +202,7 @@ class FriendService {
     final uid = _uid;
     if (uid == null) return;
     final mySnap = await _userDoc(uid).get();
-    final myNick = (mySnap.data()?['nickname'] as String?) ?? 'Hrac';
+    final myNick = (mySnap.data()?['nickname'] as String?) ?? 'Hráč';
     final friendsSnap = await _friendsCol(uid).get();
     if (friendsSnap.docs.isEmpty) return;
     final now = nowMinuteString();

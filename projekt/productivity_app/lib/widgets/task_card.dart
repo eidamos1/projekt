@@ -167,8 +167,8 @@ class _TaskCardState extends State<TaskCard>
 
     SharePlus.instance.share(
       ShareParams(
-        text: 'Cau! Mam hotovo: "${widget.task.title}".\n'
-            'Koukni na fotku v appce a potvrd mi to!\n\n'
+        text: 'Čau! Mám hotovo: "${widget.task.title}".\n'
+            'Koukni na fotku v appce a potvrď mi to!\n\n'
             'V aplikaci: $mobileLink\n'
             'Na webu: $webLink',
       ),
