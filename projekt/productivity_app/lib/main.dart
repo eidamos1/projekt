@@ -147,6 +147,10 @@ class _MyAppState extends State<MyApp> {
       _notifSub = null;
       _lastNotifSeen = -1;
       if (user == null) return;
+      // Auto-login from cached creds doesn't go through login.dart's eval
+      // trigger, so fire one here. Catches up missed unlocks (e.g. friend
+      // confirmed a rejected→resubmitted task while we were offline).
+      AchievementService().evaluate().catchError((_) => <Achievement>[]);
       try {
         _notifSub = TaskService().notificationsStream().listen((notifs) {
           if (_lastNotifSeen < 0) {
