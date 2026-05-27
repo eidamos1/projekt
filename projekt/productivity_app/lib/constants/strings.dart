@@ -176,6 +176,8 @@ abstract final class Strings {
   static const habit = 'Návyk';
   static const habits = 'Návyky';
   static const habitsMine = 'Moje návyky';
+  static const newHabit = 'Nový návyk';
+  static const habitActionsTooltip = 'Akce';
   static const repeatTask = 'Opakovat pravidelně';
   static const recurrenceEveryday = 'Každý den';
   static const recurrenceWeekdays = 'Všední dny';
@@ -193,7 +195,7 @@ abstract final class Strings {
   static const editHabit = 'Upravit návyk';
   static const deleteHabitConfirm = 'Smaže všechny budoucí instance. Minulé zůstanou.';
   static const noHabitsTitle = 'Žádné návyky.';
-  static const noHabitsSubtitle = 'Přidej jeden v dialogu nového úkolu.';
+  static const noHabitsSubtitle = 'Klepni na + dole vpravo.';
   static const rewardTierWarning = 'Pozor: častá frekvence + měsíční tier = hodně XP.';
 
   static const weekdayShort = {
@@ -211,16 +213,17 @@ abstract final class Strings {
   static const achievementUnlockedAt = 'Odemknuto';
   static const achievementSetAsTitle = 'NASADIT JAKO TITUL';
   static const achievementRemoveTitle = 'SUNDAT TITUL';
-  static const achievementNotifTitle = 'ODEMKL JSI ÚSPĚCH';
+  static const achievementNotifTitle = 'NOVÝ ÚSPĚCH';
   static const achievementYourTitle = 'TVŮJ TITUL';
   static const achievementOpenStats = 'OTEVŘÍT STATISTIKY';
   static String achievementCounter(int unlocked, int total) =>
       '$unlocked / $total odhaleno';
   static String achievementUnlockToast(String title) =>
-      'Odemkl jsi: $title';
+      'Nový úspěch: $title';
 
   // Friends
   static const profileTitle = 'Profil';
+  static const openProfileSemantic = 'Otevřít profil';
   static const friendsHeader = 'KAMARÁDI';
   static const inviteHeader = 'TVŮJ INVITE';
   static const shareInvite = 'Sdílet pozvánku';
@@ -263,10 +266,14 @@ abstract final class Strings {
 
   // Notification copy
   static const friendPendingTitlePrefix = ' čeká na potvrzení';
-  static const friendAddedTitleSuffix = ' tě přidal jako kamaráda';
+  static const friendAddedTitleSuffix = ' — nový kamarád';
+  static const notifSectionToday = 'DNES';
+  static const notifSectionYesterday = 'VČERA';
+  static const notifSectionThisWeek = 'TENTO TÝDEN';
+  static const notifSectionOlder = 'STARŠÍ';
 
   // Stats refactor
-  static const lastYearHeader = 'POSLEDNÍCH 365 DNÍ';
+  static const lastYearHeader = 'TVOJE AKTIVITA';
   static const categoryRatio = 'POMĚR KATEGORIÍ';
   static String streakLine(int current) {
     final unit = current == 1 ? 'den' : (current >= 2 && current <= 4 ? 'dny' : 'dní');

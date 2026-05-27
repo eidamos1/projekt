@@ -388,7 +388,10 @@ class _CalendarPageState extends State<CalendarPage> {
 
         return Scaffold(
           appBar: AppBar(
-            title: InkWell(
+            title: Semantics(
+              button: true,
+              label: Strings.openProfileSemantic,
+              child: InkWell(
               onTap: () => Navigator.pushNamed(context, '/profile'),
               borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
               child: Row(
@@ -431,6 +434,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   ),
                 ],
               ),
+            ),
             ),
             actions: _buildActions(context, streak),
           ),
@@ -488,6 +492,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
                   child: TableCalendar(
                     locale: 'cs',
+                    startingDayOfWeek: StartingDayOfWeek.monday,
                     firstDay: DateTime(2000),
                     lastDay: DateTime(2100),
                     focusedDay: _focusedDay,

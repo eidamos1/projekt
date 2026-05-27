@@ -17,6 +17,7 @@ class HabitConfig {
 class TaskFormDialog extends StatefulWidget {
   final Task? existingTask;
   final Habit? existingHabit;
+  final bool initialAsHabit;
   final void Function(
     String title,
     TaskType type,
@@ -28,6 +29,7 @@ class TaskFormDialog extends StatefulWidget {
     super.key,
     this.existingTask,
     this.existingHabit,
+    this.initialAsHabit = false,
     required this.onSubmit,
   });
 
@@ -62,6 +64,8 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
       _selectedCategories.addAll(widget.existingHabit!.categories);
     } else if (widget.existingTask != null) {
       _selectedCategories.addAll(widget.existingTask!.categories);
+    } else if (widget.initialAsHabit) {
+      _recurring = true;
     }
   }
 
@@ -86,7 +90,11 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
       title: Text(
         widget.existingHabit != null
             ? Strings.editHabit
-            : (_isEdit ? Strings.editTask : Strings.newTask),
+            : (_isEdit
+                ? Strings.editTask
+                : (widget.initialAsHabit
+                    ? Strings.newHabit
+                    : Strings.newTask)),
         style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.5),
       ),
       content: SingleChildScrollView(

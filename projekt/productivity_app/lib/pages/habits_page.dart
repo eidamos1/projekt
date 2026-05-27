@@ -104,6 +104,25 @@ class _HabitsPageState extends State<HabitsPage> {
     );
   }
 
+  void _showAddHabitDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => TaskFormDialog(
+        initialAsHabit: true,
+        onSubmit: (title, type, cfg, categories) async {
+          if (cfg == null) return;
+          await _habitService.createHabit(
+            title: title,
+            type: type,
+            recurrence: cfg.recurrence,
+            customDays: cfg.customDays,
+            categories: categories,
+          );
+        },
+      ),
+    );
+  }
+
   void _confirmDelete(Habit h) {
     showDialog(
       context: context,
@@ -182,8 +201,17 @@ class _HabitsPageState extends State<HabitsPage> {
                                       style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w700))),
-                              Icon(Icons.autorenew_rounded,
-                                  size: 16, color: typeColor),
+                              IconButton(
+                                tooltip: Strings.habitActionsTooltip,
+                                icon: Icon(Icons.more_horiz_rounded,
+                                    size: 20, color: typeColor),
+                                visualDensity: VisualDensity.compact,
+                                constraints: const BoxConstraints(
+                                  minWidth: 32, minHeight: 32,
+                                ),
+                                padding: EdgeInsets.zero,
+                                onPressed: () => _showActions(h),
+                              ),
                             ]),
                             const SizedBox(height: 4),
                             Text(
@@ -253,6 +281,13 @@ class _HabitsPageState extends State<HabitsPage> {
           );
         },
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddHabitDialog,
+        backgroundColor: context.primaryColor,
+        foregroundColor: Colors.black,
+        tooltip: Strings.newHabit,
+        child: const Icon(Icons.add_rounded),
       ),
       bottomNavigationBar: const NeoBottomNav(currentIndex: 1),
     );

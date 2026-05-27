@@ -36,6 +36,9 @@ Future<T?> showNeoBottomSheet<T>({
             ),
           ),
           ...children,
+          // Breathing room so the last action / button isn't flush against
+          // the viewport / bottom-nav edge.
+          const SizedBox(height: NeoTheme.spaceMd),
         ],
       ),
     ),

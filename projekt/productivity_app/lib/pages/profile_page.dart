@@ -1,15 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import '../constants/achievements.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
+import '../models/friend_profile.dart';
 import '../models/friend_rank.dart';
 import '../services/friend_service.dart';
 import '../utils/context_extensions.dart';
 import '../utils/ui_helpers.dart';
 import '../widgets/friend_badges.dart';
 import '../widgets/responsive_layout.dart';
+import '../widgets/title_chip.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -22,11 +26,13 @@ class _ProfilePageState extends State<ProfilePage> {
   final _friendService = FriendService();
   String? _inviteCode;
   bool _loading = true;
+  FriendProfile? _ownProfile;
 
   @override
   void initState() {
     super.initState();
     _loadInvite();
+    _loadOwnProfile();
   }
 
   Future<void> _loadInvite() async {
@@ -41,6 +47,15 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _loadOwnProfile() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      final p = await _friendService.loadFriendProfile(uid);
+      if (mounted) setState(() => _ownProfile = p);
+    } catch (_) {/* silent — header just won't render */}
   }
 
   Future<void> _shareInvite() async {
@@ -76,6 +91,10 @@ class _ProfilePageState extends State<ProfilePage> {
         child: ListView(
           padding: const EdgeInsets.all(NeoTheme.spaceMd),
           children: [
+            if (_ownProfile != null) ...[
+              _OwnHeader(profile: _ownProfile!, isDark: isDark),
+              const SizedBox(height: NeoTheme.spaceLg),
+            ],
             Text(
               Strings.inviteHeader,
               style: TextStyle(
@@ -366,6 +385,102 @@ class _FriendLevelBadge extends StatelessWidget {
         }
         return LevelBadge(level: level);
       },
+    );
+  }
+}
+
+class _OwnHeader extends StatelessWidget {
+  final FriendProfile profile;
+  final bool isDark;
+  const _OwnHeader({required this.profile, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final nick = profile.nickname;
+    final letter = nick.isEmpty ? '?' : nick[0].toUpperCase();
+    final titleAch = profile.activeTitleId == null
+        ? null
+        : Achievements.byId(profile.activeTitleId!);
+
+    return Container(
+      decoration: NeoTheme.cardDecoration(isDark: isDark),
+      padding: const EdgeInsets.all(NeoTheme.spaceLg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            radius: 44,
+            backgroundColor: context.primaryColor,
+            child: Text(
+              letter,
+              style: const TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.w800,
+                color: Colors.black,
+              ),
+            ),
+          ),
+          const SizedBox(height: NeoTheme.spaceMd),
+          Text(
+            nick,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              height: 1.1,
+            ),
+          ),
+          if (titleAch != null) ...[
+            const SizedBox(height: NeoTheme.spaceSm),
+            TitleChip(achievement: titleAch),
+          ],
+          const SizedBox(height: NeoTheme.spaceMd),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '${Strings.friendStatLevel} ${profile.level}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: context.primaryColor,
+                ),
+              ),
+              const SizedBox(width: NeoTheme.spaceSm),
+              Text(
+                '·',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? AppColors.textSecondary : Colors.black54,
+                ),
+              ),
+              const SizedBox(width: NeoTheme.spaceSm),
+              StreakFlame(streak: profile.streak, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                Strings.dayPlural(profile.streak),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: NeoTheme.spaceMd),
+              const Icon(Icons.monetization_on_rounded,
+                  color: AppColors.neonYellow, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                '${profile.coins}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.neonYellow,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

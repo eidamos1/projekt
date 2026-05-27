@@ -175,7 +175,7 @@ class _YearHeatmapState extends State<YearHeatmap> {
       }
     }
 
-    const weekDayNames = ['Po', '', 'St', '', 'Pa', '', ''];
+    const weekDayNames = ['Po', '', 'St', '', 'Pá', '', ''];
     final weekLabels = <Widget>[];
     for (int day = 0; day < 7; day++) {
       weekLabels.add(SizedBox(
@@ -320,8 +320,8 @@ class _YearHeatmapState extends State<YearHeatmap> {
 
   static String _monthLabel(int m) {
     const labels = [
-      '', 'led', 'uno', 'bre', 'dub', 'kve', 'cer',
-      'cvc', 'srp', 'zar', 'rij', 'lis', 'pro',
+      '', 'led', 'úno', 'bře', 'dub', 'kvě', 'čer',
+      'čvc', 'srp', 'zář', 'říj', 'lis', 'pro',
     ];
     return labels[m];
   }
