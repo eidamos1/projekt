@@ -757,9 +757,15 @@ class _CalendarPageState extends State<CalendarPage> {
                     }
 
                     return ListView.builder(
-                      padding: const EdgeInsets.only(bottom: 80),
-                      itemCount: tasks.length,
+                      // itemCount + 1: last "item" is a SizedBox spacer that
+                      // pushes the last real task above the FAB. Padding
+                      // alone doesn't work when content fits the viewport —
+                      // an actual child reserves layout space.
+                      itemCount: tasks.length + 1,
                       itemBuilder: (context, index) {
+                        if (index == tasks.length) {
+                          return const SizedBox(height: 96);
+                        }
                         return TaskCard(
                           task: tasks[index],
                           onDelete: () =>

@@ -200,35 +200,49 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
             ),
             const SizedBox(height: NeoTheme.spaceSm),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _loading ? null : _shareInvite,
-                    icon: const Icon(Icons.share_rounded, size: 18),
-                    label: const Text(Strings.shareInvite),
-                  ),
-                ),
-                const SizedBox(width: NeoTheme.spaceSm),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _loading || _inviteCode == null
-                        ? null
-                        : _showQrDialog,
-                    icon: const Icon(Icons.qr_code_2_rounded, size: 18),
-                    label: const Text(Strings.qrInvite),
-                  ),
-                ),
-                const SizedBox(width: NeoTheme.spaceSm),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _loading ? null : _regenerate,
-                    icon: const Icon(Icons.refresh_rounded, size: 18),
-                    label: const Text(Strings.regenerateInvite),
-                  ),
-                ),
-              ],
-            ),
+            LayoutBuilder(builder: (context, c) {
+              // 3 labeled buttons need ~480px to read comfortably. Below
+              // that fall back to a stacked layout so the "Sdílet pozvánku"
+              // label doesn't break mid-word.
+              final stacked = c.maxWidth < 480;
+              final share = OutlinedButton.icon(
+                onPressed: _loading ? null : _shareInvite,
+                icon: const Icon(Icons.share_rounded, size: 18),
+                label: const Text(Strings.shareInvite),
+              );
+              final qr = OutlinedButton.icon(
+                onPressed:
+                    _loading || _inviteCode == null ? null : _showQrDialog,
+                icon: const Icon(Icons.qr_code_2_rounded, size: 18),
+                label: const Text(Strings.qrInvite),
+              );
+              final regen = OutlinedButton.icon(
+                onPressed: _loading ? null : _regenerate,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text(Strings.regenerateInvite),
+              );
+              if (stacked) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    share,
+                    const SizedBox(height: NeoTheme.spaceXs),
+                    qr,
+                    const SizedBox(height: NeoTheme.spaceXs),
+                    regen,
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: share),
+                  const SizedBox(width: NeoTheme.spaceSm),
+                  Expanded(child: qr),
+                  const SizedBox(width: NeoTheme.spaceSm),
+                  Expanded(child: regen),
+                ],
+              );
+            }),
             const SizedBox(height: NeoTheme.spaceLg),
             Row(
               children: [

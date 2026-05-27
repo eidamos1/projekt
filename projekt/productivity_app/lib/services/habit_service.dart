@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../constants/game_config.dart';
 import '../models/habit.dart';
 import '../models/task.dart';
 import '../models/achievement.dart';
@@ -43,21 +44,68 @@ class HabitService {
             .toList());
   }
 
+  /// Per-service-lifetime cache: habits we've already reconciled. Prevents
+  /// re-querying Firestore on every habitsStream tick.
+  final Set<String> _reconciledHabits = {};
+
   /// In-place migration for legacy habits whose type × recurrence combo no
   /// longer parses under the coupled XP economy (see 2026-05-27 design):
   /// "Weekly + everyday/weekdays" used to yield 250–350 XP/week per habit.
   /// Snap such habits to type=daily (10 XP/instance) and persist.
+  ///
+  /// Separately, ensures future uncompleted task instances match the habit's
+  /// current type (this runs even on already-normalized habits to clean up
+  /// old instances generated before the migration code shipped).
   /// Returns the normalized Habit so callers always see the fixed shape.
   Habit _normalizeHabit(Habit h) {
     final isWeeklyButRecurringDaily =
         h.type == TaskType.weekly && h.recurrence != RecurrenceType.custom;
-    if (!isWeeklyButRecurringDaily) return h;
-    final fixed = h.copyWith(type: TaskType.daily);
-    _habitsCollection.doc(h.id).update({'type': 'daily'}).catchError((_) {
-      // Best-effort migration; if the write fails, the next stream tick
-      // will surface the same shape again and we'll retry.
-    });
+    Habit fixed = h;
+    if (isWeeklyButRecurringDaily) {
+      fixed = h.copyWith(type: TaskType.daily);
+      _habitsCollection.doc(h.id).update({'type': 'daily'}).catchError((_) {
+        // Best-effort migration; if the write fails, the next stream tick
+        // will surface the same shape again and we'll retry.
+      });
+    }
+    // Reconcile future instances with current habit type — once per session.
+    // Catches the case where an old version of the app normalized the habit
+    // but couldn't update instances yet (this code didn't exist).
+    if (_reconciledHabits.add(h.id)) {
+      _reconcileFutureInstances(h.id, fixed.type);
+    }
     return fixed;
+  }
+
+  /// Fire-and-forget: bring any future uncompleted task instance whose type
+  /// doesn't match [expectedType] in sync. Filters completed + future
+  /// client-side to avoid needing a 3-field composite index.
+  void _reconcileFutureInstances(String habitId, TaskType expectedType) {
+    final today = todayString();
+    final expectedStr = expectedType.toString().split('.').last;
+    final rewards = GameConfig.rewardsFor(expectedType);
+    _tasksCollection
+        .where('habitId', isEqualTo: habitId)
+        .get()
+        .then((snap) {
+      final batch = _firestore.batch();
+      bool any = false;
+      for (final doc in snap.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        if (data['completed'] == true) continue;
+        final date = data['date'] as String?;
+        if (date == null || date.compareTo(today) < 0) continue;
+        if (data['type'] != expectedStr) {
+          batch.update(doc.reference, {
+            'type': expectedStr,
+            'xp': rewards.xp,
+            'coins': rewards.coins,
+          });
+          any = true;
+        }
+      }
+      if (any) batch.commit().catchError((_) {});
+    }).catchError((_) {});
   }
 
   Future<String> createHabit({
