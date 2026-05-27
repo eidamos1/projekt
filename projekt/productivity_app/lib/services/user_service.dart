@@ -28,8 +28,11 @@ class UserService {
   }
 
   Future<void> updateNickname(String nickname) async {
+    // Keep a lowercase denormalized copy for case-insensitive prefix search.
+    // Trim+toLower client-side; the query in friend_service uses the same.
     await _firestore.collection('users').doc(_uid).update({
       'nickname': nickname,
+      'nicknameLower': nickname.trim().toLowerCase(),
     });
     // Propagate to all friends' denormalized snapshots (best-effort).
     await FriendService().propagateNicknameUpdate(nickname);
@@ -38,6 +41,12 @@ class UserService {
   Future<void> toggleNotifications(bool value) async {
     await _firestore.collection('users').doc(_uid).update({
       'notificationsEnabled': value,
+    });
+  }
+
+  Future<void> setDiscoverable(bool value) async {
+    await _firestore.collection('users').doc(_uid).update({
+      'discoverable': value,
     });
   }
 

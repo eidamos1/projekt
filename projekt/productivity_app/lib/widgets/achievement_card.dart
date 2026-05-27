@@ -96,12 +96,13 @@ class AchievementCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             title,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w800,
-              letterSpacing: 0.6,
+              letterSpacing: 0.4,
+              height: 1.1,
               color: isUnlocked
                   ? color
                   : (isDark ? Colors.white70 : Colors.black54),
@@ -111,7 +112,7 @@ class AchievementCard extends StatelessWidget {
           Expanded(
             child: Text(
               body,
-              maxLines: 4,
+              maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 11,

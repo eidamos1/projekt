@@ -46,4 +46,47 @@ void main() {
       expect(RegExp(r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$').hasMatch(s), isTrue);
     });
   });
+
+  group('relativeTimeCs', () {
+    final now = DateTime(2026, 5, 27, 14, 30);
+
+    test('< 1 minute ago → "Právě teď"', () {
+      expect(relativeTimeCs('2026-05-27 14:30', now: now), 'Právě teď');
+    });
+
+    test('minutes ago', () {
+      expect(relativeTimeCs('2026-05-27 14:25', now: now), 'Před 5 min.');
+      expect(relativeTimeCs('2026-05-27 13:45', now: now), 'Před 45 min.');
+    });
+
+    test('hours ago (same day)', () {
+      expect(relativeTimeCs('2026-05-27 10:30', now: now), 'Před 4 hod.');
+    });
+
+    test('yesterday', () {
+      expect(relativeTimeCs('2026-05-26 14:30', now: now), 'Včera');
+    });
+
+    test('days ago (2-6 days)', () {
+      expect(relativeTimeCs('2026-05-25 12:00', now: now), 'Před 2 dny');
+      expect(relativeTimeCs('2026-05-22 12:00', now: now), 'Před 5 dny');
+    });
+
+    test('a week+ ago', () {
+      expect(relativeTimeCs('2026-05-20 14:30', now: now), 'Před týdnem');
+      expect(relativeTimeCs('2026-05-13 14:30', now: now), 'Před 2 týdny');
+    });
+
+    test('older than 30 days → date', () {
+      expect(relativeTimeCs('2026-04-01 12:00', now: now), '2026-04-01');
+    });
+
+    test('future timestamp → date (clock skew safety)', () {
+      expect(relativeTimeCs('2026-06-01 12:00', now: now), '2026-06-01');
+    });
+
+    test('malformed input → returns raw', () {
+      expect(relativeTimeCs('not a date', now: now), 'not a date');
+    });
+  });
 }

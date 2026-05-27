@@ -178,6 +178,7 @@ abstract final class Strings {
   static const habitsMine = 'Moje návyky';
   static const newHabit = 'Nový návyk';
   static const habitActionsTooltip = 'Akce';
+  static const weeklyHabitDayHint = 'Týdenní návyk = přesně jeden den v týdnu.';
   static const repeatTask = 'Opakovat pravidelně';
   static const recurrenceEveryday = 'Každý den';
   static const recurrenceWeekdays = 'Všední dny';
@@ -224,9 +225,52 @@ abstract final class Strings {
   // Friends
   static const profileTitle = 'Profil';
   static const openProfileSemantic = 'Otevřít profil';
+  static const friendActivityHeader = 'AKTIVITA KAMARÁDŮ';
+  static const friendActivityEmpty = 'Zatím tu nic není. Tvoji kamarádi musí něco odemknout.';
+  static String friendActivityUnlocked(String achievementTitle) =>
+      '— $achievementTitle';
+  static const lastWeekHeader = 'PŘEDCHOZÍ TÝDEN';
+  static const lastWeekNobody = 'Nikdo se neukázal. Tichý týden.';
+  static String lastWeekWinnerLine(String nick, int xp) =>
+      '$nick vyhrál s $xp XP';
+  static String lastWeekYourScore(int xp) => 'Ty: $xp XP';
+
+  // Global leaderboard
+  static const globalLeaderboardHeader = 'TOP 20 TENTO TÝDEN';
+  static const globalLeaderboardEmpty =
+      'Zatím se nikdo nepřihlásil k veřejnému žebříčku.';
+  static const globalLeaderboardOptInHint =
+      'Zapni v Nastavení „Být k nalezení" — bez toho nejsi na globálu vidět.';
+
+  // Browser web notifications
+  static const browserNotifTitle = 'Push v prohlížeči';
+  static const browserNotifSubtitle =
+      'Notifikace skrz okno prohlížeče, dokud máš záložku otevřenou.';
+  static const browserNotifGranted = 'Povoleno. Zkus si vyfotit důkaz.';
+  static const browserNotifDenied =
+      'Zakázáno v prohlížeči. Změň v ikoně zámku v adresním řádku.';
+  static const browserNotifUnsupported = 'Tenhle prohlížeč to neumí.';
+  static const browserNotifEnable = 'Povolit';
+  static const browserNotifTestTitle = 'MOTIVATOR';
+  static const browserNotifTestBody = 'Push notifikace fungují.';
+
+  // Discovery
+  static const discoverableTitle = 'Být k nalezení';
+  static const discoverableSubtitle =
+      'Ostatní tě najdou podle přezdívky a můžou tě přidat.';
+  static const findFriendsTitle = 'Najít kamaráda';
+  static const findFriendsHint = 'Zadej přezdívku…';
+  static const findFriendsNoResults = 'Nikdo takový. Zkus jinou přezdívku.';
+  static const findFriendsTooShort = 'Napiš aspoň 2 znaky.';
+  static const findFriendsAdd = 'Přidat';
+  static const findFriendsLevel = 'Lvl';
   static const friendsHeader = 'KAMARÁDI';
   static const inviteHeader = 'TVŮJ INVITE';
   static const shareInvite = 'Sdílet pozvánku';
+  static const qrInvite = 'QR';
+  static const qrDialogTitle = 'Sken pozvánky';
+  static const qrDialogHint = 'Naskenuj telefonem kamaráda pro připojení.';
+  static const close = 'Zavřít';
   static const regenerateInvite = 'Regenerovat';
   static const addFriendAction = 'Přidat kamaráda';
   static const inviteShareText = 'Čau! Přidej mě na Motivátoru. Otevři tenhle odkaz:\n';

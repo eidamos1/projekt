@@ -1,15 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import '../constants/achievements.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
+import '../models/activity_feed_item.dart';
 import '../models/friend_profile.dart';
 import '../models/friend_rank.dart';
+import '../models/weekly_winner.dart';
 import '../services/friend_service.dart';
 import '../utils/context_extensions.dart';
+import '../utils/date_helpers.dart';
 import '../utils/ui_helpers.dart';
 import '../widgets/friend_badges.dart';
 import '../widgets/responsive_layout.dart';
@@ -63,6 +67,73 @@ class _ProfilePageState extends State<ProfilePage> {
     final url = 'https://calendar-mot.web.app/#/friend?code=$_inviteCode';
     await SharePlus.instance.share(
       ShareParams(text: '${Strings.inviteShareText}$url'),
+    );
+  }
+
+  Future<void> _showQrDialog() async {
+    if (_inviteCode == null) return;
+    final url = 'https://calendar-mot.web.app/#/friend?code=$_inviteCode';
+    final isDark = context.isDark;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
+          side: BorderSide(
+            color: isDark ? AppColors.borderSubtle : AppColors.borderBold,
+            width: NeoTheme.borderWidth,
+          ),
+        ),
+        title: const Text(Strings.qrDialogTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // QR is always rendered on a white background so darkmode
+            // scanners (and most camera apps) get the contrast they
+            // expect. Border keeps it on-brand.
+            Container(
+              padding: const EdgeInsets.all(NeoTheme.spaceMd),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
+                border: Border.all(
+                  color: AppColors.borderBold,
+                  width: NeoTheme.borderWidth,
+                ),
+              ),
+              child: QrImageView(
+                data: url,
+                version: QrVersions.auto,
+                size: 240,
+                backgroundColor: Colors.white,
+                eyeStyle: const QrEyeStyle(
+                  eyeShape: QrEyeShape.square,
+                  color: Colors.black,
+                ),
+                dataModuleStyle: const QrDataModuleStyle(
+                  dataModuleShape: QrDataModuleShape.square,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+            const SizedBox(height: NeoTheme.spaceMd),
+            Text(
+              Strings.qrDialogHint,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? AppColors.textSecondary : Colors.black54,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(Strings.close),
+          ),
+        ],
+      ),
     );
   }
 
@@ -141,6 +212,16 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(width: NeoTheme.spaceSm),
                 Expanded(
                   child: OutlinedButton.icon(
+                    onPressed: _loading || _inviteCode == null
+                        ? null
+                        : _showQrDialog,
+                    icon: const Icon(Icons.qr_code_2_rounded, size: 18),
+                    label: const Text(Strings.qrInvite),
+                  ),
+                ),
+                const SizedBox(width: NeoTheme.spaceSm),
+                Expanded(
+                  child: OutlinedButton.icon(
                     onPressed: _loading ? null : _regenerate,
                     icon: const Icon(Icons.refresh_rounded, size: 18),
                     label: const Text(Strings.regenerateInvite),
@@ -149,14 +230,25 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
             const SizedBox(height: NeoTheme.spaceLg),
-            Text(
-              Strings.friendsHeader,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.5,
-                color: isDark ? AppColors.textSecondary : Colors.black54,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    Strings.friendsHeader,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.5,
+                      color: isDark ? AppColors.textSecondary : Colors.black54,
+                    ),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, '/find-friends'),
+                  icon: const Icon(Icons.search_rounded, size: 16),
+                  label: const Text(Strings.findFriendsTitle),
+                ),
+              ],
             ),
             const SizedBox(height: NeoTheme.spaceSm),
             StreamBuilder<List<FriendRank>>(
@@ -202,6 +294,16 @@ class _ProfilePageState extends State<ProfilePage> {
                       .toList(),
                 );
               },
+            ),
+            const SizedBox(height: NeoTheme.spaceLg),
+            _LastWeekWinnerSection(
+              service: _friendService,
+              isDark: isDark,
+            ),
+            const SizedBox(height: NeoTheme.spaceLg),
+            _ActivityFeedSection(
+              service: _friendService,
+              isDark: isDark,
             ),
           ],
         ),
@@ -481,6 +583,249 @@ class _OwnHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ActivityFeedSection extends StatelessWidget {
+  final FriendService service;
+  final bool isDark;
+  const _ActivityFeedSection({required this.service, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<ActivityFeedItem>>(
+      stream: service.activityFeedStream(),
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox.shrink();
+        final items = snap.data!;
+        // Hide the whole section if user has no friends (parent already
+        // shows "noFriendsYet" hint above).
+        // We can't know that from here directly, but an empty feed AND no
+        // friends share the same emission shape; surface a friendly empty
+        // state when items is empty so the section still renders for
+        // friends-with-no-achievements case.
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              Strings.friendActivityHeader,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.5,
+                color: isDark ? AppColors.textSecondary : Colors.black54,
+              ),
+            ),
+            const SizedBox(height: NeoTheme.spaceSm),
+            if (items.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: NeoTheme.spaceMd),
+                child: Text(
+                  Strings.friendActivityEmpty,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontStyle: FontStyle.italic,
+                    color: isDark ? AppColors.textSecondary : Colors.black54,
+                  ),
+                ),
+              )
+            else
+              ...items.map((it) => _ActivityFeedRow(item: it, isDark: isDark)),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ActivityFeedRow extends StatelessWidget {
+  final ActivityFeedItem item;
+  final bool isDark;
+  const _ActivityFeedRow({required this.item, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final ach = Achievements.byId(item.achievementId);
+    final color = ach?.color ?? AppColors.neonYellow;
+    final iconData = ach?.icon ?? Icons.emoji_events_rounded;
+    final achTitle = ach?.title ?? item.achievementId;
+    final nick = item.friendNickname.isEmpty ? '—' : item.friendNickname;
+
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(
+        context,
+        '/friend-profile?uid=${item.friendUid}',
+      ),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(
+            horizontal: NeoTheme.spaceMd, vertical: NeoTheme.spaceSm + 2),
+        decoration: NeoTheme.cardDecoration(isDark: isDark),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withValues(alpha: 0.15),
+                border: Border.all(color: color, width: NeoTheme.borderWidthThin),
+              ),
+              child: Icon(iconData, color: color, size: 18),
+            ),
+            const SizedBox(width: NeoTheme.spaceSm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RichText(
+                    text: TextSpan(
+                      style: DefaultTextStyle.of(context).style.copyWith(
+                            fontSize: 14,
+                          ),
+                      children: [
+                        TextSpan(
+                          text: nick,
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        TextSpan(text: ' ${Strings.friendActivityUnlocked(achTitle)}'),
+                      ],
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    relativeTimeCs(item.unlockedAt),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? AppColors.textSecondary : Colors.black45,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LastWeekWinnerSection extends StatefulWidget {
+  final FriendService service;
+  final bool isDark;
+  const _LastWeekWinnerSection({required this.service, required this.isDark});
+
+  @override
+  State<_LastWeekWinnerSection> createState() =>
+      _LastWeekWinnerSectionState();
+}
+
+class _LastWeekWinnerSectionState extends State<_LastWeekWinnerSection> {
+  WeeklyWinner? _winner;
+  bool _loaded = false;
+  String? _myUid;
+
+  @override
+  void initState() {
+    super.initState();
+    _myUid = FirebaseAuth.instance.currentUser?.uid;
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final w = await widget.service.fetchOrCreateLastWeekSnapshot();
+      if (!mounted) return;
+      setState(() {
+        _winner = w;
+        _loaded = true;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loaded = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded) return const SizedBox.shrink();
+    final w = _winner;
+    if (w == null) return const SizedBox.shrink();
+    final isDark = widget.isDark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          Strings.lastWeekHeader,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.5,
+            color: isDark ? AppColors.textSecondary : Colors.black54,
+          ),
+        ),
+        const SizedBox(height: NeoTheme.spaceSm),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: NeoTheme.spaceMd,
+            vertical: NeoTheme.spaceMd,
+          ),
+          decoration: NeoTheme.cardDecoration(isDark: isDark),
+          child: w.nobodyWon
+              ? Text(
+                  Strings.lastWeekNobody,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontStyle: FontStyle.italic,
+                    color: isDark ? AppColors.textSecondary : Colors.black54,
+                  ),
+                )
+              : Row(
+                  children: [
+                    const Icon(
+                      Icons.emoji_events_rounded,
+                      color: AppColors.neonYellow,
+                      size: 22,
+                    ),
+                    const SizedBox(width: NeoTheme.spaceSm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            Strings.lastWeekWinnerLine(
+                                w.winnerNickname.isEmpty ? '—' : w.winnerNickname,
+                                w.winnerXp),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: w.winnerUid == _myUid
+                                  ? context.primaryColor
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            Strings.lastWeekYourScore(w.myXp),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark
+                                  ? AppColors.textSecondary
+                                  : Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ],
     );
   }
 }

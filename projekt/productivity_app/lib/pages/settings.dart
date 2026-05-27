@@ -5,6 +5,7 @@ import '../main.dart';
 import '../services/achievement_service.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
+import '../services/web_notification_service.dart';
 import '../constants/achievements.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
@@ -452,6 +453,30 @@ class _SettingsPageState extends State<SettingsPage> {
               },
             ),
             const Divider(),
+            // Browser web notifications (foreground-only)
+            const _BrowserNotifTile(),
+            const Divider(),
+            // Discoverable (search-by-nickname opt-in)
+            StreamBuilder<DocumentSnapshot>(
+              stream: _userService.notificationsSettingStream(),
+              builder: (context, snapshot) {
+                bool discoverable = false;
+                if (snapshot.hasData && snapshot.data!.exists) {
+                  final data = snapshot.data!.data() as Map<String, dynamic>;
+                  discoverable = data['discoverable'] ?? false;
+                }
+                return ListTile(
+                  leading: const Icon(Icons.search_rounded),
+                  title: const Text(Strings.discoverableTitle),
+                  subtitle: const Text(Strings.discoverableSubtitle),
+                  trailing: Switch(
+                    value: discoverable,
+                    onChanged: (value) => _userService.setDiscoverable(value),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
             // Habits
             ListTile(
               leading: const Icon(Icons.autorenew_rounded),
@@ -490,6 +515,66 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
       bottomNavigationBar: const NeoBottomNav(currentIndex: 4),
+    );
+  }
+}
+
+class _BrowserNotifTile extends StatefulWidget {
+  const _BrowserNotifTile();
+
+  @override
+  State<_BrowserNotifTile> createState() => _BrowserNotifTileState();
+}
+
+class _BrowserNotifTileState extends State<_BrowserNotifTile> {
+  WebNotifPermission _state = WebNotifPermission.unsupported;
+
+  @override
+  void initState() {
+    super.initState();
+    _state = WebNotificationService().permission;
+  }
+
+  Future<void> _request() async {
+    final next = await WebNotificationService().requestPermission();
+    if (!mounted) return;
+    setState(() => _state = next);
+    if (next == WebNotifPermission.granted) {
+      WebNotificationService().show(
+        title: Strings.browserNotifTestTitle,
+        body: Strings.browserNotifTestBody,
+        tag: 'test-${DateTime.now().millisecondsSinceEpoch}',
+      );
+    }
+  }
+
+  String _subtitleFor(WebNotifPermission s) {
+    switch (s) {
+      case WebNotifPermission.granted:
+        return Strings.browserNotifGranted;
+      case WebNotifPermission.denied:
+        return Strings.browserNotifDenied;
+      case WebNotifPermission.defaultState:
+        return Strings.browserNotifSubtitle;
+      case WebNotifPermission.unsupported:
+        return Strings.browserNotifUnsupported;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tappable = _state == WebNotifPermission.defaultState;
+    return ListTile(
+      leading: const Icon(Icons.web_asset_rounded),
+      title: const Text(Strings.browserNotifTitle),
+      subtitle: Text(_subtitleFor(_state)),
+      trailing: tappable
+          ? TextButton(
+              onPressed: _request,
+              child: const Text(Strings.browserNotifEnable),
+            )
+          : null,
+      onTap: tappable ? _request : null,
     );
   }
 }

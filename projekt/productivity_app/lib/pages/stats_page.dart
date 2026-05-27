@@ -135,6 +135,8 @@ class _StatsPageState extends State<StatsPage> {
                 // Users with friends but no own tasks shouldn't be cut off
                 // from the social view by the empty-stats early return.
                 _LeaderboardWidget(isDark: isDark),
+              const SizedBox(height: NeoTheme.spaceLg),
+              _GlobalLeaderboardWidget(isDark: isDark),
                 const SizedBox(height: NeoTheme.spaceLg),
                 const SizedBox(
                   height: 320,
@@ -202,6 +204,8 @@ class _StatsPageState extends State<StatsPage> {
               ),
               const SizedBox(height: NeoTheme.spaceLg),
               _LeaderboardWidget(isDark: isDark),
+              const SizedBox(height: NeoTheme.spaceLg),
+              _GlobalLeaderboardWidget(isDark: isDark),
               const SizedBox(height: NeoTheme.spaceLg),
               // Heatmap section
               const Text(Strings.lastYearHeader, style: NeoTheme.subhead),
@@ -746,6 +750,71 @@ class _LeaderboardWidget extends StatelessWidget {
                   ],
                 ],
               ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _GlobalLeaderboardWidget extends StatelessWidget {
+  final bool isDark;
+  const _GlobalLeaderboardWidget({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<FriendRank>>(
+      stream: FriendService().globalLeaderboardStream(),
+      builder: (context, snap) {
+        // Render even when the stream errors (e.g. composite index not yet
+        // deployed) — surface the opt-in hint instead of disappearing.
+        final ranks = snap.data ?? const <FriendRank>[];
+        if (!snap.hasData && !snap.hasError) {
+          // Initial loading — defer render to avoid layout jump.
+          return const SizedBox.shrink();
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(Strings.globalLeaderboardHeader, style: NeoTheme.subhead),
+            const SizedBox(height: NeoTheme.spaceSm),
+            Container(
+              width: double.infinity,
+              decoration: NeoTheme.cardDecoration(isDark: isDark),
+              padding: const EdgeInsets.all(NeoTheme.spaceMd),
+              child: ranks.isEmpty
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          Strings.globalLeaderboardEmpty,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontStyle: FontStyle.italic,
+                            color: isDark
+                                ? AppColors.textSecondary
+                                : Colors.black54,
+                          ),
+                        ),
+                        const SizedBox(height: NeoTheme.spaceSm),
+                        Text(
+                          Strings.globalLeaderboardOptInHint,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark
+                                ? AppColors.textSecondary
+                                : Colors.black54,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        for (final r in ranks)
+                          _LeaderboardRow(rank: r, isDark: isDark),
+                      ],
+                    ),
             ),
           ],
         );

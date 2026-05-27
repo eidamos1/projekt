@@ -81,19 +81,21 @@ class _YearHeatmapState extends State<YearHeatmap> {
     final now = DateTime.now();
     final todayMidnight = DateTime(now.year, now.month, now.day);
 
-    // Start at user's first task date OR 365 days ago, whichever is later.
-    // Round down to the Monday of that week so columns align.
-    final earliestRequested = todayMidnight.subtract(const Duration(days: 365));
-    DateTime startDate = earliestRequested;
-    if (widget.firstTaskDate != null && widget.firstTaskDate!.isNotEmpty) {
-      try {
-        final first = DateTime.parse(widget.firstTaskDate!);
-        if (first.isAfter(earliestRequested)) startDate = first;
-      } catch (_) {}
-    }
+    // Always render a full 365-day window — gives every user a year-wide
+    // GitHub-style grid, with empty days as muted cells. Round down to the
+    // Monday of the window so columns align.
+    final startDate = todayMidnight.subtract(const Duration(days: 365));
     final startMonday = startDate.subtract(
       Duration(days: (startDate.weekday - 1) % 7),
     );
+    // Days before the user's first task get a slightly more muted shade so
+    // there's visual separation between "before you joined" and "blank day".
+    DateTime? firstTaskParsed;
+    if (widget.firstTaskDate != null && widget.firstTaskDate!.isNotEmpty) {
+      try {
+        firstTaskParsed = DateTime.parse(widget.firstTaskDate!);
+      } catch (_) {}
+    }
 
     final cells =
         YearHeatmap.cellsFromMondayThroughWeekOf(startMonday, todayMidnight);
@@ -118,14 +120,20 @@ class _YearHeatmapState extends State<YearHeatmap> {
             '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
         final count = widget.tasksPerDay[dateStr] ?? 0;
         final bucket = YearHeatmap.intensityBucket(count);
-        final preStart = date.isBefore(startDate);
         final isFuture = date.isAfter(todayMidnight);
+        final preFirstTask =
+            firstTaskParsed != null && date.isBefore(firstTaskParsed);
 
         Color color;
-        if (preStart || isFuture) {
+        if (isFuture) {
           color = Colors.transparent;
         } else if (bucket == 0) {
-          color = isDark ? const Color(0xFF2E2E3A) : const Color(0xFFE8E8E8);
+          // Pre-first-task days are dimmer so "before you joined" reads
+          // differently from "blank day since you joined".
+          final empty = isDark
+              ? const Color(0xFF2E2E3A)
+              : const Color(0xFFE8E8E8);
+          color = preFirstTask ? empty.withValues(alpha: 0.35) : empty;
         } else {
           final alpha = 0.30 + 0.175 * bucket; // 0.475, 0.65, 0.825, 1.00
           color = primary.withValues(alpha: alpha);

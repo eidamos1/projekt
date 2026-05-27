@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../models/activity_feed_item.dart';
 import '../models/friend_profile.dart';
 import '../models/friend_rank.dart';
+import '../models/nickname_search_result.dart';
+import '../models/weekly_winner.dart';
 import '../utils/date_helpers.dart';
 import '../utils/invite_code.dart';
 import '../utils/week_helpers.dart';
@@ -321,6 +324,86 @@ class FriendService {
         .toList(growable: false));
   }
 
+  /// Live friend-activity stream: latest unlocked achievements across all
+  /// friends, merged + sorted DESC by [ActivityFeedItem.unlockedAt].
+  ///
+  /// Per-friend query: `users/{uid}/achievements.orderBy(unlockedAt desc)
+  /// .limit(perFriendLimit)`. Total feed capped at [limit]. When the friends
+  /// list changes, subscriptions are torn down and rebuilt — same pattern
+  /// as [leaderboardStream].
+  Stream<List<ActivityFeedItem>> activityFeedStream({
+    int limit = 20,
+    int perFriendLimit = 10,
+  }) {
+    final uid = _uid;
+    if (uid == null) return const Stream.empty();
+
+    late StreamController<List<ActivityFeedItem>> controller;
+    StreamSubscription<List<Map<String, dynamic>>>? friendsSub;
+    StreamSubscription<List<ActivityFeedItem>>? combinedSub;
+
+    Future<void> rebuildFor(List<Map<String, dynamic>> friends) async {
+      await combinedSub?.cancel();
+      combinedSub = null;
+      if (friends.isEmpty) {
+        if (!controller.isClosed) controller.add(const []);
+        return;
+      }
+      // uid → nickname snapshot from the friend list, used to denormalize
+      // into each feed item without a per-friend user-doc read.
+      final nicknameByUid = <String, String>{
+        for (final f in friends)
+          (f['uid'] as String): (f['nickname'] as String?) ?? '',
+      };
+      final queryStreams = friends.map((f) {
+        final fuid = f['uid'] as String;
+        return _userDoc(fuid)
+            .collection('achievements')
+            .orderBy('unlockedAt', descending: true)
+            .limit(perFriendLimit)
+            .snapshots();
+      }).toList();
+
+      combinedSub = _combineLatestQuery(queryStreams).map((snaps) {
+        final items = <ActivityFeedItem>[];
+        for (int i = 0; i < snaps.length; i++) {
+          final friendUid = friends[i]['uid'] as String;
+          final nick = nicknameByUid[friendUid] ?? '';
+          for (final doc in snaps[i].docs) {
+            final data = doc.data();
+            final unlockedAt = data['unlockedAt'] as String?;
+            if (unlockedAt == null || unlockedAt.isEmpty) continue;
+            items.add(ActivityFeedItem(
+              friendUid: friendUid,
+              friendNickname: nick,
+              achievementId: doc.id,
+              unlockedAt: unlockedAt,
+            ));
+          }
+        }
+        items.sort((a, b) => b.unlockedAt.compareTo(a.unlockedAt));
+        if (items.length > limit) {
+          return items.sublist(0, limit);
+        }
+        return items;
+      }).listen(controller.add, onError: controller.addError);
+    }
+
+    controller = StreamController<List<ActivityFeedItem>>(
+      onListen: () {
+        friendsSub = friendsStream().listen(
+          rebuildFor,
+          onError: controller.addError,
+        );
+      },
+      onCancel: () async {
+        await friendsSub?.cancel();
+        await combinedSub?.cancel();
+      },
+    );
+    return controller.stream;
+  }
+
   /// Live leaderboard stream: self + each friend, sorted DESC by weekly XP.
   ///
   /// Re-subscribes to per-user doc streams whenever the friends list itself
@@ -381,6 +464,194 @@ class FriendService {
       onCancel: () async {
         await friendsSub?.cancel();
         await combinedSub?.cancel();
+      },
+    );
+    return controller.stream;
+  }
+
+  /// Global leaderboard stream — top [limit] opt-in (`discoverable=true`)
+  /// users by weeklyXp this week.
+  ///
+  /// Server orders by raw `weeklyXp DESC`; the client normalizes stale-week
+  /// entries to 0 (mirrors [leaderboardStream]) and re-sorts. Users who
+  /// have not opted in via `discoverable=true` are excluded — that includes
+  /// the current user unless they themselves opted in.
+  Stream<List<FriendRank>> globalLeaderboardStream({int limit = 20}) {
+    final uid = _uid;
+    if (uid == null) return const Stream.empty();
+    final mondayStr = mondayStringOf(DateTime.now());
+    return _firestore
+        .collection('users')
+        .where('discoverable', isEqualTo: true)
+        .orderBy('weeklyXp', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((snap) {
+      final raw = <FriendRankRaw>[];
+      for (final doc in snap.docs) {
+        final data = doc.data();
+        raw.add(FriendRankRaw(
+          uid: doc.id,
+          nickname: (data['nickname'] as String?) ?? '',
+          weeklyXp: (data['weeklyXp'] as int?) ?? 0,
+          weeklyXpWeekStart: data['weeklyXpWeekStart'] as String?,
+          streak: (data['streak'] as int?) ?? 0,
+        ));
+      }
+      return FriendRank.buildLeaderboard(
+        entries: raw,
+        myUid: uid,
+        currentMondayStr: mondayStr,
+      );
+    });
+  }
+
+  /// Case-insensitive prefix search of opt-in discoverable users by nickname.
+  /// Filters out the current user and existing friends client-side so we
+  /// don't list people the user can't usefully act on.
+  ///
+  /// Returns up to [limit] results. Empty query returns the empty list
+  /// without hitting Firestore.
+  Future<List<NicknameSearchResult>> searchByNickname(
+    String query, {
+    int limit = 20,
+  }) async {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return const [];
+    final uid = _uid;
+
+    // Build a friends-set client-side so we can hide already-mutual rows.
+    final friendsIds = <String>{};
+    if (uid != null) {
+      try {
+        final friendsSnap = await _friendsCol(uid).get();
+        friendsIds.addAll(friendsSnap.docs.map((d) => d.id));
+      } catch (_) {/* fall back to unfiltered */}
+    }
+
+    final qSnap = await _firestore
+        .collection('users')
+        .where('discoverable', isEqualTo: true)
+        .where('nicknameLower', isGreaterThanOrEqualTo: q)
+        .where('nicknameLower', isLessThan: '$q')
+        .limit(limit)
+        .get();
+
+    final results = <NicknameSearchResult>[];
+    for (final doc in qSnap.docs) {
+      if (doc.id == uid) continue; // self
+      if (friendsIds.contains(doc.id)) continue; // already friend
+      final data = doc.data();
+      results.add(NicknameSearchResult(
+        uid: doc.id,
+        nickname: (data['nickname'] as String?) ?? '',
+        level: (data['level'] as int?) ?? 1,
+      ));
+    }
+    return results;
+  }
+
+  /// Returns the [WeeklyWinner] for last week from this user's perspective,
+  /// creating the snapshot on first call of a new week. Subsequent calls in
+  /// the same week return the cached version, so reads stay cheap.
+  ///
+  /// Tradeoff (documented in design doc 2026-05-27): if a friend confirms a
+  /// task on Monday morning before this user opens the app, their weeklyXp
+  /// is already reset and they won't contribute to the snapshot. Acceptable
+  /// for an MVP without a server-side cron.
+  ///
+  /// Returns null when the user is not authenticated.
+  Future<WeeklyWinner?> fetchOrCreateLastWeekSnapshot() async {
+    final uid = _uid;
+    if (uid == null) return null;
+    final now = DateTime.now();
+    final lastWeekMonday =
+        mondayStringOf(now.subtract(const Duration(days: 7)));
+
+    final snapRef =
+        _userDoc(uid).collection('weeklyWinners').doc(lastWeekMonday);
+
+    // Cache read: best-effort. If rules deny (e.g. pre-deploy state) we
+    // just fall through to recompute — UI degrades to "always-fresh" instead
+    // of blank.
+    try {
+      final existing = await snapRef.get();
+      if (existing.exists) {
+        return WeeklyWinner.fromMap(existing.data()!);
+      }
+    } catch (_) {/* fall through to compute */}
+
+    // Build participant list: self + each friend's user doc.
+    final friendsSnap = await _friendsCol(uid).get();
+    final allUids = <String>{uid, ...friendsSnap.docs.map((d) => d.id)};
+    final docs = await Future.wait(
+      allUids.map((u) => _userDoc(u).get()),
+    );
+
+    final participants = <WeeklyParticipant>[];
+    for (final doc in docs) {
+      final data = doc.data();
+      if (data == null) continue;
+      participants.add(WeeklyParticipant(
+        uid: doc.id,
+        nickname: (data['nickname'] as String?) ?? '',
+        weeklyXp: (data['weeklyXp'] as int?) ?? 0,
+        weeklyXpWeekStart: data['weeklyXpWeekStart'] as String?,
+      ));
+    }
+
+    final winner = pickWeeklyWinner(
+      participants: participants,
+      weekStart: lastWeekMonday,
+      capturedAt: nowMinuteString(),
+      myUid: uid,
+    );
+
+    // Persist so the next /profile open in the same week is a single doc
+    // read instead of N+1 reads. Best-effort: tolerates rules denial.
+    try {
+      await snapRef.set(winner.toMap());
+    } catch (_) {/* best-effort */}
+
+    return winner;
+  }
+
+  /// Same shape as [_combineLatest] but fans in QuerySnapshot streams
+  /// (collection queries) instead of single-doc snapshots.
+  Stream<List<QuerySnapshot<Map<String, dynamic>>>> _combineLatestQuery(
+      List<Stream<QuerySnapshot<Map<String, dynamic>>>> streams) {
+    if (streams.isEmpty) {
+      return Stream.value(<QuerySnapshot<Map<String, dynamic>>>[]);
+    }
+    late StreamController<List<QuerySnapshot<Map<String, dynamic>>>> controller;
+    final latest = List<QuerySnapshot<Map<String, dynamic>>?>.filled(
+        streams.length, null);
+    final subs = <StreamSubscription>[];
+
+    controller = StreamController<List<QuerySnapshot<Map<String, dynamic>>>>(
+      onListen: () {
+        for (int i = 0; i < streams.length; i++) {
+          final idx = i;
+          subs.add(streams[i].listen(
+            (snap) {
+              latest[idx] = snap;
+              if (latest.every((x) => x != null) && !controller.isClosed) {
+                controller.add(
+                  [...latest.cast<QuerySnapshot<Map<String, dynamic>>>()],
+                );
+              }
+            },
+            onError: (err, st) {
+              if (!controller.isClosed) controller.addError(err, st);
+            },
+          ));
+        }
+      },
+      onCancel: () async {
+        for (final s in subs) {
+          await s.cancel();
+        }
+        subs.clear();
       },
     );
     return controller.stream;

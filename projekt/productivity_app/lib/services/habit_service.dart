@@ -35,8 +35,29 @@ class HabitService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snap) => snap.docs
-            .map((d) => Habit.fromMap(d.id, d.data() as Map<String, dynamic>))
+            .map((d) {
+              final habit =
+                  Habit.fromMap(d.id, d.data() as Map<String, dynamic>);
+              return _normalizeHabit(habit);
+            })
             .toList());
+  }
+
+  /// In-place migration for legacy habits whose type × recurrence combo no
+  /// longer parses under the coupled XP economy (see 2026-05-27 design):
+  /// "Weekly + everyday/weekdays" used to yield 250–350 XP/week per habit.
+  /// Snap such habits to type=daily (10 XP/instance) and persist.
+  /// Returns the normalized Habit so callers always see the fixed shape.
+  Habit _normalizeHabit(Habit h) {
+    final isWeeklyButRecurringDaily =
+        h.type == TaskType.weekly && h.recurrence != RecurrenceType.custom;
+    if (!isWeeklyButRecurringDaily) return h;
+    final fixed = h.copyWith(type: TaskType.daily);
+    _habitsCollection.doc(h.id).update({'type': 'daily'}).catchError((_) {
+      // Best-effort migration; if the write fails, the next stream tick
+      // will surface the same shape again and we'll retry.
+    });
+    return fixed;
   }
 
   Future<String> createHabit({

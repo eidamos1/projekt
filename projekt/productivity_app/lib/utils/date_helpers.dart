@@ -45,3 +45,38 @@ int? hourOf(String? s) {
   if (s == null || s.length != 16) return null;
   return parseFlexibleTimestamp(s)?.hour;
 }
+
+/// Czech-language relative timestamp ("Před 5 min.", "Včera", "Před 3 dny",
+/// "2026-05-14") for a 'yyyy-MM-dd HH:mm' string. Falls back to the raw
+/// input on parse failure so the UI never goes empty.
+String relativeTimeCs(String timestamp, {DateTime? now}) {
+  final t = parseFlexibleTimestamp(timestamp);
+  if (t == null) return timestamp;
+  final n = now ?? DateTime.now();
+  final diff = n.difference(t);
+  if (diff.isNegative) {
+    // Clock skew or future timestamp — render as the date.
+    return timestamp.length >= 10 ? timestamp.substring(0, 10) : timestamp;
+  }
+  final minutes = diff.inMinutes;
+  if (minutes < 1) return 'Právě teď';
+  if (minutes < 60) return 'Před $minutes min.';
+  final hours = diff.inHours;
+  if (hours < 24 && t.day == n.day) return 'Před $hours hod.';
+  final today = DateTime(n.year, n.month, n.day);
+  final tDay = DateTime(t.year, t.month, t.day);
+  final dayDiff = today.difference(tDay).inDays;
+  if (dayDiff == 1) return 'Včera';
+  if (dayDiff < 7) {
+    if (dayDiff == 2 || dayDiff == 3 || dayDiff == 4) return 'Před $dayDiff dny';
+    return 'Před $dayDiff dny';
+  }
+  if (dayDiff < 30) {
+    final weeks = (dayDiff / 7).floor();
+    if (weeks == 1) return 'Před týdnem';
+    if (weeks >= 2 && weeks <= 4) return 'Před $weeks týdny';
+    return 'Před $weeks týdny';
+  }
+  // Older — show the calendar date.
+  return timestamp.length >= 10 ? timestamp.substring(0, 10) : timestamp;
+}

@@ -140,7 +140,12 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                   ),
                 ),
               ),
-              items: TaskType.values.map((TaskType type) {
+              items: TaskType.values
+                  // Monthly is excluded when the form is in habit mode —
+                  // a recurring "Monthly" habit blew up the XP economy
+                  // (200 XP/instance × 7-30 instances/month).
+                  .where((t) => !(_recurring && t == TaskType.monthly))
+                  .map((TaskType type) {
                 String label;
                 switch (type) {
                   case TaskType.daily:
@@ -152,7 +157,19 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                 }
                 return DropdownMenuItem(value: type, child: Text(label));
               }).toList(),
-              onChanged: (val) => setState(() => _selectedType = val!),
+              onChanged: (val) => setState(() {
+                _selectedType = val!;
+                // Weekly habit = exactly one weekday per week. Force the
+                // recurrence to custom + pick today's weekday by default.
+                if (_recurring && _selectedType == TaskType.weekly) {
+                  _recurrence = RecurrenceType.custom;
+                  if (_customDays.length != 1) {
+                    _customDays
+                      ..clear()
+                      ..add(DateTime.now().weekday);
+                  }
+                }
+              }),
             ),
             const SizedBox(height: 16),
             SwitchListTile(
@@ -161,37 +178,46 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                   ? null
                   : (v) => setState(() {
                         _recurring = v;
-                        if (v &&
-                            _selectedType == TaskType.monthly &&
-                            _recurrence != RecurrenceType.custom) {
+                        if (v && _selectedType == TaskType.monthly) {
                           _selectedType = TaskType.daily;
+                        }
+                        if (v && _selectedType == TaskType.weekly) {
+                          _recurrence = RecurrenceType.custom;
+                          if (_customDays.length != 1) {
+                            _customDays
+                              ..clear()
+                              ..add(DateTime.now().weekday);
+                          }
                         }
                       }),
               title: const Text(Strings.repeatTask),
               contentPadding: EdgeInsets.zero,
             ),
             if (_recurring) ...[
-              SegmentedButton<RecurrenceType>(
-                segments: const [
-                  ButtonSegment(
-                      value: RecurrenceType.everyday,
-                      label: Text(Strings.recurrenceEveryday)),
-                  ButtonSegment(
-                      value: RecurrenceType.weekdays,
-                      label: Text(Strings.recurrenceWeekdays)),
-                  ButtonSegment(
-                      value: RecurrenceType.custom,
-                      label: Text(Strings.recurrenceCustom)),
-                ],
-                selected: {_recurrence},
-                onSelectionChanged: (s) => setState(() {
-                  _recurrence = s.first;
-                  if (_recurrence == RecurrenceType.custom &&
-                      _customDays.isEmpty) {
-                    _customDays.add(DateTime.now().weekday);
-                  }
-                }),
-              ),
+              // Weekly habits are always "custom 1 day" — hide the
+              // recurrence segment, only show the day-of-week picker.
+              if (_selectedType != TaskType.weekly)
+                SegmentedButton<RecurrenceType>(
+                  segments: const [
+                    ButtonSegment(
+                        value: RecurrenceType.everyday,
+                        label: Text(Strings.recurrenceEveryday)),
+                    ButtonSegment(
+                        value: RecurrenceType.weekdays,
+                        label: Text(Strings.recurrenceWeekdays)),
+                    ButtonSegment(
+                        value: RecurrenceType.custom,
+                        label: Text(Strings.recurrenceCustom)),
+                  ],
+                  selected: {_recurrence},
+                  onSelectionChanged: (s) => setState(() {
+                    _recurrence = s.first;
+                    if (_recurrence == RecurrenceType.custom &&
+                        _customDays.isEmpty) {
+                      _customDays.add(DateTime.now().weekday);
+                    }
+                  }),
+                ),
               if (_recurrence == RecurrenceType.custom) ...[
                 const SizedBox(height: 8),
                 Wrap(
@@ -201,6 +227,16 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                             label: Text(Strings.weekdayShort[d]!),
                             selected: _customDays.contains(d),
                             onSelected: (sel) => setState(() {
+                              // Weekly = exactly 1 day; new selection
+                              // replaces the previous.
+                              if (_selectedType == TaskType.weekly) {
+                                if (sel) {
+                                  _customDays
+                                    ..clear()
+                                    ..add(d);
+                                }
+                                return;
+                              }
                               if (sel) {
                                 _customDays.add(d);
                               } else {
@@ -210,14 +246,18 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                           ))
                       .toList(),
                 ),
-              ],
-              if ((_recurrence == RecurrenceType.everyday ||
-                      _recurrence == RecurrenceType.weekdays) &&
-                  _selectedType == TaskType.monthly) ...[
-                const SizedBox(height: 8),
-                const Text(Strings.rewardTierWarning,
-                    style:
-                        TextStyle(color: AppColors.neonPink, fontSize: 12)),
+                if (_selectedType == TaskType.weekly) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    Strings.weeklyHabitDayHint,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark
+                          ? AppColors.textSecondary
+                          : Colors.black54,
+                    ),
+                  ),
+                ],
               ],
             ],
             const SizedBox(height: NeoTheme.spaceMd),
@@ -278,6 +318,12 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                 _recurrence == RecurrenceType.custom &&
                 _customDays.isEmpty) {
               return; // custom needs at least one day
+            }
+            // Weekly habit invariant: exactly 1 chosen weekday.
+            if (_recurring &&
+                _selectedType == TaskType.weekly &&
+                _customDays.length != 1) {
+              return;
             }
             Navigator.pop(context);
             HabitConfig? cfg;

@@ -12,12 +12,14 @@ import 'firebase_options.dart';
 import 'models/achievement.dart';
 import 'services/task_service.dart';
 import 'services/achievement_service.dart';
+import 'services/web_notification_service.dart';
 import 'pages/login.dart';
 import 'pages/calendar_page.dart';
 import 'pages/confirm_task.dart';
 import 'pages/settings.dart';
 import 'pages/stats_page.dart';
 import 'pages/notifications_page.dart';
+import 'pages/find_friends_page.dart';
 import 'pages/habits_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/friend_invite_screen.dart';
@@ -151,7 +153,10 @@ class _MyAppState extends State<MyApp> {
       // Auto-login from cached creds doesn't go through login.dart's eval
       // trigger, so fire one here. Catches up missed unlocks (e.g. friend
       // confirmed a rejected→resubmitted task while we were offline).
-      AchievementService().evaluate().catchError((_) => <Achievement>[]);
+      AchievementService().evaluate().catchError((e, s) {
+        debugPrint('[ach-eval/auth-restore] $e\n$s');
+        return <Achievement>[];
+      });
       try {
         _notifSub = TaskService().notificationsStream().listen((notifs) {
           if (_lastNotifSeen < 0) {
@@ -160,18 +165,77 @@ class _MyAppState extends State<MyApp> {
           }
           if (notifs.length > _lastNotifSeen) {
             _lastNotifSeen = notifs.length;
-            AchievementService()
-                .evaluate()
-                .catchError((_) => <Achievement>[]);
+            AchievementService().evaluate().catchError((e, s) {
+              debugPrint('[ach-eval/notif-tick] $e\n$s');
+              return <Achievement>[];
+            });
+            // Fire a browser-level Web Notification for the freshest item.
+            // Foreground-only: no-op when permission isn't granted, when
+            // running outside web, or when the user has muted the tab.
+            if (notifs.isNotEmpty) {
+              final latest = notifs.first;
+              WebNotificationService().show(
+                title: _browserNotifTitle(latest),
+                body: _browserNotifBody(latest),
+                tag: latest['id'] as String?,
+                onClick: () => _routeFromNotif(latest),
+              );
+            }
           } else {
             _lastNotifSeen = notifs.length;
           }
-        }, onError: (_) {});
-      } catch (_) {
+        }, onError: (e, s) {
+          debugPrint('[notif-stream] $e\n$s');
+        });
+      } catch (e, s) {
         // Stream construction failed (e.g. transient auth state) — silently
         // skip; we'll get another authStateChanges tick.
+        debugPrint('[notif-stream-ctor] $e\n$s');
       }
     });
+  }
+
+  String _browserNotifTitle(Map<String, dynamic> n) {
+    final type = n['type'];
+    final nick = n['fromNickname'] as String? ?? '—';
+    if (type == 'confirmed') return '$nick — úkol potvrzen';
+    if (type == 'rejected') return '$nick — úkol zamítnut';
+    if (type == 'achievement') return 'NOVÝ ÚSPĚCH';
+    if (type == 'expiring') return 'Úkol vyprší zítra';
+    if (type == 'friend_pending') return '$nick čeká na potvrzení';
+    if (type == 'friend_added') return '$nick — nový kamarád';
+    return 'MOTIVATOR';
+  }
+
+  String? _browserNotifBody(Map<String, dynamic> n) {
+    final task = n['taskTitle'] as String?;
+    if (task != null && task.isNotEmpty) return '"$task"';
+    return null;
+  }
+
+  void _routeFromNotif(Map<String, dynamic> n) {
+    final type = n['type'];
+    final nav = navigatorKey.currentState;
+    if (nav == null) return;
+    if (type == 'friend_pending') {
+      final code = n['code'] as String?;
+      if (code != null && code.isNotEmpty) {
+        nav.pushNamed('/confirm', arguments: code);
+        return;
+      }
+    }
+    if (type == 'achievement') {
+      final id = n['achievementId'] as String?;
+      nav.pushNamed('/stats',
+          arguments: id != null ? {'highlightId': id} : null);
+      return;
+    }
+    if (type == 'friend_added') {
+      nav.pushNamed('/profile');
+      return;
+    }
+    // Default: take user to inbox.
+    nav.pushNamed('/notifications');
   }
 
   Future<void> _initDeepLinks() async {
@@ -269,10 +333,16 @@ class _MyAppState extends State<MyApp> {
           TargetPlatform.windows: _NeoPageTransitionsBuilder(),
         }),
         appBarTheme: AppBarTheme(
-          backgroundColor: themeProvider.primaryColor,
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.cardLight,
+          foregroundColor: Colors.black87,
           elevation: 0,
           scrolledUnderElevation: 0,
+          shape: Border(
+            bottom: BorderSide(
+              color: themeProvider.primaryColor,
+              width: NeoTheme.borderWidth,
+            ),
+          ),
         ),
         floatingActionButtonTheme: FloatingActionButtonThemeData(
           elevation: 0,
@@ -399,6 +469,7 @@ class _MyAppState extends State<MyApp> {
         '/notifications': (context) => const NotificationsPage(),
         '/habits': (context) => const HabitsPage(),
         '/profile': (context) => const ProfilePage(),
+        '/find-friends': (context) => const FindFriendsPage(),
       },
       // Handle parameterised routes (e.g. /friend?code=XXX) that the static
       // `routes` map cannot express. The static map takes priority; this only
