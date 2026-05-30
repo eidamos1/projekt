@@ -1,9 +1,11 @@
 # HANDOFF — Motivator
 
-**Stav k:** 2026-05-15
+**Stav k:** 2026-05-30
 **Branch:** `main` (vše pushnuto + nasazeno na https://calendar-mot.web.app)
-**Tests:** 126/126 zelené
+**Tests:** 143/143 zelené
 **Analyze:** čistý
+
+> **v3 push DONE** (commity `f2e656f` + QA fix `09ea551`): activity feed „AKTIVITA KAMARÁDŮ", QR pozvánka, snapshot vítěze týdne, hledání podle přezdívky (`discoverable` + index), globální top-20 leaderboard, web push (foreground). Plus QA polish: 2řádkové wrapy karet úspěchů, plná 365denní heatmapa, light-mode AppBar, coupling typ×opakování návyku, mobilní stacking tlačítek + FAB clearance. Detaily v `CLAUDE.md` (sekce „Friends v3").
 
 ---
 
@@ -114,11 +116,8 @@ userInvites/{code}/ → userId            (global friend-invite index)
 
 ## Co dál — open tracks
 
-V2 push uzavřen. Další možné směry (žádný není rozpracovaný):
-- Týdenní winner snapshot (`weeklyXpHistory/{lastMondayStr}` před resetem)
-- Activity feed (kamarád odemkl úspěch X, kamarád dosáhl level N)
-- QR kód pro invite link
-- Search kamarádů podle přezdívky (kromě invite linku)
-- Globální leaderboard (kromě friends)
-- Push notifs (aktuálně jen in-app)
-- Expirovaný úkol → cleanup `friend_pending` notifs (drobnost; aktuálně friend tap → "task not found" graceful)
+V2 i v3 push uzavřen + nasazen. Repo vyčištěno do prezentovatelného stavu (README, .gitignore na QA artefakty, 2026-05-30). Žádný track není rozpracovaný. Možné další směry:
+- Expirovaný úkol → cleanup `friend_pending` notifs (drobnost; aktuálně friend tap → „task not found" graceful)
+- Background push (aktuálně foreground-only web push)
+- Block / report kamarádů
+- i18n framework (nyní hardcoded čeština ve `Strings`)

@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# QA / Playwright artifacts (screenshots, console logs) — not part of the deliverable
+/*.png
+/qa-screenshots/
+/.playwright-mcp/
