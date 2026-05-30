@@ -7,7 +7,7 @@ void showErrorSnack(BuildContext context, String msg) {
     SnackBar(
       content: Text(msg, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
       backgroundColor: AppColors.neonPink,
-      behavior: SnackBarBehavior.floating,
+      behavior: SnackBarBehavior.fixed,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
         side: const BorderSide(color: Colors.white, width: NeoTheme.borderWidthThin),
@@ -21,7 +21,7 @@ void showSuccessSnack(BuildContext context, String msg) {
     SnackBar(
       content: Text(msg, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
       backgroundColor: AppColors.neonGreen,
-      behavior: SnackBarBehavior.floating,
+      behavior: SnackBarBehavior.fixed,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
         side: const BorderSide(color: Colors.white, width: NeoTheme.borderWidthThin),
@@ -35,7 +35,7 @@ void showInfoSnack(BuildContext context, String msg) {
     SnackBar(
       content: Text(msg, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
       backgroundColor: AppColors.neonCyan,
-      behavior: SnackBarBehavior.floating,
+      behavior: SnackBarBehavior.fixed,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(NeoTheme.radiusButton),
         side: const BorderSide(color: Colors.white, width: NeoTheme.borderWidthThin),
