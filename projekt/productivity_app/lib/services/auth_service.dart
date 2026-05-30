@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../utils/nickname_search.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -20,6 +21,7 @@ class AuthService {
     final cred = await _auth.createUserWithEmailAndPassword(email: email, password: password);
     await _firestore.collection('users').doc(cred.user!.uid).set({
       'nickname': nickname,
+      'nicknameLower': nicknameSearchKey(nickname),
       'xp': 0,
       'coins': 0,
       'level': 1,
@@ -46,8 +48,10 @@ class AuthService {
 
     UserCredential userCred = await _auth.signInWithCredential(credential);
 
+    final googleNickname = googleUser.displayName ?? 'Hráč';
     await _firestore.collection('users').doc(userCred.user!.uid).set({
-      'nickname': googleUser.displayName ?? 'Hráč',
+      'nickname': googleNickname,
+      'nicknameLower': nicknameSearchKey(googleNickname),
       'photoUrl': googleUser.photoUrl,
     }, SetOptions(merge: true));
 

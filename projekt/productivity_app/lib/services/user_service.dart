@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../utils/nickname_search.dart';
 import 'friend_service.dart';
 
 class UserService {
@@ -32,7 +33,7 @@ class UserService {
     // Trim+toLower client-side; the query in friend_service uses the same.
     await _firestore.collection('users').doc(_uid).update({
       'nickname': nickname,
-      'nicknameLower': nickname.trim().toLowerCase(),
+      'nicknameLower': nicknameSearchKey(nickname),
     });
     // Propagate to all friends' denormalized snapshots (best-effort).
     await FriendService().propagateNicknameUpdate(nickname);
@@ -45,9 +46,16 @@ class UserService {
   }
 
   Future<void> setDiscoverable(bool value) async {
-    await _firestore.collection('users').doc(_uid).update({
-      'discoverable': value,
-    });
+    final data = <String, dynamic>{'discoverable': value};
+    if (value) {
+      // Backfill the search key when opting in, so the user is actually
+      // findable even if they never renamed (nicknameLower would be unset on
+      // accounts created before it was written at registration).
+      final snap = await _firestore.collection('users').doc(_uid).get();
+      final nickname = (snap.data()?['nickname'] as String?) ?? '';
+      data['nicknameLower'] = nicknameSearchKey(nickname);
+    }
+    await _firestore.collection('users').doc(_uid).update(data);
   }
 
   Stream<DocumentSnapshot> notificationsSettingStream() {

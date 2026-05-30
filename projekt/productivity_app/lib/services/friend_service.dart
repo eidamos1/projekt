@@ -8,6 +8,7 @@ import '../models/nickname_search_result.dart';
 import '../models/weekly_winner.dart';
 import '../utils/date_helpers.dart';
 import '../utils/invite_code.dart';
+import '../utils/nickname_search.dart';
 import '../utils/week_helpers.dart';
 
 /// Service for friends + invite codes + leaderboard.
@@ -516,7 +517,7 @@ class FriendService {
     String query, {
     int limit = 20,
   }) async {
-    final q = query.trim().toLowerCase();
+    final q = nicknameSearchKey(query);
     if (q.isEmpty) return const [];
     final uid = _uid;
 
@@ -533,7 +534,7 @@ class FriendService {
         .collection('users')
         .where('discoverable', isEqualTo: true)
         .where('nicknameLower', isGreaterThanOrEqualTo: q)
-        .where('nicknameLower', isLessThan: '$q')
+        .where('nicknameLower', isLessThan: nicknamePrefixUpperBound(q))
         .limit(limit)
         .get();
 
