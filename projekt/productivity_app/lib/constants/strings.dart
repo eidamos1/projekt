@@ -323,4 +323,36 @@ abstract final class Strings {
     final unit = current == 1 ? 'den' : (current >= 2 && current <= 4 ? 'dny' : 'dní');
     return 'Série: $current $unit';
   }
+
+  // Onboarding / průvodce (první spuštění + znovu z Nastavení)
+  static const onboardingGuide = 'Jak to funguje';
+  static const onboardingGuideSubtitle = 'Krátký průvodce aplikací';
+  static const onboardingSkip = 'Přeskočit';
+  static const onboardingNext = 'Další';
+  static const onboardingDone = 'Pojďme na to';
+
+  static const onboarding1Title = 'VÍTEJ V MOTIVATORU';
+  static const onboarding1Body =
+      'Appka, co tě donutí makat. Naplánuješ úkol, splníš ho a necháš si ho '
+      'potvrdit od kamaráda. Za odměnu bereš XP, mince a levely.';
+
+  static const onboarding2Title = 'NAPLÁNUJ SI ÚKOL';
+  static const onboarding2Body =
+      'Klepni na ➕ a přidej denní, týdenní nebo měsíční úkol. Přiřaď mu '
+      'kategorii. Návyky se opakují samy a drží ti sérii.';
+
+  static const onboarding3Title = 'VYFOŤ DŮKAZ';
+  static const onboarding3Body =
+      'Hotovo? Vyfoť důkaz a kamarád ho ověří přes 6místný kód. Teprve pak ti '
+      'naskočí odměna — sám sebe neoblafneš.';
+
+  static const onboarding4Title = 'KAMARÁDI A ŽEBŘÍČEK';
+  static const onboarding4Body =
+      'Přidej kamarády přes pozvánku nebo QR kód. Každý týden se měříte '
+      'v žebříčku podle nasbíraného XP.';
+
+  static const onboarding5Title = 'ÚSPĚCHY A STATISTIKY';
+  static const onboarding5Body =
+      'Za konkrétní činy odemykáš 15 úspěchů s vlastním vtipem. Roční heatmapa '
+      'ukáže, jak ti to dlouhodobě jede.';
 }

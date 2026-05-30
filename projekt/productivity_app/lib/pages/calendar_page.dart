@@ -25,6 +25,7 @@ import '../widgets/neo_bottom_sheet.dart';
 import '../widgets/neo_bottom_nav.dart';
 import '../widgets/neo_pressable.dart';
 import '../widgets/neo_skeleton.dart';
+import '../widgets/onboarding_tour.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -64,6 +65,18 @@ class _CalendarPageState extends State<CalendarPage> {
         map.putIfAbsent(t.date, () => []).add(t.type);
       }
       if (mounted) setState(() => _tasksByDate = map);
+    });
+    _maybeShowOnboarding();
+  }
+
+  /// On the very first launch, open the guided tour once. It doubles as a
+  /// welcome for new users and a talking-point cheat sheet during demos.
+  Future<void> _maybeShowOnboarding() async {
+    if (await onboardingSeen()) return;
+    await markOnboardingSeen();
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) showOnboardingTour(context);
     });
   }
 

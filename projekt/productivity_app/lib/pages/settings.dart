@@ -15,6 +15,7 @@ import '../utils/context_extensions.dart';
 import '../utils/ui_helpers.dart';
 import '../widgets/neo_bottom_nav.dart';
 import '../widgets/neo_bottom_sheet.dart';
+import '../widgets/onboarding_tour.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/title_chip.dart';
 
@@ -483,6 +484,15 @@ class _SettingsPageState extends State<SettingsPage> {
               title: const Text(Strings.habitsMine),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.pushNamed(context, '/habits'),
+            ),
+            const Divider(),
+            // How it works — replay the first-run guide
+            ListTile(
+              leading: const Icon(Icons.explore_outlined),
+              title: const Text(Strings.onboardingGuide),
+              subtitle: const Text(Strings.onboardingGuideSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => showOnboardingTour(context),
             ),
             const Divider(),
             // About app
