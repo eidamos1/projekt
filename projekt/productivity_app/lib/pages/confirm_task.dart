@@ -137,22 +137,46 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
-                    onPressed: _confirmAnother,
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                        color: isDark
-                            ? AppColors.borderSubtle
-                            : AppColors.borderBold,
-                        width: NeoTheme.borderWidth,
-                      ),
-                      shape: RoundedRectangleBorder(
+                  // Secondary action — neo "outline" style so it shares the
+                  // same language as the primary button below (was a Material
+                  // OutlinedButton, which clashed with the neo button beside it).
+                  child: NeoPressable(
+                    onTap: _confirmAnother,
+                    child: Container(
+                      decoration: BoxDecoration(
                         borderRadius:
                             BorderRadius.circular(NeoTheme.radiusButton),
+                        color: isDark
+                            ? AppColors.cardDark
+                            : AppColors.cardLight,
+                        border: Border.all(
+                          color: isDark
+                              ? AppColors.borderSubtle
+                              : AppColors.borderBold,
+                          width: NeoTheme.borderWidth,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black
+                                .withValues(alpha: isDark ? 0.4 : 0.12),
+                            offset: NeoTheme.shadowOffsetSmall,
+                            blurRadius: 0,
+                          ),
+                        ],
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        child: Center(
+                          child: Text(
+                            Strings.confirmAnother,
+                            style: TextStyle(
+                              color: context.primaryColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    child: const Text(Strings.confirmAnother),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -237,7 +261,7 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
               }
               Navigator.pop(context, text);
             },
-            child: const Text(Strings.statusRejected),
+            child: const Text(Strings.rejectAction),
           ),
         ],
       ),

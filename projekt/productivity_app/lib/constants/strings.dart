@@ -11,6 +11,7 @@ abstract final class Strings {
   static const createTask = 'Vytvořit úkol';
   static const confirm = 'Potvrdit';
   static const reject = 'ODMÍTNOUT';
+  static const rejectAction = 'Odmítnout';
   static const confirmUpper = 'POTVRDIT';
 
   // Status
