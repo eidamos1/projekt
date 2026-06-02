@@ -496,11 +496,33 @@ class _MyAppState extends State<MyApp> {
           );
         }
         if (name.startsWith('/friend')) {
-          final uri = Uri.parse(name);
-          final code = uri.queryParameters['code'] ?? '';
+          final code = Uri.parse(name).queryParameters['code'] ?? '';
+          // Deep link opened while logged out: the router resolves the boot URL
+          // before app_links can read it, so stash the link here and fall back
+          // to the login screen (return null → initialRoute '/'). login.dart
+          // replays it once the user authenticates.
+          if (FirebaseAuth.instance.currentUser == null) {
+            PendingDeepLink.stash('/friend?code=$code', null);
+            return null;
+          }
           return MaterialPageRoute(
             builder: (_) => FriendInviteScreen(code: code),
             settings: settings,
+          );
+        }
+        // '/confirm?code=X' web deep link. The bare '/confirm' is served by the
+        // static routes map (in-app navigation); only the query-carrying form
+        // reaches here, so this is always an external link.
+        if (name.startsWith('/confirm')) {
+          final code = Uri.parse(name).queryParameters['code'];
+          if (code == null || code.isEmpty) return null;
+          if (FirebaseAuth.instance.currentUser == null) {
+            PendingDeepLink.stash('/confirm', code);
+            return null;
+          }
+          return MaterialPageRoute(
+            builder: (_) => const ConfirmTaskPage(),
+            settings: RouteSettings(name: '/confirm', arguments: code),
           );
         }
         return null;
