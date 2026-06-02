@@ -58,6 +58,10 @@ class _ConfirmTaskPageState extends State<ConfirmTaskPage> {
       if (result != null) {
         setState(() => _lookup = result);
       } else {
+        // The code resolved to nothing — the task was already confirmed or
+        // deleted. Scrub any stale friend_pending notif of mine for this code
+        // so it stops dead-ending here on every tap.
+        _taskService.dismissStalePendingByCode(code).ignore();
         if (mounted) showErrorSnack(context, Strings.taskNotFound);
       }
     } catch (e) {

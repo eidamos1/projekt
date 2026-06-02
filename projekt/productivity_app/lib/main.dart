@@ -28,8 +28,22 @@ import 'widgets/achievement_unlock_toast.dart';
 import 'constants/app_colors.dart';
 import 'constants/neo_theme.dart';
 import 'constants/layout.dart';
+import 'utils/pending_deep_link.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+/// Pushes a deep-link route once the root navigator is mounted. Replaces the
+/// old fixed `Future.delayed(1s)` gamble — which silently dropped the link if
+/// the navigator wasn't ready yet on a cold start — with a short bounded retry.
+void pushDeepLinkWhenReady(String route, Object? args, [int attempt = 0]) {
+  final nav = navigatorKey.currentState;
+  if (nav != null) {
+    nav.pushNamed(route, arguments: args);
+  } else if (attempt < 20) {
+    Future.delayed(const Duration(milliseconds: 150),
+        () => pushDeepLinkWhenReady(route, args, attempt + 1));
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -256,46 +270,41 @@ class _MyAppState extends State<MyApp> {
   void _handleLink(Uri uri) {
     String? code = uri.queryParameters['code'];
 
-    if (uri.host == 'confirm' && code != null) {
-      Future.delayed(const Duration(seconds: 1), () {
-        navigatorKey.currentState?.pushNamed('/confirm', arguments: code);
-      });
-      return;
-    }
-
-    if (uri.host == 'friend' && code != null) {
-      Future.delayed(const Duration(seconds: 1), () {
-        navigatorKey.currentState?.pushNamed('/friend?code=$code');
-      });
-      return;
-    }
-
+    // Web fragment URLs (https://.../#/confirm?code=X) carry the real route +
+    // query after the '#', so parse the fragment too.
     if (code == null && uri.fragment.isNotEmpty) {
       try {
-        final fragmentUri = Uri.parse('dummy://dummy/${uri.fragment}');
-        code = fragmentUri.queryParameters['code'];
+        code =
+            Uri.parse('dummy://dummy/${uri.fragment}').queryParameters['code'];
       } catch (_) {}
     }
+    if (code == null) return;
 
-    bool isConfirmPage = uri.host == 'confirm' ||
-        uri.path.contains('confirm') ||
-        uri.fragment.contains('confirm');
+    final blob = '${uri.host}/${uri.path}/${uri.fragment}';
+    // `/friend-profile` contains 'friend' but is a read-only profile view, not
+    // an invite — exclude it so a friend-profile URL that happens to carry a
+    // `code` isn't misrouted into the add-friend screen.
+    final isFriendProfile = blob.contains('friend-profile');
+    final isConfirm = blob.contains('confirm');
+    final isFriendInvite = !isFriendProfile && blob.contains('friend');
 
-    bool isFriendPage = uri.host == 'friend' ||
-        uri.path.contains('friend') ||
-        uri.fragment.contains('friend');
-
-    if (isConfirmPage && code != null) {
-      Future.delayed(const Duration(seconds: 1), () {
-        navigatorKey.currentState?.pushNamed('/confirm', arguments: code);
-      });
-      return;
+    String? route;
+    Object? args;
+    if (isConfirm) {
+      route = '/confirm';
+      args = code;
+    } else if (isFriendInvite) {
+      route = '/friend?code=$code';
     }
+    if (route == null) return;
 
-    if (isFriendPage && code != null) {
-      Future.delayed(const Duration(seconds: 1), () {
-        navigatorKey.currentState?.pushNamed('/friend?code=$code');
-      });
+    // Act now if signed in; otherwise stash and let login.dart replay it once
+    // the user authenticates — so a link opened from a cold, logged-out start
+    // isn't silently dropped.
+    if (FirebaseAuth.instance.currentUser != null) {
+      pushDeepLinkWhenReady(route, args);
+    } else {
+      PendingDeepLink.stash(route, args);
     }
   }
 

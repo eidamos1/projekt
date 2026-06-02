@@ -271,18 +271,27 @@ class TaskService {
       String? lastActive = userData['lastActiveDate'] as String?;
       int streak = userData['streak'] ?? 0;
 
+      // Track whether this confirm actually advanced the streak. The milestone
+      // bonus must only fire on the confirm that *crosses into* 7/30/100 — not
+      // on every confirm while the streak happens to sit on a milestone value.
+      // Otherwise a second task confirmed the same day (lastActive == today,
+      // streak unchanged) would re-award the bonus, inflating XP + weeklyXp.
+      bool streakAdvanced = false;
       if (lastActive == null) {
         streak = 1;
+        streakAdvanced = true;
       } else if (lastActive == today) {
-        // Already active today
+        // Already active today — streak unchanged, so no bonus this confirm.
       } else if (lastActive == yesterdayString()) {
         streak += 1;
+        streakAdvanced = true;
       } else {
         streak = 1;
+        streakAdvanced = true;
       }
 
-      // Streak bonus XP
-      int bonus = GameConfig.streakBonus(streak);
+      // Streak bonus XP — only on the confirm that advanced the streak.
+      int bonus = streakAdvanced ? GameConfig.streakBonus(streak) : 0;
       newXp += bonus;
       newLevel = GameConfig.levelFromXp(newXp);
 
@@ -409,6 +418,30 @@ class TaskService {
         .collection('notifications')
         .doc(notifId)
         .update({'read': true});
+  }
+
+  /// Removes any `friend_pending` notif in MY inbox that points at [code].
+  /// Called when a confirm attempt can't resolve the code (the owner's task was
+  /// already confirmed/deleted, or they unfriended me) so the dead notif stops
+  /// dead-ending me to "task not found" on every tap. I own my inbox, so the
+  /// delete is always permitted. Best-effort.
+  Future<void> dismissStalePendingByCode(String code) async {
+    try {
+      final snap = await _firestore
+          .collection('users')
+          .doc(_uid)
+          .collection('notifications')
+          .where('type', isEqualTo: 'friend_pending')
+          .get();
+      for (final doc in snap.docs) {
+        // Filter by code client-side so we don't need a composite index.
+        if (doc.data()['code'] == code) {
+          await doc.reference.delete();
+        }
+      }
+    } catch (_) {
+      // best-effort — never surface this to the user
+    }
   }
 
   Future<void> markAllNotificationsRead() async {

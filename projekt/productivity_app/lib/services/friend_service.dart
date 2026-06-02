@@ -144,6 +144,9 @@ class FriendService {
     final otherNickname = (otherSnap.data() ?? const {})['nickname'] as String? ?? '';
     final addedAt = nowMinuteString();
 
+    // The two mutual edges are the essential write and go in one atomic batch.
+    // Both are always permitted (each party may write either edge), so this
+    // commit cannot fail on rules — the friendship is created reliably.
     final batch = _firestore.batch();
 
     // Edge: me -> other (stores other's nickname snapshot)
@@ -160,20 +163,27 @@ class FriendService {
       SetOptions(merge: true),
     );
 
-    // Deterministic notif id -> idempotent on retry.
-    batch.set(
-      _notifsCol(otherUid).doc('friend_added_$uid'),
-      {
-        'type': 'friend_added',
-        'fromNickname': myNickname,
-        'fromUid': uid,
-        'createdAt': addedAt,
-        'read': false,
-      },
-      SetOptions(merge: true),
-    );
-
     await batch.commit();
+
+    // Notif to the other's inbox — best-effort, decoupled from the edge batch.
+    // A non-owner may only *create* a notif, not update one; if a stale
+    // `friend_added_$uid` somehow survives (e.g. cleanup didn't run), the
+    // set-as-update would be denied. Keeping it out of the batch means that
+    // can never roll back the friendship. Deterministic id -> idempotent.
+    try {
+      await _notifsCol(otherUid).doc('friend_added_$uid').set(
+        {
+          'type': 'friend_added',
+          'fromNickname': myNickname,
+          'fromUid': uid,
+          'createdAt': addedAt,
+          'read': false,
+        },
+        SetOptions(merge: true),
+      );
+    } catch (_) {
+      // best-effort — a notif glitch must not surface as an "add failed" error
+    }
   }
 
   /// Updates the denormalized nickname snapshot in every friend's
@@ -195,10 +205,16 @@ class FriendService {
 
   /// Writes a `friend_pending` notif to every friend's inbox so they see
   /// the task in their feed and can confirm without copying the code.
-  /// Deterministic doc id: `friend_pending_{taskId}` — idempotent on re-upload.
+  /// Deterministic doc id: `friend_pending_{taskId}`.
   ///
-  /// Best-effort: a batch-commit failure does not throw, so a notif glitch
-  /// can't block the user's photo save flow.
+  /// Written per-friend, NOT as one atomic batch: on a photo re-upload the doc
+  /// already exists in friends' inboxes, and a non-owner may only *create* a
+  /// notif, not update one (see rules). In a single batch that one denied
+  /// update would roll back EVERY friend's write — so a re-upload would notify
+  /// nobody, including friends added since the first upload. Independent writes
+  /// let the creates succeed; the redundant updates fail harmlessly (the
+  /// existing notif already carries the same code + task). Best-effort
+  /// throughout: a notif glitch must never block the user's photo save.
   Future<void> notifyFriendsOfPendingTask({
     required String taskId,
     required String taskTitle,
@@ -210,26 +226,26 @@ class FriendService {
     final myNick = (mySnap.data()?['nickname'] as String?) ?? 'Hráč';
     final friendsSnap = await _friendsCol(uid).get();
     if (friendsSnap.docs.isEmpty) return;
-    final now = nowMinuteString();
-    final batch = _firestore.batch();
-    for (final f in friendsSnap.docs) {
-      final ref = _notifsCol(f.id).doc('friend_pending_$taskId');
-      batch.set(ref, {
-        'type': 'friend_pending',
-        'fromUid': uid,
-        'fromNickname': myNick,
-        'taskId': taskId,
-        'taskTitle': taskTitle,
-        'code': code,
-        'createdAt': now,
-        'read': false,
-      }, SetOptions(merge: true));
-    }
-    try {
-      await batch.commit();
-    } catch (_) {
-      // best-effort — notif failure shouldn't block photo save
-    }
+    final payload = {
+      'type': 'friend_pending',
+      'fromUid': uid,
+      'fromNickname': myNick,
+      'taskId': taskId,
+      'taskTitle': taskTitle,
+      'code': code,
+      'createdAt': nowMinuteString(),
+      'read': false,
+    };
+    await Future.wait(friendsSnap.docs.map((f) async {
+      try {
+        await _notifsCol(f.id)
+            .doc('friend_pending_$taskId')
+            .set(payload, SetOptions(merge: true));
+      } catch (_) {
+        // Already-present notif -> cross-user update is denied. Fine: the
+        // friend still holds an actionable notif for the same task.
+      }
+    }));
   }
 
   /// Removes the `friend_pending` notif for [taskId] from every friend's inbox.
@@ -252,6 +268,14 @@ class FriendService {
   }
 
   /// Removes the mutual friendship with [otherUid]. Silent (no notif).
+  ///
+  /// Also clears the deterministic `friend_added_*` notif from whichever
+  /// inbox holds it. This matters: without it the notif survives the unfriend,
+  /// and a later re-add — which writes the same doc id via `set(merge)` —
+  /// becomes an *update* of a cross-user notif, which the rules forbid for
+  /// non-owners, so `addFriend`'s batch would fail. Deleting it here keeps the
+  /// re-add path a clean `create`. Both deletes are permitted: I'm the inbox
+  /// owner of one, and the original `fromUid` (sender) of the other.
   Future<void> removeFriend(String otherUid) async {
     final uid = _uid;
     if (uid == null) {
@@ -261,6 +285,10 @@ class FriendService {
     final batch = _firestore.batch();
     batch.delete(_friendsCol(uid).doc(otherUid));
     batch.delete(_friendsCol(otherUid).doc(uid));
+    // Notif I sent when I added them (lives in their inbox; I'm fromUid).
+    batch.delete(_notifsCol(otherUid).doc('friend_added_$uid'));
+    // Notif they sent when they added me (lives in my inbox; I'm owner).
+    batch.delete(_notifsCol(uid).doc('friend_added_$otherUid'));
     await batch.commit();
   }
 
@@ -473,10 +501,13 @@ class FriendService {
   /// Global leaderboard stream — top [limit] opt-in (`discoverable=true`)
   /// users by weeklyXp this week.
   ///
-  /// Server orders by raw `weeklyXp DESC`; the client normalizes stale-week
-  /// entries to 0 (mirrors [leaderboardStream]) and re-sorts. Users who
-  /// have not opted in via `discoverable=true` are excluded — that includes
-  /// the current user unless they themselves opted in.
+  /// The query is scoped to `weeklyXpWeekStart == this Monday` so the server
+  /// only ranks users who actually scored *this* week. Without that filter the
+  /// server ordered by raw `weeklyXp DESC` and the top slots at the start of a
+  /// new week were filled by people still carrying last week's (stale) total —
+  /// which the client then zeroes, pushing the real current leader out of the
+  /// `limit` window entirely. Requires composite index
+  /// `users (discoverable ASC, weeklyXpWeekStart ASC, weeklyXp DESC)`.
   Stream<List<FriendRank>> globalLeaderboardStream({int limit = 20}) {
     final uid = _uid;
     if (uid == null) return const Stream.empty();
@@ -484,6 +515,7 @@ class FriendService {
     return _firestore
         .collection('users')
         .where('discoverable', isEqualTo: true)
+        .where('weeklyXpWeekStart', isEqualTo: mondayStr)
         .orderBy('weeklyXp', descending: true)
         .limit(limit)
         .snapshots()

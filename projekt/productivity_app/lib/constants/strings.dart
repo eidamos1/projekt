@@ -33,6 +33,8 @@ abstract final class Strings {
   static const deleteAccountWarning =
       'Tato akce je nevratná. Přijdeš o všechny úkoly, XP a mince.';
   static const deleteAccountButton = 'SMAZAT NAVŽDY';
+  static const deletePasswordPrompt =
+      'Pro potvrzení zadej své heslo.';
 
   // Form hints
   static const taskTitleHint = 'Co chceš splnit?';

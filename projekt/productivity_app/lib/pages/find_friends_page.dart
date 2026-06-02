@@ -48,6 +48,10 @@ class _FindFriendsPageState extends State<FindFriendsPage> {
       setState(() {
         _results = null;
         _lastQuery = trimmed;
+        // Clear any spinner from an in-flight longer query: its result will be
+        // dropped by the stale-guard below, which would otherwise never reset
+        // _loading and strand the spinner over a now-empty query.
+        _loading = false;
       });
       return;
     }

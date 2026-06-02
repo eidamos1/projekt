@@ -8,6 +8,7 @@ import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
 import '../utils/context_extensions.dart';
 import '../utils/ui_helpers.dart';
+import '../utils/pending_deep_link.dart';
 import '../widgets/responsive_layout.dart';
 
 class LoginPage extends StatefulWidget {
@@ -34,10 +35,24 @@ class _LoginPageState extends State<LoginPage> {
 
   void _toggleForm() => setState(() => isLogin = !isLogin);
 
+  /// Navigates to the calendar after a successful sign-in and replays any deep
+  /// link (friend invite / confirm) that was stashed while logged out, pushed
+  /// on top so the back button returns to the calendar.
+  void _postLoginNavigate() {
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/calendar');
+    if (PendingDeepLink.isSet) {
+      final route = PendingDeepLink.route!;
+      final args = PendingDeepLink.args;
+      PendingDeepLink.clear();
+      Navigator.pushNamed(context, route, arguments: args);
+    }
+  }
+
   Future<void> _signInWithGoogle() async {
     try {
       await _authService.signInWithGoogle();
-      if (mounted) Navigator.pushReplacementNamed(context, '/calendar');
+      _postLoginNavigate();
       AchievementService().evaluate().catchError((_) => <Achievement>[]);
     } catch (e) {
       debugPrint('Google Sign-In error: $e');
@@ -63,7 +78,7 @@ class _LoginPageState extends State<LoginPage> {
       } else {
         await _authService.registerWithEmail(email, password, nickname);
       }
-      if (mounted) Navigator.pushReplacementNamed(context, '/calendar');
+      _postLoginNavigate();
       AchievementService().evaluate().catchError((_) => <Achievement>[]);
     } on FirebaseAuthException catch (e) {
       if (mounted) {

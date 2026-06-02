@@ -198,8 +198,18 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (!confirm) return;
 
+    // Password accounts must re-authenticate before deletion (Firebase rejects
+    // the delete otherwise). Google accounts re-auth via the chooser popup
+    // inside deleteAccount, so no prompt is needed for them.
+    String? password;
+    if (AuthService().isPasswordUser) {
+      if (!context.mounted) return;
+      password = await _promptPassword(context);
+      if (password == null) return; // cancelled
+    }
+
     try {
-      await AuthService().deleteAccount();
+      await AuthService().deleteAccount(password: password);
       if (context.mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
         showSuccessSnack(context, Strings.accountDeleted);
@@ -209,6 +219,53 @@ class _SettingsPageState extends State<SettingsPage> {
         showErrorSnack(context, Strings.accountDeleteError);
       }
     }
+  }
+
+  Future<String?> _promptPassword(BuildContext context) async {
+    final isDark = context.isDark;
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NeoTheme.radiusCard),
+          side: BorderSide(
+            color: isDark ? AppColors.borderSubtle : AppColors.borderBold,
+            width: NeoTheme.borderWidth,
+          ),
+        ),
+        title: const Text(Strings.deleteAccount),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(Strings.deletePasswordPrompt),
+            const SizedBox(height: NeoTheme.spaceMd),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: Strings.passwordLabel),
+              onSubmitted: (v) => Navigator.pop(ctx, v),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(Strings.cancel),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.neonPink,
+                foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(ctx, controller.text),
+            child: const Text(Strings.deleteAccountButton),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return (result != null && result.isNotEmpty) ? result : null;
   }
 
   void _openTitleSheet(BuildContext context) {

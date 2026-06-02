@@ -3,7 +3,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../models/task.dart';
@@ -14,6 +13,7 @@ import '../widgets/empty_state.dart';
 import '../widgets/dialogs/task_form_dialog.dart';
 import '../services/task_service.dart';
 import '../services/habit_service.dart';
+import '../services/auth_service.dart';
 import '../constants/app_colors.dart';
 import '../constants/neo_theme.dart';
 import '../constants/strings.dart';
@@ -35,7 +35,6 @@ class CalendarPage extends StatefulWidget {
 }
 
 class _CalendarPageState extends State<CalendarPage> {
-  final _auth = FirebaseAuth.instance;
   final _taskService = TaskService();
   final _habitService = HabitService();
 
@@ -133,7 +132,9 @@ class _CalendarPageState extends State<CalendarPage> {
         icon: const Icon(Icons.logout_rounded),
         tooltip: Strings.logout,
         onPressed: () async {
-          await _auth.signOut();
+          // Route through AuthService so the Google session is cleared too
+          // (plain FirebaseAuth.signOut leaves the prior Google account cached).
+          await AuthService().signOut();
           if (!mounted) return;
           Navigator.pushReplacementNamed(context, '/');
         },

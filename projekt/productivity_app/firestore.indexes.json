@@ -29,6 +29,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "discoverable", "order": "ASCENDING" },
+        { "fieldPath": "weeklyXpWeekStart", "order": "ASCENDING" },
         { "fieldPath": "weeklyXp", "order": "DESCENDING" }
       ]
     }
