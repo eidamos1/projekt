@@ -269,27 +269,37 @@ class FriendService {
 
   /// Removes the mutual friendship with [otherUid]. Silent (no notif).
   ///
-  /// Also clears the deterministic `friend_added_*` notif from whichever
-  /// inbox holds it. This matters: without it the notif survives the unfriend,
-  /// and a later re-add — which writes the same doc id via `set(merge)` —
-  /// becomes an *update* of a cross-user notif, which the rules forbid for
-  /// non-owners, so `addFriend`'s batch would fail. Deleting it here keeps the
-  /// re-add path a clean `create`. Both deletes are permitted: I'm the inbox
-  /// owner of one, and the original `fromUid` (sender) of the other.
+  /// Then best-effort clears the deterministic `friend_added_*` notifs so a
+  /// later re-add is a clean create.
   Future<void> removeFriend(String otherUid) async {
     final uid = _uid;
     if (uid == null) {
       throw StateError('Uzivatel neni prihlasen — nelze odebrat kamarada.');
     }
 
+    // The two mutual edges are the essential write: atomic, and both always
+    // permitted (either party may delete either edge).
     final batch = _firestore.batch();
     batch.delete(_friendsCol(uid).doc(otherUid));
     batch.delete(_friendsCol(otherUid).doc(uid));
-    // Notif I sent when I added them (lives in their inbox; I'm fromUid).
-    batch.delete(_notifsCol(otherUid).doc('friend_added_$uid'));
-    // Notif they sent when they added me (lives in my inbox; I'm owner).
-    batch.delete(_notifsCol(uid).doc('friend_added_$otherUid'));
     await batch.commit();
+
+    // Notif cleanup is best-effort and OUTSIDE the atomic batch. The notif in
+    // the OTHER user's inbox can only be deleted by its sender (`fromUid`), and
+    // deleting a NON-existent doc there is rules-denied (the rule reads
+    // resource.data.fromUid, which is null for a missing doc). Bundling it into
+    // the edge batch made the *entire unfriend* fail whenever the remover
+    // wasn't the original adder — so the friendship couldn't be removed at all.
+    // Independent best-effort deletes keep the unfriend reliable; a surviving
+    // notif is harmless because addFriend's notif write is itself best-effort.
+    try {
+      // Notif I sent when I added them (their inbox; allowed iff I'm fromUid).
+      await _notifsCol(otherUid).doc('friend_added_$uid').delete();
+    } catch (_) {/* not the sender / already gone — fine */}
+    try {
+      // Notif they sent when they added me (my inbox; I'm owner).
+      await _notifsCol(uid).doc('friend_added_$otherUid').delete();
+    } catch (_) {/* already gone — fine */}
   }
 
   /// Returns the public-ish snapshot of another user's profile. Returns null
