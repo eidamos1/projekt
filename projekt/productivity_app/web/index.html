@@ -33,6 +33,38 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <script>
+    // Auto-apply new deploys without a manual hard refresh (Ctrl+F5).
+    //
+    // Flutter's service worker already calls skipWaiting() + clients.claim(),
+    // so a fresh deploy activates and takes control on the next load — but the
+    // page keeps running the OLD main.dart.js in memory until it reloads. So we
+    // reload once when a NEW worker takes over.
+    //
+    // Guard: only when the page was ALREADY controlled at startup. On a
+    // first-ever visit there's no controller yet and the initial claim would
+    // otherwise trigger a needless reload (or loop).
+    if ('serviceWorker' in navigator) {
+      if (navigator.serviceWorker.controller) {
+        let reloading = false;
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (reloading) return;
+          reloading = true;
+          window.location.reload();
+        });
+      }
+      // Long-open tabs won't re-fetch the worker on their own — re-check for a
+      // newer version whenever the tab regains focus. If one exists it installs,
+      // takes over, and the listener above reloads.
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') {
+          navigator.serviceWorker.getRegistration().then(function (reg) {
+            if (reg) reg.update();
+          });
+        }
+      });
+    }
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
