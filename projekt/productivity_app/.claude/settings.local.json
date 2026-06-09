@@ -14,7 +14,11 @@
       "WebFetch(domain:www.wearetenet.com)",
       "WebFetch(domain:raw.studio)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "mcp__plugin_playwright_playwright__browser_resize",
+      "mcp__plugin_playwright_playwright__browser_navigate"
     ]
   }
 }
