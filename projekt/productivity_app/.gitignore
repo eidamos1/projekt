@@ -48,3 +48,6 @@ app.*.map.json
 /*.png
 /qa-screenshots/
 /.playwright-mcp/
+
+# Claude Code planning docs — design/implementation notes, not part of the deliverable
+/docs/plans/
